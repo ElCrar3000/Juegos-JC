@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Infinity Evolution • Juegos JC</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="index.html">
+        <div class="logo"></div>
+        <div>
+          <h1 id="siteName">Juegos JC</h1>
+          <small>Juegos que evolucionan</small>
+        </div>
+      </a>
+      <nav class="links">
+        <a class="chip" href="index.html">Inicio</a>
+        <a class="chip" href="game.html">Juegos</a>
+        <a class="chip" href="about.html">Sobre mí</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container hero">
+    <section class="card">
+      <div class="panel-title">
+        <h2><span id="gameName">Infinity Evolution</span></h2>
+        <span class="badge">Versión: <span id="currentVersion">v1.0</span></span>
+      </div>
+
+      <p class="subtitle">
+        Empieza simple y se vuelve profundo: desbloquea poderes, crea combinaciones y mejora tu evolución.
+      </p>
+
+      <div class="cta-row">
+        <a class="btn" id="directPlay" href="./game/index.html">Abrir en pestaña nueva</a>
+        <span class="badge">Próximo: <span id="nextVersion">v1.1</span></span>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="note">
+        <div class="dot"></div>
+        <div>
+          El juego se carga aquí abajo en un <kbd>iframe</kbd>. Si no aparece, revisa que exista <kbd>game/index.html</kbd>.
+        </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <iframe
+          id="gameFrame"
+          title="Infinity Evolution"
+          style="width:100%; height:70vh; border:1px solid rgba(31,42,64,.85); border-radius:18px; background: rgba(0,0,0,.25);"
+          loading="lazy"
+        ></iframe>
+      </div>
+    </section>
+
+    <section class="grid2" style="margin-top:18px;">
+      <div class="card">
+        <div class="panel-title">
+          <h2>Notas de versión</h2>
+          <span class="pill"><span class="p"></span> changelog</span>
+        </div>
+
+        <div class="list">
+          <div class="item">
+            <h3>v1.0</h3>
+            <p>Base jugable + mecánica principal + primera progresión.</p>
+          </div>
+          <div class="item">
+            <h3>v1.1 (plan)</h3>
+            <p>Nuevo poder + ajustes de balance + mejoras de UI.</p>
+          </div>
+          <div class="item">
+            <h3>v1.2 (idea)</h3>
+            <p>Voces/sonidos y una mejora de “feedback” al usar poderes.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="panel-title">
+          <h2>Roadmap corto</h2>
+          <span class="badge">sin agobios</span>
+        </div>
+
+        <div class="list">
+          <div class="item">
+            <h3>Semana 1</h3>
+            <p>Corregir bugs + pulir controles.</p>
+          </div>
+          <div class="item">
+            <h3>Semana 2</h3>
+            <p>Un poder nuevo que cambie reglas (profundidad real).</p>
+          </div>
+          <div class="item">
+            <h3>Semana 3</h3>
+            <p>Pequeña mejora visual/sonora (sin romper nada).</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      © <span id="year"></span> Juegos JC • Infinity Evolution
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

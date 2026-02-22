@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Juegos JC</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="index.html" aria-label="Ir a inicio">
+        <div class="logo"></div>
+        <div>
+          <h1 id="siteName">Juegos JC</h1>
+          <small>Indie. Mecánicas. Evolución.</small>
+        </div>
+      </a>
+      <nav class="links">
+        <a class="chip" href="index.html">Inicio</a>
+        <a class="chip" id="gameLink" href="game.html">Juegos</a>
+        <a class="chip" href="about.html">Sobre mí</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container hero">
+    <section class="hero-grid">
+      <div class="card">
+        <div class="kicker">Estudio independiente • Construido para durar</div>
+        <h2 class="title">Bienvenido a <span id="siteName">Juegos JC</span></h2>
+        <p class="subtitle">
+          Aquí los juegos empiezan simples y se vuelven profundos. Primero jugabilidad, luego poderes, luego personajes.
+          Y sí: versiones, mejoras y crecimiento real.
+        </p>
+
+        <div class="cta-row">
+          <a class="btn primary" id="playBtn" href="game.html">▶ Jugar ahora</a>
+          <a class="btn" id="directPlay" href="./game/index.html">Abrir juego directo</a>
+          <span class="badge">Actual: <span id="currentVersion">v1.0</span></span>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="note">
+          <div class="dot"></div>
+          <div>
+            <strong>Pro tip:</strong> si el juego tarda en cargar, revisa que exista <kbd>game/index.html</kbd>.
+          </div>
+        </div>
+      </div>
+
+      <aside class="card">
+        <div class="panel-title">
+          <h2>Ahora en desarrollo</h2>
+          <span class="badge">Próximo: <span id="nextVersion">v1.1</span></span>
+        </div>
+
+        <div class="list">
+          <div class="item">
+            <h3>Infinity Evolution</h3>
+            <p>El primer juego de Juegos JC. Evolución progresiva y poderes que cambian reglas.</p>
+          </div>
+          <div class="item">
+            <h3>Notas rápidas</h3>
+            <p>Subidas por versiones. Sin drama. Sin quemarse. Una mejora pequeña, pero buena.</p>
+          </div>
+          <div class="item">
+            <h3>Próximamente</h3>
+            <p>Voces, habilidades nuevas y más profundidad… cuando toque. 🧠</p>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="grid2" style="margin-top:18px;">
+      <div class="card">
+        <div class="panel-title">
+          <h2>Actualizaciones</h2>
+          <span class="pill"><span class="p"></span> roadmap</span>
+        </div>
+        <table class="table" aria-label="Tabla de versiones">
+          <thead>
+            <tr>
+              <th>Versión</th>
+              <th>Estado</th>
+              <th>Contenido</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge">v1.0</span></td>
+              <td>Publicado</td>
+              <td>Base jugable + mecánica principal</td>
+            </tr>
+            <tr>
+              <td><span class="badge">v1.1</span></td>
+              <td>En camino</td>
+              <td>1 poder nuevo + balance + UI</td>
+            </tr>
+            <tr>
+              <td><span class="badge">v1.2</span></td>
+              <td>Idea</td>
+              <td>Voces / sonidos + ajustes finos</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="panel-title">
+          <h2>Objetivo</h2>
+          <span class="badge">largo plazo</span>
+        </div>
+        <div class="list">
+          <div class="item">
+            <h3>Que dure años</h3>
+            <p>Un sistema simple al inicio, pero ampliable para siempre sin romperlo.</p>
+          </div>
+          <div class="item">
+            <h3>Marca acumulativa</h3>
+            <p>Todo lo que creas vive aquí. Cada juego suma. Cada versión suma.</p>
+          </div>
+          <div class="item">
+            <h3>Sin humo</h3>
+            <p>Primero jugabilidad. Luego monetización. El orden correcto.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      © <span id="year"></span> Juegos JC • Hecho para evolucionar.
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
