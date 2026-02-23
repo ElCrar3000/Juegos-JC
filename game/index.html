@@ -1,0 +1,1344 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>INFINITY EVOLUTION — Endless + Idle + Prestige</title>
+<style>
+  :root{
+    --bg:#070b11;
+    --panel: rgba(15,22,34,.72);
+    --panel2: rgba(10,16,26,.58);
+    --line: rgba(255,255,255,.10);
+    --txt:#eaf2ff;
+    --muted:#9db0c9;
+    --good:#7CFF8A;
+    --warn:#ffd36e;
+    --bad:#ff6e6e;
+    --acc:#6ee7ff;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  }
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);overflow:hidden;}
+  canvas{display:block;width:100vw;height:100vh;touch-action:none;}
+  .hud{
+    position:fixed; inset:10px 10px auto 10px;
+    display:flex; gap:10px; justify-content:space-between; align-items:flex-start;
+    pointer-events:none;
+  }
+  .box{
+    pointer-events:none;
+    background:linear-gradient(180deg, var(--panel), var(--panel2));
+    border:1px solid rgba(110,231,255,.16);
+    border-radius:14px;
+    padding:10px 12px;
+    box-shadow: 0 14px 35px rgba(0,0,0,.35);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    min-width: 170px;
+  }
+  .box h3{margin:0 0 6px 0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
+  .row{display:flex;justify-content:space-between;gap:10px;font-size:13px;line-height:1.35;}
+  .row b{font-weight:800;}
+  .bar{margin-top:8px;height:10px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);}
+  .bar > i{display:block;height:100%;width:50%;background:linear-gradient(90deg, rgba(110,231,255,.9), rgba(124,255,138,.9));}
+  .bar.hp > i{background:linear-gradient(90deg, rgba(255,110,110,.95), rgba(255,211,110,.9));}
+  .btnRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;pointer-events:auto}
+  .btn{
+    pointer-events:auto;
+    appearance:none;border:1px solid rgba(110,231,255,.22);
+    background:linear-gradient(180deg, rgba(16,24,36,.95), rgba(14,21,32,.85));
+    color:var(--txt);
+    padding:8px 10px;border-radius:12px;
+    cursor:pointer;
+    font-weight:800;font-size:12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,.25);
+    transition: transform .08s ease, border-color .12s ease, filter .12s ease;
+    user-select:none;
+  }
+  .btn:hover{border-color: rgba(110,231,255,.45); filter:brightness(1.06);}
+  .btn:active{transform: translateY(1px) scale(.99);}
+  .btn.secondary{border-color: rgba(255,255,255,.12); color: var(--muted);}
+  .btn.danger{border-color: rgba(255,110,110,.45);}
+  .btn.good{border-color: rgba(124,255,138,.45);}
+  .centerModal{
+    position:fixed; inset:0;
+    display:none; align-items:center; justify-content:center;
+    background:rgba(0,0,0,.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index:10;
+  }
+  .modal{
+    width:min(720px, calc(100vw - 22px));
+    background:linear-gradient(180deg, rgba(16,24,36,.92), rgba(12,18,28,.88));
+    border:1px solid rgba(110,231,255,.18);
+    border-radius: 18px;
+    box-shadow: 0 18px 55px rgba(0,0,0,.55);
+    padding: 14px;
+  }
+  .modal h2{margin:0 0 4px 0;font-size:16px;letter-spacing:.06em}
+  .modal p{margin:6px 0 12px 0;color:var(--muted);font-size:13px;line-height:1.35}
+  .choices{display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;}
+  .card{
+    border-radius:16px;
+    padding:12px;
+    background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+    border:1px solid rgba(255,255,255,.10);
+    cursor:pointer;
+    user-select:none;
+    transition: transform .08s ease, border-color .12s ease, filter .12s ease;
+  }
+  .card:hover{border-color:rgba(110,231,255,.35); filter:brightness(1.05);}
+  .card:active{transform: translateY(1px) scale(.99)}
+  .card h4{margin:0 0 6px 0;font-size:13px}
+  .card .small{font-size:12px;color:var(--muted);line-height:1.3}
+  .tag{
+    display:inline-block;
+    margin-top:8px;
+    font-size:11px;
+    padding:3px 8px;border-radius:999px;
+    border:1px solid rgba(110,231,255,.22);
+    color: var(--acc);
+  }
+  .toast{
+    position:fixed; right:12px; bottom:12px;
+    background:rgba(16,24,36,.85);
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:14px;
+    padding:10px 12px;
+    color: var(--muted);
+    font-size:12px;
+    max-width: min(420px, calc(100vw - 24px));
+    box-shadow: 0 14px 35px rgba(0,0,0,.35);
+    display:none;
+    z-index:12;
+  }
+  .mini{
+    position:fixed; left:12px; bottom:12px;
+    background:rgba(16,24,36,.75);
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:14px;
+    padding:8px 10px;
+    color: var(--muted);
+    font-size:12px;
+    box-shadow: 0 14px 35px rgba(0,0,0,.35);
+    pointer-events:none;
+  }
+  @media (max-width: 820px){
+    .choices{grid-template-columns:1fr;}
+    .box{min-width: 150px;}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<div class="hud">
+  <div class="box" id="leftBox">
+    <h3>Jugador</h3>
+    <div class="row"><span>Vida</span><b id="hpTxt">—</b></div>
+    <div class="bar hp"><i id="hpBar"></i></div>
+    <div class="row" style="margin-top:8px"><span>Nivel</span><b id="lvlTxt">—</b></div>
+    <div class="bar"><i id="xpBar"></i></div>
+    <div class="row" style="margin-top:8px"><span>DPS</span><b id="dpsTxt">—</b></div>
+    <div class="row"><span>Velocidad</span><b id="spdTxt">—</b></div>
+    <div class="row"><span>Regen</span><b id="regTxt">—</b></div>
+    <div class="row"><span>Dash</span><b id="dashTxt">—</b></div>
+  </div>
+
+  <div class="box" id="rightBox">
+    <h3>Progreso</h3>
+    <div class="row"><span>Tiempo</span><b id="timeTxt">—</b></div>
+    <div class="row"><span>Oro</span><b id="goldTxt">—</b></div>
+    <div class="row"><span>Oro/s</span><b id="gpsTxt">—</b></div>
+    <div class="row"><span>Esencia</span><b id="essTxt">—</b></div>
+    <div class="row"><span>Mejor</span><b id="bestTxt">—</b></div>
+    <div class="btnRow">
+      <button class="btn secondary" id="btnPause">Pausa (P)</button>
+      <button class="btn" id="btnPrestige">Prestigio</button>
+      <button class="btn danger" id="btnReset">Reset</button>
+    </div>
+  </div>
+</div>
+
+<div class="mini" id="help">
+  WASD/Flechas mueve · Shift dash · P pausa · Sobrevive, sube nivel, elige mejoras.
+</div>
+
+<div class="centerModal" id="modal">
+  <div class="modal">
+    <h2 id="modalTitle">—</h2>
+    <p id="modalDesc">—</p>
+    <div class="choices" id="choices"></div>
+    <div class="btnRow" id="modalBtns" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  // ============================
+  //  INFINITY EVOLUTION
+  //  Endless Arena + Idle + Prestige
+  //  Single-file HTML
+  // ============================
+
+  // ---------- Utils ----------
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const lerp=(a,b,t)=>a+(b-a)*t;
+  const rnd=(a,b)=>a+Math.random()*(b-a);
+  const irnd=(a,b)=>Math.floor(rnd(a,b+1));
+  const now=()=>performance.now();
+
+  const fmt=(n)=>{
+    if(!isFinite(n)) return "∞";
+    const abs=Math.abs(n);
+    if(abs>=1e12) return (n/1e12).toFixed(2)+"T";
+    if(abs>=1e9)  return (n/1e9).toFixed(2)+"B";
+    if(abs>=1e6)  return (n/1e6).toFixed(2)+"M";
+    if(abs>=1e3)  return (n/1e3).toFixed(2)+"K";
+    if(abs>=100)  return Math.round(n).toString();
+    if(abs>=10)   return n.toFixed(1);
+    return n.toFixed(2);
+  };
+  const fmtTime=(s)=>{
+    s=Math.max(0,s|0);
+    const m=(s/60)|0, r=s%60;
+    return `${m}:${r.toString().padStart(2,"0")}`;
+  };
+
+  // ---------- Save ----------
+  const KEY="infinity_evolution_save_v2";
+  const loadSave=()=>{
+    try{ const raw=localStorage.getItem(KEY); return raw?JSON.parse(raw):null; }
+    catch(e){ return null; }
+  };
+  const save=(obj)=>{ try{ localStorage.setItem(KEY, JSON.stringify(obj)); }catch(e){} };
+
+  // ---------- Canvas ----------
+  const canvas=document.getElementById("c");
+  const ctx=canvas.getContext("2d",{alpha:false});
+  let W=0,H=0, DPR=1;
+
+  function resize(){
+    DPR=Math.max(1, Math.min(2, window.devicePixelRatio||1));
+    W=canvas.width=Math.floor(innerWidth*DPR);
+    H=canvas.height=Math.floor(innerHeight*DPR);
+  }
+  addEventListener("resize", resize, {passive:true});
+  resize();
+
+  // ---------- UI ----------
+  const ui={
+    hpTxt:document.getElementById("hpTxt"),
+    hpBar:document.getElementById("hpBar"),
+    lvlTxt:document.getElementById("lvlTxt"),
+    xpBar:document.getElementById("xpBar"),
+    dpsTxt:document.getElementById("dpsTxt"),
+    spdTxt:document.getElementById("spdTxt"),
+    regTxt:document.getElementById("regTxt"),
+    dashTxt:document.getElementById("dashTxt"),
+    timeTxt:document.getElementById("timeTxt"),
+    goldTxt:document.getElementById("goldTxt"),
+    gpsTxt:document.getElementById("gpsTxt"),
+    essTxt:document.getElementById("essTxt"),
+    bestTxt:document.getElementById("bestTxt"),
+    btnPause:document.getElementById("btnPause"),
+    btnPrestige:document.getElementById("btnPrestige"),
+    btnReset:document.getElementById("btnReset"),
+    modal:document.getElementById("modal"),
+    modalTitle:document.getElementById("modalTitle"),
+    modalDesc:document.getElementById("modalDesc"),
+    choices:document.getElementById("choices"),
+    modalBtns:document.getElementById("modalBtns"),
+    toast:document.getElementById("toast")
+  };
+
+  function showToast(msg, ms=2400){
+    ui.toast.textContent=msg;
+    ui.toast.style.display="block";
+    clearTimeout(showToast._t);
+    showToast._t=setTimeout(()=>ui.toast.style.display="none", ms);
+  }
+
+  function openModal(title, desc, builder){
+    ui.modalTitle.textContent=title;
+    ui.modalDesc.textContent=desc;
+    ui.choices.innerHTML="";
+    ui.modalBtns.innerHTML="";
+    ui.modal.style.display="flex";
+    builder?.();
+  }
+  function closeModal(){ ui.modal.style.display="none"; }
+
+  // ---------- Input ----------
+  const keys=new Set();
+  addEventListener("keydown",(e)=>{
+    const k=e.key.toLowerCase();
+    keys.add(k);
+    if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(k)) e.preventDefault();
+    if(k==="p") togglePause();
+  },{passive:false});
+  addEventListener("keyup",(e)=>keys.delete(e.key.toLowerCase()),{passive:true});
+
+  // ---------- Game State ----------
+  const state={
+    paused:false,
+    inChoice:false,
+    dead:false,
+
+    t0:0,
+    time:0,
+    best:0,
+
+    // meta permanent
+    essence:0,
+    totalGold:0,
+    achv:{}, // simple achievements
+
+    // run
+    gold:0,
+    goldPerSec:0,
+    level:1,
+    xp:0,
+    xpNeed:18,
+    kills:0,
+    wave:1,
+
+    // cam
+    cam:{x:0,y:0},
+    shake:0,
+
+    // timers
+    spawnAcc:0,
+    eliteAcc:0,
+    bossAcc:0,
+    saveAcc:0
+  };
+
+  const meta={
+    goldMult:1,
+    xpMult:1,
+    luck: 0,         // affects drop/elite a bit
+    arenaTier: 1     // unlocks visuals & difficulty variety
+  };
+
+  const player={
+    x:0,y:0,
+    r:14,
+    vx:0,vy:0,
+
+    hp:100, maxHp:100,
+    regen:0,
+    invuln:0,
+
+    // combat
+    dmg:10,
+    fireRate:3.0,      // shots per sec
+    bulletSpeed:520,
+    range:560,
+    knock: 120,
+    crit: 0.06,
+    critMult: 1.75,
+    pierce: 0,
+    multiShot: 1,
+    spread: 0.10,
+
+    // AoE / skills
+    novaCd: 14.0,
+    novaT: 0,
+    burn: 0,           // burn chance
+    lifesteal: 0,      // 0..0.2
+
+    // movement
+    speed: 240,
+    magnet: 0,
+
+    // dash
+    dashCd: 1.65,
+    dashT: 0,
+    dashPow: 820,
+
+    // helpers
+    drones: 0,
+  };
+
+  const arrays={
+    enemies:[],
+    bullets:[],
+    drops:[],
+    drones:[],
+    particles:[]
+  };
+
+  // ---------- Prestige scaling ----------
+  function prestigeMult(){
+    const e=state.essence;
+    // softcaps: powerful but not stupid
+    const dmg = 1 + (1 - Math.exp(-e/35))*2.35;    // up to ~3.35x
+    const gold= 1 + (1 - Math.exp(-e/45))*2.20;    // up to ~3.20x
+    const xp  = 1 + (1 - Math.exp(-e/55))*1.35;    // up to ~2.35x
+    const hp  = 1 + (1 - Math.exp(-e/60))*1.05;    // up to ~2.05x
+    const spd = 1 + (1 - Math.exp(-e/70))*0.45;    // up to ~1.45x
+    const luck= 1 + (1 - Math.exp(-e/85))*0.35;    // up to ~1.35x
+    return {dmg,gold,xp,hp,spd,luck};
+  }
+
+  function applyPrestigeBase(){
+    const m=prestigeMult();
+    player.maxHp = 100*m.hp;
+    player.hp = player.maxHp;
+    player.speed = 240*m.spd;
+    player.dmg = 10*m.dmg;
+    meta.luck = (m.luck-1);
+  }
+
+  // ---------- Upgrades ----------
+  const UPG=[
+    {id:"dmg", name:"Daño +25%", desc:"Disparos más fuertes.", tag:"+Daño", apply:()=>player.dmg*=1.25},
+    {id:"firerate", name:"Cadencia +20%", desc:"Más tiros por segundo.", tag:"+Cadencia", apply:()=>player.fireRate*=1.20},
+    {id:"maxhp", name:"Vida Máx +22%", desc:"Más tanque, menos drama.", tag:"+Vida", apply:()=>{player.maxHp*=1.22; player.hp=player.maxHp;}},
+    {id:"regen", name:"Regen +0.7/s", desc:"Curas vida con el tiempo.", tag:"+Regen", apply:()=>player.regen+=0.7},
+    {id:"speed", name:"Velocidad +12%", desc:"Más movilidad, más vida.", tag:"+Velocidad", apply:()=>player.speed*=1.12},
+    {id:"range", name:"Alcance +18%", desc:"Matas antes de que huelan tu miedo.", tag:"+Alcance", apply:()=>player.range*=1.18},
+    {id:"bulletspeed", name:"Vel. bala +22%", desc:"Aciertas más fácil.", tag:"+Vel. Bala", apply:()=>player.bulletSpeed*=1.22},
+    {id:"magnet", name:"Imán +45", desc:"Recolectas desde más lejos.", tag:"+Imán", apply:()=>player.magnet+=45},
+    {id:"crit", name:"Crítico +3.5%", desc:"Más críticos, más fiesta.", tag:"+Crítico", apply:()=>player.crit=clamp(player.crit+0.035,0,0.65)},
+    {id:"critmult", name:"Daño crítico +25%", desc:"Cuando critas, duele de verdad.", tag:"+Crit DMG", apply:()=>player.critMult*=1.25},
+    {id:"pierce", name:"Perforación +1", desc:"Tus balas atraviesan.", tag:"+Pierce", apply:()=>player.pierce+=1},
+    {id:"multishot", name:"Multi-tiro +1", desc:"Disparas más proyectiles.", tag:"+Proyectil", apply:()=>{player.multiShot+=1; player.spread*=1.10;}},
+    {id:"lifesteal", name:"Robo de vida +2%", desc:"Te curas al hacer daño.", tag:"+Vamp", apply:()=>player.lifesteal=clamp(player.lifesteal+0.02,0,0.20)},
+    {id:"burn", name:"Quemar +12%", desc:"Chance de daño en el tiempo.", tag:"+Burn", apply:()=>player.burn=clamp(player.burn+0.12,0,0.75)},
+    {id:"drone", name:"Dron orbital +1", desc:"Un dron que golpea cerca.", tag:"+Dron", apply:()=>addDrone()},
+    {id:"nova", name:"Nova más frecuente", desc:"Tu explosión se recarga antes.", tag:"Skill", apply:()=>player.novaCd=Math.max(6, player.novaCd*0.85)},
+    {id:"goldps", name:"Mina: Oro +1.5/s", desc:"Ganas oro aunque vayas AFK.", tag:"+Oro/s", apply:()=>state.goldPerSec+=1.5},
+    {id:"goldmult", name:"Oro ×1.18", desc:"Más oro de todo.", tag:"× Oro", apply:()=>meta.goldMult*=1.18},
+    {id:"xpmult", name:"XP ×1.15", desc:"Subes de nivel antes.", tag:"× XP", apply:()=>meta.xpMult*=1.15},
+    {id:"heal", name:"Cura 35%", desc:"Una mano de santo.", tag:"Cura", apply:()=>player.hp=clamp(player.hp+player.maxHp*0.35,0,player.maxHp)},
+    {id:"dash", name:"Dash mejorado", desc:"Menos cooldown y más empuje.", tag:"Dash", apply:()=>{player.dashCd=Math.max(0.85, player.dashCd*0.90); player.dashPow*=1.08;}}
+  ];
+
+  function pick3Upgrades(){
+    const picks=[];
+    const seen=new Set();
+    const luckBonus = meta.luck || 0;
+    for(let i=0;i<70 && picks.length<3;i++){
+      // bias: if you have drones, slightly reduce drone chance
+      let u=UPG[irnd(0,UPG.length-1)];
+      if(player.drones>=3 && u.id==="drone" && Math.random()<0.6) continue;
+
+      // tiny bias: with luck, prefer multipliers a bit more
+      if(Math.random()<0.10+0.10*luckBonus){
+        const ids=["goldmult","xpmult","multishot","crit","critmult"];
+        u=UPG.find(x=>x.id===ids[irnd(0,ids.length-1)])||u;
+      }
+
+      if(seen.has(u.id)) continue;
+      seen.add(u.id);
+      picks.push(u);
+    }
+    return picks;
+  }
+
+  function levelUp(){
+    state.inChoice=true;
+    state.level++;
+    state.xp=0;
+    state.xpNeed = Math.floor(state.xpNeed*1.22 + 6 + state.level*0.14);
+    player.hp = clamp(player.hp + player.maxHp*0.08, 0, player.maxHp);
+
+    const choices=pick3Upgrades();
+    openModal(
+      `Nivel ${state.level} — Elige mejora`,
+      `Aquí se crea la adicción (y la excusa para “una partida más”).`,
+      ()=>{
+        choices.forEach(u=>{
+          const el=document.createElement("div");
+          el.className="card";
+          el.innerHTML=`<h4>${u.name}</h4><div class="small">${u.desc}</div><div class="tag">${u.tag}</div>`;
+          el.onclick=()=>{
+            u.apply();
+            state.shake=10;
+            spawnParticles(player.x, player.y, 18, "level");
+            closeModal();
+            state.inChoice=false;
+          };
+          ui.choices.appendChild(el);
+        });
+
+        const b=document.createElement("button");
+        b.className="btn secondary";
+        b.textContent="Cerrar (elige una mejora)";
+        b.onclick=()=>showToast("Elige una mejora. No hay escapatoria 😈");
+        ui.modalBtns.appendChild(b);
+      }
+    );
+  }
+
+  // ---------- Drones ----------
+  function addDrone(){
+    player.drones++;
+    arrays.drones.push({
+      a:rnd(0,Math.PI*2),
+      r: 40 + player.drones*6,
+      dps: 10 + player.drones*4,
+      tick:0
+    });
+  }
+
+  // ---------- Enemies & scaling ----------
+  function difficulty(){
+    const t=state.time;
+    const wave = 1 + Math.floor(t/28);
+    state.wave = wave;
+
+    // enemy base stats scale
+    const hp = 24 + wave*4.2 + Math.pow(wave,1.10)*1.6;
+    const sp = 85 + wave*2.2 + Math.pow(wave,1.08)*1.1;
+    const dmg = 10 + wave*0.75;
+
+    // spawn rate increases slowly
+    const spawnPerSec = 0.85 + wave*0.05;
+
+    // elites & boss schedule
+    const eliteChance = clamp(0.05 + wave*0.004 + (meta.luck||0)*0.04, 0.05, 0.22);
+    const bossEvery = 70; // seconds
+    return {wave,hp,sp,dmg,spawnPerSec,eliteChance,bossEvery};
+  }
+
+  function spawnEnemy(kind="normal", atEdge=true){
+    const d=difficulty();
+    const ang = rnd(0,Math.PI*2);
+    const rad = atEdge ? Math.max(W,H)*0.60 : rnd(120, 280);
+    const ex = player.x + Math.cos(ang)*rad;
+    const ey = player.y + Math.sin(ang)*rad;
+
+    let r= kind==="boss" ? 28 : (kind==="elite"? 18 : 14);
+    let hp= d.hp * (kind==="boss"? 16 : (kind==="elite"? 3.2 : 1));
+    let sp= d.sp * (kind==="boss"? 0.60 : (kind==="elite"? 1.10 : 1));
+    let dmg= d.dmg * (kind==="boss"? 2.6 : (kind==="elite"? 1.4 : 1));
+
+    // arena tier cosmetics / variants
+    let type="chaser";
+    if(meta.arenaTier>=2 && Math.random()<0.18) type="zig";
+    if(meta.arenaTier>=3 && Math.random()<0.14) type="sprinter";
+
+    arrays.enemies.push({
+      x:ex,y:ey,r,
+      hp, maxHp:hp,
+      sp, dmg,
+      kind,
+      type,
+      burnT:0,
+      burnDps:0,
+      hitT:0
+    });
+  }
+
+  // ---------- Bullets ----------
+  function shootAt(targetX, targetY){
+    const dx=targetX-player.x, dy=targetY-player.y;
+    const dist=Math.hypot(dx,dy) || 1;
+    const ux=dx/dist, uy=dy/dist;
+
+    const shots = player.multiShot;
+    const baseAng=Math.atan2(uy,ux);
+    const spread = Math.max(0.02, player.spread) * (shots>1?1:0);
+
+    for(let i=0;i<shots;i++){
+      const t = shots===1 ? 0 : (i/(shots-1))*2 - 1; // -1..1
+      const a = baseAng + t*spread;
+      const vx = Math.cos(a)*player.bulletSpeed;
+      const vy = Math.sin(a)*player.bulletSpeed;
+
+      arrays.bullets.push({
+        x:player.x, y:player.y,
+        vx, vy,
+        r:3.2,
+        life: (player.range / player.bulletSpeed),
+        pierce: player.pierce,
+        dmg: player.dmg,
+      });
+    }
+  }
+
+  function nova(){
+    // radial burst + knock
+    const rings = 18;
+    for(let i=0;i<rings;i++){
+      const a=(i/rings)*Math.PI*2;
+      arrays.bullets.push({
+        x:player.x, y:player.y,
+        vx:Math.cos(a)*player.bulletSpeed*0.82,
+        vy:Math.sin(a)*player.bulletSpeed*0.82,
+        r:3.0,
+        life: 0.55,
+        pierce: 1,
+        dmg: player.dmg*0.75
+      });
+    }
+    state.shake=14;
+    spawnParticles(player.x, player.y, 24, "nova");
+    showToast("💥 NOVA");
+  }
+
+  // ---------- Drops ----------
+  function dropOrb(x,y, kind){
+    arrays.drops.push({
+      x,y,
+      kind, // "xp" or "gold" or "heal"
+      r: kind==="heal"? 9 : 7,
+      v: rnd(35,70)
+    });
+  }
+
+  // ---------- Particles ----------
+  function spawnParticles(x,y,n, kind){
+    for(let i=0;i<n;i++){
+      arrays.particles.push({
+        x,y,
+        vx:rnd(-220,220),
+        vy:rnd(-220,220),
+        life:rnd(0.25,0.85),
+        max:rnd(0.25,0.85),
+        kind
+      });
+    }
+  }
+
+  // ---------- Targeting ----------
+  function nearestEnemyInRange(){
+    let best=null, bestD=1e18;
+    const r2=player.range*player.range;
+    for(const e of arrays.enemies){
+      const dx=e.x-player.x, dy=e.y-player.y;
+      const d=dx*dx+dy*dy;
+      if(d<bestD && d<=r2){ best=e; bestD=d; }
+    }
+    return best;
+  }
+
+  // ---------- Combat resolution ----------
+  function circleHit(ax,ay,ar,bx,by,br){
+    const dx=ax-bx, dy=ay-by;
+    const rr=ar+br;
+    return dx*dx+dy*dy <= rr*rr;
+  }
+
+  function applyDamageToEnemy(e, dmg){
+    // crit
+    let dealt=dmg;
+    if(Math.random()<player.crit) dealt*=player.critMult;
+
+    e.hp -= dealt;
+    e.hitT = 0.06;
+
+    // burn
+    if(player.burn>0 && Math.random()<player.burn){
+      e.burnT = Math.max(e.burnT, 1.8);
+      e.burnDps = Math.max(e.burnDps, dealt*0.10);
+    }
+
+    // lifesteal
+    if(player.lifesteal>0){
+      player.hp = clamp(player.hp + dealt*player.lifesteal*0.015, 0, player.maxHp);
+    }
+
+    return dealt;
+  }
+
+  // ---------- Achievements (simple & addictive) ----------
+  function unlock(id, text){
+    if(state.achv[id]) return;
+    state.achv[id]=1;
+    showToast("🏆 Logro: "+text, 3200);
+    // tiny essence bonus for achievements
+    state.essence += 1;
+  }
+
+  function checkAchv(){
+    if(state.time>=60) unlock("min1","1 minuto vivo");
+    if(state.time>=180) unlock("min3","3 minutos vivo");
+    if(state.time>=420) unlock("min7","7 minutos vivo");
+    if(state.kills>=200) unlock("k200","200 kills");
+    if(state.kills>=800) unlock("k800","800 kills");
+    if(state.level>=20) unlock("lvl20","Nivel 20");
+    if(state.level>=35) unlock("lvl35","Nivel 35");
+    if(state.totalGold>=25000) unlock("g25k","Acumular 25K oro (total)");
+  }
+
+  // ---------- Pause / reset / prestige ----------
+  function togglePause(){
+    if(state.dead) return;
+    state.paused=!state.paused;
+    showToast(state.paused?"⏸ Pausa":"▶ Reanudar");
+  }
+
+  function hardResetAll(){
+    localStorage.removeItem(KEY);
+    location.reload();
+  }
+
+  function resetRun(keepMeta=true){
+    arrays.enemies.length=0;
+    arrays.bullets.length=0;
+    arrays.drops.length=0;
+    arrays.drones.length=0;
+    arrays.particles.length=0;
+
+    state.dead=false;
+    state.inChoice=false;
+    state.time=0;
+    state.gold=0;
+    state.goldPerSec=0;
+    state.level=1;
+    state.xp=0;
+    state.xpNeed=18;
+    state.kills=0;
+    state.wave=1;
+    state.shake=0;
+    state.spawnAcc=0;
+    state.eliteAcc=0;
+    state.bossAcc=0;
+
+    // reset meta run modifiers
+    meta.goldMult = 1;
+    meta.xpMult = 1;
+
+    // reset player base + prestige base
+    player.x=0; player.y=0;
+    player.vx=0; player.vy=0;
+    player.r=14;
+    player.regen=0;
+    player.invuln=0;
+
+    player.fireRate=3.0;
+    player.bulletSpeed=520;
+    player.range=560;
+    player.knock=120;
+    player.crit=0.06;
+    player.critMult=1.75;
+    player.pierce=0;
+    player.multiShot=1;
+    player.spread=0.10;
+    player.burn=0;
+    player.lifesteal=0;
+    player.novaCd=14.0;
+    player.novaT=0;
+    player.speed=240;
+    player.magnet=0;
+    player.dashCd=1.65;
+    player.dashT=0;
+    player.dashPow=820;
+    player.drones=0;
+
+    applyPrestigeBase();
+    showToast("Nueva partida. A por el récord.");
+  }
+
+  function calcEssenceGain(){
+    // essence based on time, wave, level, gold and kills
+    const t=state.time;
+    const w=state.wave;
+    const l=state.level;
+    const g=state.gold;
+    const k=state.kills;
+
+    const score = (t*0.22) + (w*1.8) + (l*1.4) + (Math.sqrt(g)*0.55) + (Math.sqrt(k)*0.85);
+    // diminishing returns
+    const gain = Math.max(0, Math.floor(Math.pow(score, 0.75) / 4));
+    return gain;
+  }
+
+  function doPrestige(reason="manual"){
+    const gain=calcEssenceGain();
+    if(gain<=0 && reason==="manual"){
+      showToast("Prestigio ahora da 0 esencia. Aguanta un poco más 😈");
+      return;
+    }
+    state.essence += gain;
+    // unlock arena tiers progressively
+    if(state.essence>=10) meta.arenaTier=2;
+    if(state.essence>=25) meta.arenaTier=3;
+    if(state.essence>=55) meta.arenaTier=4;
+
+    showToast(`✨ Prestigio: +${gain} esencia (total ${state.essence})`, 3200);
+    resetRun(true);
+  }
+
+  // ---------- UI handlers ----------
+  ui.btnPause.onclick=()=>togglePause();
+  ui.btnReset.onclick=()=>{ if(confirm("Reset total (borra progreso)?")) hardResetAll(); };
+  ui.btnPrestige.onclick=()=>{
+    openModal("Prestigio", "Conviertes tu run en Esencia permanente. Más esencia = más poder.", ()=>{
+      const gain=calcEssenceGain();
+      const a=document.createElement("div");
+      a.className="card";
+      a.innerHTML=`<h4>Hacer prestigio ahora</h4>
+                   <div class="small">Ganas <b>${gain}</b> esencia y reinicias. (Si es 0... te estás precipitando.)</div>
+                   <div class="tag">+Esencia</div>`;
+      a.onclick=()=>{ closeModal(); doPrestige("manual"); };
+      ui.choices.appendChild(a);
+
+      const b=document.createElement("div");
+      b.className="card";
+      b.innerHTML=`<h4>Cancelar</h4><div class="small">Sigue sobreviviendo y subiendo poder.</div><div class="tag">Volver</div>`;
+      b.onclick=()=>{ closeModal(); };
+      ui.choices.appendChild(b);
+
+      const c=document.createElement("div");
+      c.className="card";
+      c.innerHTML=`<h4>¿Cómo gano esencia?</h4><div class="small">Tiempo, oleadas, nivel, oro y kills. Cuanto más lejos, más “cobrador” se pone el juego.</div><div class="tag">Tip</div>`;
+      c.onclick=()=>showToast("Tip: 5-7 minutos suele ser un prestigio rico.");
+      ui.choices.appendChild(c);
+
+      const bb=document.createElement("button");
+      bb.className="btn secondary";
+      bb.textContent="Cerrar";
+      bb.onclick=()=>closeModal();
+      ui.modalBtns.appendChild(bb);
+    });
+  };
+
+  // ---------- Load / init ----------
+  function applyLoaded(s){
+    state.essence = s.essence||0;
+    state.best = s.best||0;
+    state.totalGold = s.totalGold||0;
+    state.achv = s.achv||{};
+    meta.arenaTier = s.arenaTier||1;
+    applyPrestigeBase();
+  }
+
+  (function init(){
+    const s=loadSave();
+    if(s) applyLoaded(s);
+    resetRun(true);
+  })();
+
+  // ---------- Game loop ----------
+  let last=now();
+  function tick(){
+    requestAnimationFrame(tick);
+    const t=now();
+    let dt=(t-last)/1000;
+    last=t;
+    dt=clamp(dt, 0, 0.033); // stable
+
+    if(state.paused || state.inChoice) { draw(0); return; }
+    if(state.dead){ draw(0); return; }
+
+    step(dt);
+    draw(dt);
+  }
+  requestAnimationFrame(tick);
+
+  function step(dt){
+    state.time += dt;
+    state.best = Math.max(state.best, state.time);
+
+    // save every ~3.5s
+    state.saveAcc += dt;
+    if(state.saveAcc>3.5){
+      state.saveAcc=0;
+      save({
+        essence: state.essence,
+        best: state.best,
+        totalGold: state.totalGold,
+        achv: state.achv,
+        arenaTier: meta.arenaTier
+      });
+    }
+
+    // regen
+    if(player.regen>0) player.hp = clamp(player.hp + player.regen*dt, 0, player.maxHp);
+    if(player.invuln>0) player.invuln = Math.max(0, player.invuln-dt);
+
+    // dash cooldown
+    player.dashT = Math.max(0, player.dashT-dt);
+
+    // movement
+    let mx=0,my=0;
+    if(keys.has("w")||keys.has("arrowup")) my-=1;
+    if(keys.has("s")||keys.has("arrowdown")) my+=1;
+    if(keys.has("a")||keys.has("arrowleft")) mx-=1;
+    if(keys.has("d")||keys.has("arrowright")) mx+=1;
+    const mlen=Math.hypot(mx,my)||1;
+    mx/=mlen; my/=mlen;
+
+    // dash
+    if((keys.has("shift")) && player.dashT<=0 && (Math.abs(mx)+Math.abs(my)>0)){
+      player.vx += mx*player.dashPow;
+      player.vy += my*player.dashPow;
+      player.dashT = player.dashCd;
+      state.shake=8;
+      spawnParticles(player.x, player.y, 12, "dash");
+    }
+
+    // velocity -> position
+    const accel = 1200;
+    player.vx = lerp(player.vx, mx*player.speed, clamp(accel*dt/1000,0,1));
+    player.vy = lerp(player.vy, my*player.speed, clamp(accel*dt/1000,0,1));
+    player.x += player.vx*dt;
+    player.y += player.vy*dt;
+
+    // camera follows
+    state.cam.x = lerp(state.cam.x, player.x, 0.10);
+    state.cam.y = lerp(state.cam.y, player.y, 0.10);
+
+    // idle gold per second
+    const p=prestigeMult();
+    const goldGain = (state.goldPerSec * meta.goldMult * p.gold) * dt;
+    state.gold += goldGain;
+    state.totalGold += goldGain;
+
+    // auto-shoot
+    const target=nearestEnemyInRange();
+    if(target){
+      // fire timer from fireRate
+      if(!state._fireAcc) state._fireAcc=0;
+      state._fireAcc += dt*player.fireRate;
+      while(state._fireAcc>=1){
+        state._fireAcc-=1;
+        shootAt(target.x, target.y);
+      }
+    }
+
+    // nova skill
+    player.novaT += dt;
+    if(player.novaT>=player.novaCd){
+      player.novaT=0;
+      nova();
+    }
+
+    // spawns
+    const d=difficulty();
+    state.spawnAcc += dt*d.spawnPerSec;
+    while(state.spawnAcc>=1){
+      state.spawnAcc-=1;
+      // elite chance
+      const elite = Math.random() < d.eliteChance;
+      spawnEnemy(elite?"elite":"normal", true);
+    }
+
+    // boss
+    state.bossAcc += dt;
+    if(state.bossAcc >= d.bossEvery){
+      state.bossAcc = 0;
+      spawnEnemy("boss", true);
+      showToast("👑 JEFE ENTRANDO…", 2600);
+    }
+
+    // update drones
+    for(const dr of arrays.drones){
+      dr.a += dt*(1.2 + player.drones*0.04);
+      dr.tick += dt;
+      if(dr.tick>=0.20){
+        dr.tick=0;
+        // hit nearest enemy in drone radius
+        let best=null, bd=1e18;
+        const dx = Math.cos(dr.a)*dr.r;
+        const dy = Math.sin(dr.a)*dr.r;
+        const px = player.x + dx;
+        const py = player.y + dy;
+        for(const e of arrays.enemies){
+          const dd=(e.x-px)*(e.x-px)+(e.y-py)*(e.y-py);
+          if(dd<bd){ bd=dd; best=e; }
+        }
+        if(best && bd < (210*210)){
+          applyDamageToEnemy(best, dr.dps);
+          spawnParticles(best.x, best.y, 2, "hit");
+        }
+      }
+    }
+
+    // update bullets
+    for(let i=arrays.bullets.length-1;i>=0;i--){
+      const b=arrays.bullets[i];
+      b.x += b.vx*dt;
+      b.y += b.vy*dt;
+      b.life -= dt;
+      if(b.life<=0){ arrays.bullets.splice(i,1); continue; }
+
+      // hit enemies
+      for(let j=arrays.enemies.length-1;j>=0;j--){
+        const e=arrays.enemies[j];
+        if(circleHit(b.x,b.y,b.r, e.x,e.y,e.r)){
+          applyDamageToEnemy(e, b.dmg);
+          // knockback
+          const dx=e.x-b.x, dy=e.y-b.y;
+          const L=Math.hypot(dx,dy)||1;
+          e.x += (dx/L)*player.knock*dt;
+          e.y += (dy/L)*player.knock*dt;
+
+          // consume pierce
+          if(b.pierce>0) b.pierce--;
+          else { arrays.bullets.splice(i,1); }
+          break;
+        }
+      }
+    }
+
+    // update enemies
+    for(let i=arrays.enemies.length-1;i>=0;i--){
+      const e=arrays.enemies[i];
+
+      // burn tick
+      if(e.burnT>0){
+        e.burnT=Math.max(0, e.burnT-dt);
+        e.hp -= e.burnDps*dt;
+      }
+
+      // move types
+      const dx=player.x-e.x, dy=player.y-e.y;
+      const L=Math.hypot(dx,dy)||1;
+
+      if(e.type==="chaser"){
+        e.x += (dx/L)*e.sp*dt;
+        e.y += (dy/L)*e.sp*dt;
+      }else if(e.type==="zig"){
+        const wob = Math.sin(state.time*3 + i)*0.75;
+        const ax = (dx/L)*Math.cos(wob) - (dy/L)*Math.sin(wob);
+        const ay = (dx/L)*Math.sin(wob) + (dy/L)*Math.cos(wob);
+        e.x += ax*e.sp*dt;
+        e.y += ay*e.sp*dt;
+      }else if(e.type==="sprinter"){
+        const burst = (Math.sin(state.time*2.2 + i*0.7)+1)*0.5; // 0..1
+        const sp = e.sp*(0.75 + burst*0.85);
+        e.x += (dx/L)*sp*dt;
+        e.y += (dy/L)*sp*dt;
+      }
+
+      // hit flash
+      e.hitT = Math.max(0, e.hitT-dt);
+
+      // collide with player
+      if(player.invuln<=0 && circleHit(player.x,player.y,player.r, e.x,e.y,e.r)){
+        player.hp -= e.dmg;
+        player.invuln = 0.55;
+        state.shake=12;
+        spawnParticles(player.x, player.y, 14, "hurt");
+        if(player.hp<=0){
+          die();
+          return;
+        }
+      }
+
+      // death
+      if(e.hp<=0){
+        arrays.enemies.splice(i,1);
+        state.kills++;
+        // reward
+        const p=prestigeMult();
+        const baseGold = (e.kind==="boss"? 120 : (e.kind==="elite"? 24 : 8));
+        const gold = baseGold * meta.goldMult * p.gold;
+        state.gold += gold;
+        state.totalGold += gold;
+
+        // drop chance
+        const luck = 0.07 + (meta.luck||0)*0.06;
+        if(Math.random() < 0.55 + (meta.luck||0)*0.08){
+          dropOrb(e.x,e.y,"xp");
+        }
+        if(Math.random() < 0.12 + (meta.luck||0)*0.08){
+          dropOrb(e.x,e.y,"gold");
+        }
+        if(Math.random() < 0.03 + luck*0.08){
+          dropOrb(e.x,e.y,"heal");
+        }
+
+        spawnParticles(e.x, e.y, e.kind==="boss"? 24:10, "kill");
+      }
+    }
+
+    // update drops (magnet + pickup)
+    for(let i=arrays.drops.length-1;i>=0;i--){
+      const o=arrays.drops[i];
+      // magnet pull
+      const dx=player.x-o.x, dy=player.y-o.y;
+      const dist=Math.hypot(dx,dy)||1;
+      const pullR = 85 + player.magnet;
+      if(dist < pullR){
+        const s = (pullR-dist)/pullR;
+        o.x += (dx/dist) * (o.v*(1.0+s*2.5)) * dt;
+        o.y += (dy/dist) * (o.v*(1.0+s*2.5)) * dt;
+      }
+
+      // pickup
+      if(circleHit(player.x,player.y,player.r, o.x,o.y,o.r)){
+        arrays.drops.splice(i,1);
+        if(o.kind==="xp"){
+          const p=prestigeMult();
+          const gain = (6 + state.wave*0.35) * meta.xpMult * p.xp;
+          state.xp += gain;
+        }else if(o.kind==="gold"){
+          const p=prestigeMult();
+          const gain = (22 + state.wave*0.9) * meta.goldMult * p.gold;
+          state.gold += gain;
+          state.totalGold += gain;
+        }else if(o.kind==="heal"){
+          player.hp = clamp(player.hp + player.maxHp*0.18, 0, player.maxHp);
+        }
+      }
+    }
+
+    // xp level
+    if(state.xp >= state.xpNeed){
+      levelUp();
+    }
+
+    // achievements
+    checkAchv();
+  }
+
+  function die(){
+    state.dead=true;
+    // auto prestige suggestion modal
+    openModal("💀 Has muerto", "Ahora viene lo bueno: convertir dolor en poder (prestigio).", ()=>{
+      const gain=calcEssenceGain();
+
+      const a=document.createElement("div");
+      a.className="card";
+      a.innerHTML=`<h4>✨ Prestigiar</h4>
+                   <div class="small">Ganas <b>${gain}</b> esencia. Reinicias más fuerte.</div>
+                   <div class="tag">+Esencia</div>`;
+      a.onclick=()=>{ closeModal(); doPrestige("death"); };
+      ui.choices.appendChild(a);
+
+      const b=document.createElement("div");
+      b.className="card";
+      b.innerHTML=`<h4>🔁 Reintentar sin prestigio</h4>
+                   <div class="small">Reinicias, pero sin convertir la run en esencia.</div>
+                   <div class="tag">Retry</div>`;
+      b.onclick=()=>{ closeModal(); resetRun(true); };
+      ui.choices.appendChild(b);
+
+      const c=document.createElement("div");
+      c.className="card";
+      c.innerHTML=`<h4>📈 Consejo rápido</h4>
+                   <div class="small">Prioriza: <b>Cadencia</b> → <b>Multi-tiro</b> → <b>Oro/s</b>. Si te falta vida, mete Regen.</div>
+                   <div class="tag">Meta</div>`;
+      c.onclick=()=>showToast("Meta: Cadencia + Multitiro = pantalla limpia.");
+      ui.choices.appendChild(c);
+
+      const bb=document.createElement("button");
+      bb.className="btn secondary";
+      bb.textContent="Cerrar";
+      bb.onclick=()=>closeModal();
+      ui.modalBtns.appendChild(bb);
+    });
+
+    showToast("💀 RIP. (Pero tu esencia se ríe en la cara del destino).", 2800);
+  }
+
+  // ---------- Draw ----------
+  function draw(dt){
+    // clear
+    ctx.fillStyle="#070b11";
+    ctx.fillRect(0,0,W,H);
+
+    // camera shake
+    state.shake = Math.max(0, state.shake - dt*18);
+    const sh = state.shake*DPR;
+    const sx = (Math.random()-0.5)*sh;
+    const sy = (Math.random()-0.5)*sh;
+
+    // world transform
+    ctx.save();
+    ctx.translate(W/2 + sx, H/2 + sy);
+    ctx.scale(DPR, DPR);
+    ctx.translate(-state.cam.x, -state.cam.y);
+
+    // arena background (procedural grid)
+    drawArena();
+
+    // drops
+    for(const o of arrays.drops){
+      if(o.kind==="xp"){
+        ctx.fillStyle="rgba(110,231,255,.95)";
+      }else if(o.kind==="gold"){
+        ctx.fillStyle="rgba(255,211,110,.95)";
+      }else{
+        ctx.fillStyle="rgba(124,255,138,.95)";
+      }
+      ctx.beginPath();
+      ctx.arc(o.x,o.y,o.r,0,Math.PI*2);
+      ctx.fill();
+    }
+
+    // bullets
+    ctx.fillStyle="rgba(231,241,255,.92)";
+    for(const b of arrays.bullets){
+      ctx.beginPath();
+      ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+      ctx.fill();
+    }
+
+    // drones
+    for(const dr of arrays.drones){
+      const x = player.x + Math.cos(dr.a)*dr.r;
+      const y = player.y + Math.sin(dr.a)*dr.r;
+      ctx.fillStyle="rgba(110,231,255,.22)";
+      ctx.beginPath(); ctx.arc(x,y,10,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle="rgba(110,231,255,.35)";
+      ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(x,y,10,0,Math.PI*2); ctx.stroke();
+    }
+
+    // enemies
+    for(const e of arrays.enemies){
+      const hpT = clamp(e.hp/e.maxHp,0,1);
+
+      // body
+      const isBoss = e.kind==="boss";
+      const isElite = e.kind==="elite";
+
+      let body = isBoss ? "rgba(255,110,110,.95)" : (isElite ? "rgba(255,211,110,.92)" : "rgba(231,241,255,.10)");
+      if(meta.arenaTier>=3 && !isBoss && !isElite) body = "rgba(110,231,255,.12)";
+
+      if(e.hitT>0) body="rgba(255,255,255,.28)";
+
+      ctx.fillStyle=body;
+      ctx.beginPath();
+      ctx.arc(e.x,e.y,e.r,0,Math.PI*2);
+      ctx.fill();
+
+      // hp bar
+      ctx.fillStyle="rgba(0,0,0,.35)";
+      ctx.fillRect(e.x-e.r, e.y-e.r-10, e.r*2, 4);
+      ctx.fillStyle=isBoss?"rgba(255,110,110,.92)":"rgba(124,255,138,.92)";
+      ctx.fillRect(e.x-e.r, e.y-e.r-10, e.r*2*hpT, 4);
+
+      // burn effect
+      if(e.burnT>0){
+        ctx.strokeStyle="rgba(255,110,110,.35)";
+        ctx.lineWidth=2;
+        ctx.beginPath();
+        ctx.arc(e.x,e.y,e.r+3,0,Math.PI*2);
+        ctx.stroke();
+      }
+    }
+
+    // player
+    // shadow
+    ctx.fillStyle="rgba(0,0,0,.28)";
+    ctx.beginPath(); ctx.ellipse(player.x, player.y+player.r*0.85, player.r*0.9, player.r*0.45, 0, 0, Math.PI*2); ctx.fill();
+
+    // body
+    const inv = player.invuln>0;
+    ctx.fillStyle = inv ? "rgba(255,255,255,.24)" : "rgba(110,231,255,.20)";
+    ctx.beginPath(); ctx.arc(player.x,player.y,player.r,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle = inv ? "rgba(255,211,110,.55)" : "rgba(110,231,255,.45)";
+    ctx.lineWidth=3;
+    ctx.beginPath(); ctx.arc(player.x,player.y,player.r,0,Math.PI*2); ctx.stroke();
+
+    // particles
+    for(let i=arrays.particles.length-1;i>=0;i--){
+      const p=arrays.particles[i];
+      p.life -= dt;
+      if(p.life<=0){ arrays.particles.splice(i,1); continue; }
+      p.x += p.vx*dt; p.y += p.vy*dt;
+      const t = clamp(p.life/p.max,0,1);
+
+      let col="rgba(110,231,255,";
+      if(p.kind==="kill") col="rgba(124,255,138,";
+      if(p.kind==="hurt") col="rgba(255,110,110,";
+      if(p.kind==="nova") col="rgba(255,211,110,";
+      if(p.kind==="dash") col="rgba(231,241,255,";
+      if(p.kind==="level") col="rgba(110,231,255,";
+      ctx.fillStyle = col + (0.6*t) + ")";
+      ctx.beginPath();
+      ctx.arc(p.x,p.y, 2.2 + (1-t)*3.0, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+
+    // HUD update
+    updateUI();
+  }
+
+  function drawArena(){
+    // infinite grid with tier variations
+    const tier = meta.arenaTier||1;
+    const grid = tier>=3 ? 54 : 48;
+    const col1 = tier>=4 ? "rgba(255,211,110,.05)" : "rgba(110,231,255,.05)";
+    const col2 = "rgba(255,255,255,.03)";
+
+    // visible bounds around camera
+    const left = state.cam.x - (innerWidth/2) - 120;
+    const right= state.cam.x + (innerWidth/2) + 120;
+    const top  = state.cam.y - (innerHeight/2) - 120;
+    const bot  = state.cam.y + (innerHeight/2) + 120;
+
+    // big soft vignette
+    ctx.save();
+    ctx.fillStyle="rgba(0,0,0,.22)";
+    ctx.fillRect(left,top,right-left,bot-top);
+    ctx.restore();
+
+    // grid lines
+    ctx.lineWidth=1;
+    ctx.strokeStyle=col2;
+
+    const x0 = Math.floor(left/grid)*grid;
+    const y0 = Math.floor(top/grid)*grid;
+    for(let x=x0;x<right;x+=grid){
+      ctx.beginPath();
+      ctx.moveTo(x, top);
+      ctx.lineTo(x, bot);
+      ctx.stroke();
+    }
+    for(let y=y0;y<bot;y+=grid){
+      ctx.beginPath();
+      ctx.moveTo(left, y);
+      ctx.lineTo(right, y);
+      ctx.stroke();
+    }
+
+    // tier accents (diagonal marks)
+    if(tier>=2){
+      ctx.strokeStyle=col1;
+      for(let x=x0;x<right;x+=grid*3){
+        for(let y=y0;y<bot;y+=grid*3){
+          ctx.beginPath();
+          ctx.moveTo(x,y);
+          ctx.lineTo(x+18, y+18);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  function updateUI(){
+    ui.hpTxt.textContent = `${fmt(player.hp)} / ${fmt(player.maxHp)}`;
+    ui.hpBar.style.width = `${clamp(player.hp/player.maxHp,0,1)*100}%`;
+
+    ui.lvlTxt.textContent = state.level;
+    ui.xpBar.style.width = `${clamp(state.xp/state.xpNeed,0,1)*100}%`;
+
+    // approximate DPS
+    const dps = player.dmg * player.fireRate * player.multiShot;
+    ui.dpsTxt.textContent = fmt(dps);
+
+    ui.spdTxt.textContent = fmt(player.speed);
+    ui.regTxt.textContent = fmt(player.regen) + "/s";
+
+    ui.dashTxt.textContent = player.dashT>0 ? `${fmt(player.dashT)}s` : "LISTO";
+
+    ui.timeTxt.textContent = fmtTime(state.time);
+    ui.goldTxt.textContent = fmt(state.gold);
+    const p=prestigeMult();
+    ui.gpsTxt.textContent = fmt(state.goldPerSec * meta.goldMult * p.gold);
+
+    ui.essTxt.textContent = state.essence;
+    ui.bestTxt.textContent = fmtTime(state.best);
+  }
+
+})();
+</script>
+
+</body>
+</html>
