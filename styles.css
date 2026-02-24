@@ -1,3 +1,23 @@
+.logo-img {
+  width: 60px;
+  height: auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  text-decoration: none;
+  color: white;
+}
+
+#siteName {
+  margin: 0;
+}
+
+small {
+  color: #4da6ff;
+}
 :root{
   --bg:#0b0f16;
   --panel:#101a2a;
@@ -246,4 +266,5 @@ kbd{
   width:8px; height:8px; border-radius:999px;
   background: var(--good);
   box-shadow: 0 0 0 4px rgba(55,214,122,.12);
+
 }
