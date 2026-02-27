@@ -5,11 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Juegos JC</title>
 
-  <!-- FAVICON (icono pestaña) -->
-  <link rel="icon" type="image/png" href="./logo.png?v=3" />
-  <link rel="apple-touch-icon" href="./logo.png?v=3" />
+  <link rel="icon" type="image/png" href="./logo.png?v=4" />
+  <link rel="apple-touch-icon" href="./logo.png?v=4" />
 
-  <link rel="stylesheet" href="styles.css?v=3" />
+  <link rel="stylesheet" href="styles.css?v=4" />
 </head>
 
 <body>
@@ -18,7 +17,7 @@
     <div class="container nav-inner">
 
       <a class="brand" href="index.html" aria-label="Ir a inicio">
-        <img src="./logo.png?v=3" alt="Juegos JC Logo" class="brand-logo" />
+        <img src="./logo.png?v=4" alt="Juegos JC Logo" class="brand-logo" />
         <div>
           <h1 id="siteName">Juegos JC</h1>
           <small>Indie. Mecánicas. Evolución.</small>
@@ -34,115 +33,55 @@
   </header>
 
   <main class="container hero">
-    <section class="hero-grid">
-      <div class="card">
-        <div class="kicker">Estudio independiente • Construido para durar</div>
-        <h2 class="title">Bienvenido a <span id="siteName">Juegos JC</span></h2>
-        <p class="subtitle">
-          Aquí los juegos empiezan simples y se vuelven profundos. Primero jugabilidad, luego poderes, luego personajes.
-          Y sí: versiones, mejoras y crecimiento real.
-        </p>
 
-        <div class="cta-row">
-          <a class="btn primary" id="playBtn" href="game.html">▶ Jugar ahora</a>
-          <a class="btn" id="directPlay" href="./game/index.html">Abrir juego directo</a>
-          <span class="badge">Actual: <span id="currentVersion">v1.0</span></span>
-        </div>
-
-        <div class="hr"></div>
-
-        <div class="note">
-          <div class="dot"></div>
-          <div>
-            <strong>Pro tip:</strong> si el juego tarda en cargar, revisa que exista <kbd>game/index.html</kbd>.
-          </div>
-        </div>
+    <!-- TOP STATS -->
+    <section class="card topbar">
+      <div class="topbar-left">
+        <h2 class="topbar-title">Explora tus juegos</h2>
+        <p class="topbar-sub">Busca por nombre, versión, etiquetas… y ordénalos como un jefe.</p>
       </div>
 
-      <aside class="card">
-        <div class="panel-title">
-          <h2>Ahora en desarrollo</h2>
-          <span class="badge">Próximo: <span id="nextVersion">v1.1</span></span>
-        </div>
-
-        <div class="list">
-          <div class="item">
-            <h3>Infinity Evolution</h3>
-            <p>El primer juego de Juegos JC. Evolución progresiva y poderes que cambian reglas.</p>
-          </div>
-          <div class="item">
-            <h3>Notas rápidas</h3>
-            <p>Subidas por versiones. Sin drama. Sin quemarse. Una mejora pequeña, pero buena.</p>
-          </div>
-          <div class="item">
-            <h3>Próximamente</h3>
-            <p>Voces, habilidades nuevas y más profundidad… cuando toque.</p>
-          </div>
-        </div>
-      </aside>
-    </section>
-
-    <section class="grid2" style="margin-top:18px;">
-      <div class="card">
-        <div class="panel-title">
-          <h2>Actualizaciones</h2>
-          <span class="pill"><span class="p"></span> roadmap</span>
-        </div>
-        <table class="table" aria-label="Tabla de versiones">
-          <thead>
-            <tr>
-              <th>Versión</th>
-              <th>Estado</th>
-              <th>Contenido</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><span class="badge">v1.0</span></td>
-              <td>Publicado</td>
-              <td>Base jugable + mecánica principal</td>
-            </tr>
-            <tr>
-              <td><span class="badge">v1.1</span></td>
-              <td>En camino</td>
-              <td>1 poder nuevo + balance + UI</td>
-            </tr>
-            <tr>
-              <td><span class="badge">v1.2</span></td>
-              <td>Idea</td>
-              <td>Voces / sonidos + ajustes finos</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="card">
-        <div class="panel-title">
-          <h2>Objetivo</h2>
-          <span class="badge">largo plazo</span>
-        </div>
-        <div class="list">
-          <div class="item">
-            <h3>Que dure años</h3>
-            <p>Un sistema simple al inicio, pero ampliable para siempre sin romperlo.</p>
-          </div>
-          <div class="item">
-            <h3>Marca acumulativa</h3>
-            <p>Todo lo que creas vive aquí. Cada juego suma. Cada versión suma.</p>
-          </div>
-          <div class="item">
-            <h3>Sin humo</h3>
-            <p>Primero jugabilidad. Luego monetización. El orden correcto.</p>
-          </div>
+      <div class="topbar-right">
+        <div class="stat">
+          <div class="stat-k">Visitas página (local)</div>
+          <div class="stat-v" id="siteVisits">0</div>
         </div>
       </div>
     </section>
+
+    <!-- SEARCH + FILTERS -->
+    <section class="card controls">
+      <div class="controls-grid">
+        <div class="field">
+          <label for="q">Buscador</label>
+          <input id="q" class="input" type="search" placeholder="Ej: Infinity, Banana, v1.2, acción…" autocomplete="off" />
+        </div>
+
+        <div class="field">
+          <label for="sort">Ordenar por</label>
+          <select id="sort" class="select">
+            <option value="popular">Más popular</option>
+            <option value="new">Más nuevo</option>
+            <option value="version">Mayor versión</option>
+            <option value="name">Nombre (A-Z)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Filtros rápidos</label>
+          <div class="chips-row" id="tagFilters"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GAMES GRID -->
+    <section class="games-grid" id="gamesGrid"></section>
 
     <footer class="footer">
       © <span id="year"></span> Juegos JC • Hecho para evolucionar.
     </footer>
   </main>
 
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
