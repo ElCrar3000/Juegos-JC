@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Campana Clicker</title>
+  <style>
+    :root{
+      --bg:#0b0f16; --panel:#101a2a; --panel2:#0f1726;
+      --text:#e7eefc; --muted:#9fb1d1; --line:#1f2a40;
+      --accent:#4ea6ff; --good:#37d67a; --warn:#ffd166;
+      --radius:18px; --shadow:0 12px 40px rgba(0,0,0,.45);
+      --max:1100px;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    }
+    body{ margin:0; background:radial-gradient(1000px 600px at 20% 10%, #122044, var(--bg)); color:var(--text); }
+    .wrap{ max-width:var(--max); margin:0 auto; padding:18px; display:grid; gap:14px; grid-template-columns: 1.2fr .8fr; }
+    @media (max-width: 920px){ .wrap{ grid-template-columns: 1fr; } }
+
+    header{ max-width:var(--max); margin:0 auto; padding:18px 18px 0; }
+    h1{ margin:0; font-size:22px; letter-spacing:.3px; }
+    .sub{ color:var(--muted); margin-top:6px; font-size:13px; }
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{ padding:12px 14px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .card .bd{ padding:14px; }
+    .pill{ font-size:12px; padding:5px 10px; border:1px solid var(--line); border-radius:999px; color:var(--muted); }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .kpi{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    .kpi .box{ background:rgba(255,255,255,.02); border:1px solid var(--line); border-radius:14px; padding:10px; }
+    .kpi .label{ color:var(--muted); font-size:12px; }
+    .kpi .val{ font-size:18px; margin-top:4px; font-weight:700; }
+
+    /* Game area */
+    .arena{ display:grid; gap:12px; grid-template-columns: 1fr; }
+    canvas{ width:100%; height:340px; background:linear-gradient(180deg, rgba(78,166,255,.08), rgba(0,0,0,0)); border:1px dashed rgba(78,166,255,.25); border-radius:16px; }
+    .btn{
+      appearance:none; border:1px solid var(--line); background:rgba(255,255,255,.03);
+      color:var(--text); padding:10px 12px; border-radius:14px; cursor:pointer;
+      transition:transform .05s ease, border-color .15s ease, background .15s ease;
+      font-weight:650;
+    }
+    .btn:hover{ border-color:rgba(78,166,255,.55); }
+    .btn:active{ transform:translateY(1px); }
+    .btn.good{ border-color:rgba(55,215,122,.4); }
+    .btn.warn{ border-color:rgba(255,209,102,.45); }
+    .btn.danger{ border-color:rgba(255,90,90,.45); }
+    .btn:disabled{ opacity:.45; cursor:not-allowed; }
+
+    /* Shop */
+    .shop{ display:grid; gap:10px; }
+    .item{
+      border:1px solid var(--line); border-radius:16px; padding:10px;
+      background:rgba(255,255,255,.02);
+      display:grid; gap:6px;
+    }
+    .item .top{ display:flex; justify-content:space-between; gap:10px; align-items:center; }
+    .item .name{ font-weight:800; }
+    .item .desc{ color:var(--muted); font-size:12px; line-height:1.35; }
+    .item .meta{ color:var(--muted); font-size:12px; display:flex; gap:10px; flex-wrap:wrap; }
+    .item .actions{ display:flex; gap:8px; flex-wrap:wrap; }
+    .tag{ font-size:11px; padding:3px 8px; border:1px solid var(--line); border-radius:999px; color:var(--muted); }
+
+    .log{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size:12px; color:var(--muted); max-height:190px; overflow:auto; padding-right:4px; }
+    .log div{ padding:4px 0; border-bottom:1px dashed rgba(255,255,255,.06); }
+
+    .tiny{ font-size:12px; color:var(--muted); }
+    .sep{ height:1px; background:var(--line); margin:10px 0; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Campana Clicker</h1>
+  <div class="sub">Clicas la campana → ganas <b>sónicos</b>. Desbloquea estrellas, bonificadores y <b>prestigio</b>.</div>
+</header>
+
+<div class="wrap">
+  <!-- LEFT: Game -->
+  <section class="card">
+    <div class="hd">
+      <div class="row">
+        <span class="pill">Sónicos: <b id="sonicos">0</b></span>
+        <span class="pill">SPS: <b id="sps">0</b></span>
+        <span class="pill">Multiplicador: <b id="mult">x1.00</b></span>
+      </div>
+      <div class="row">
+        <span class="pill">Prestigio: <b id="prestigio">0</b></span>
+        <span class="pill">Bono Prestigio: <b id="pbonus">x1.00</b></span>
+      </div>
+    </div>
+
+    <div class="bd arena">
+      <div class="kpi">
+        <div class="box">
+          <div class="label">Click (Campana)</div>
+          <div class="val"><span id="clickVal">1</span> són./click</div>
+          <div class="tiny">Se aplica el multiplicador total.</div>
+        </div>
+        <div class="box">
+          <div class="label">Total ganado (histórico)</div>
+          <div class="val"><span id="totalEarned">0</span></div>
+          <div class="tiny">Sirve para calcular el prestigio.</div>
+        </div>
+      </div>
+
+      <canvas id="cv" width="900" height="340" aria-label="arena"></canvas>
+
+      <div class="row">
+        <button class="btn good" id="btnBell">🔔 Campana (clic)</button>
+        <button class="btn" id="btnSave">💾 Guardar</button>
+        <button class="btn danger" id="btnReset">♻️ Reset</button>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="row">
+        <button class="btn warn" id="btnDestello" disabled>✨ Activar Destello</button>
+        <button class="btn warn" id="btnMicroTake" disabled>🎙️ Micrófono: Guardar x10</button>
+        <button class="btn warn" id="btnMicroGive" disabled>🎙️ Micrófono: Devolver x10</button>
+        <button class="btn" id="btnPrestige">📻 Prestigiar</button>
+      </div>
+
+      <div class="tiny" id="statusLine"></div>
+
+      <div class="sep"></div>
+      <div class="log" id="log"></div>
+    </div>
+  </section>
+
+  <!-- RIGHT: Shop -->
+  <aside class="card">
+    <div class="hd">
+      <div class="row">
+        <b>Tienda</b>
+        <span class="tag">Compra mejoras</span>
+      </div>
+      <span class="pill">Auto-guardado ✅</span>
+    </div>
+    <div class="bd shop" id="shop"></div>
+  </aside>
+</div>
+
+<script>
+(() => {
+  // --------- Helpers ----------
+  const $ = (id) => document.getElementById(id);
+  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+  const fmt = (n) => {
+    if (!isFinite(n)) return "∞";
+    if (n < 1000) return String(Math.floor(n));
+    const units = ["K","M","B","T","Qa","Qi"];
+    let u = -1;
+    while (n >= 1000 && u < units.length - 1) { n /= 1000; u++; }
+    return (n >= 100 ? n.toFixed(0) : n >= 10 ? n.toFixed(1) : n.toFixed(2)) + units[u];
+  };
+  const now = () => performance.now();
+
+  function log(msg){
+    const el = $("log");
+    const d = document.createElement("div");
+    const t = new Date();
+    d.textContent = `[${t.toLocaleTimeString()}] ${msg}`;
+    el.prepend(d);
+    while (el.children.length > 60) el.removeChild(el.lastChild);
+  }
+
+  // --------- Game State ----------
+  const DEFAULT = {
+    sonicos: 0,
+    totalEarned: 0,
+    prestigio: 0,
+    dvdVault: 0,          // DVD: guarda sonicos para el prestigio
+    microStored: 0,       // Micrófono: banco temporal
+    hasEstrellaMadre: false,
+    lucias: 0,
+    hasCandelo: false,    // 1 solo
+    hasZolo: false,       // 1 solo
+    astrozLv: 0,          // mejora campana y estrellas
+    confettiLv: 0,        // pequeño bonus (multiplicador)
+    hasDisco: false,      // compra repetible? aquí lo dejamos repetible como botón de "regalo"
+    hasRadio: true,       // el prestigio existe siempre, pero Radio se usa como "punto de prestigio" (ver tienda)
+    hasDVD: false,
+    hasDestello: false,
+    hasPlatillo: false,
+    destelloActive: false,
+    destelloEndsAt: 0
+  };
+
+  const SAVE_KEY = "campana_clicker_v1";
+  const state = load();
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return structuredClone(DEFAULT);
+      const s = JSON.parse(raw);
+      return { ...structuredClone(DEFAULT), ...s };
+    }catch{
+      return structuredClone(DEFAULT);
+    }
+  }
+
+  function save(){
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  }
+
+  // --------- Mechanics (según tu hoja) ----------
+  // Campana: Al clicar te suma un sónico.
+  function prestigeBonus(){
+    // Simple y claro: cada punto de prestigio da +5% multiplicador.
+    return 1 + state.prestigio * 0.05;
+  }
+
+  function luciaBonus(){
+    // "cada Lucía le suma 1% de todo"
+    return 1 + state.lucias * 0.01;
+  }
+
+  function confettiBonus(){
+    // pequeño bonus (multiplicador): +10% por nivel
+    return 1 + state.confettiLv * 0.10;
+  }
+
+  function astrozBellMult(){
+    // Astroz: mejora estrellas y campana (campana +20% por nivel)
+    return 1 + state.astrozLv * 0.20;
+  }
+
+  function astrozStarMult(){
+    // estrellas +25% por nivel
+    return 1 + state.astrozLv * 0.25;
+  }
+
+  function totalMult(){
+    return prestigeBonus() * luciaBonus() * confettiBonus();
+  }
+
+  function clickValue(){
+    // base 1 sónico por click, mejorado por Astroz y multiplicador total
+    return 1 * astrozBellMult() * totalMult();
+  }
+
+  // Estrellas orbitando y chocando para generar sónicos
+  // Lucía = 1 estrella, Candelo = 2 estrellas (solo 1), Zolo = 8 estrellas (solo 1)
+  function totalStars(){
+    if (!state.hasEstrellaMadre) return 0;
+    let stars = state.lucias;           // cada Lucía añade 1 "estrella"
+    if (state.hasCandelo) stars += 2;   // "lo mismo que lucía pero dos"
+    if (state.hasZolo) stars += 8;      // "lo mismo que lucía pero 8"
+    return stars;
+  }
+
+  function starSPS(){
+    // Cada estrella aporta sps; sube con Astroz y multiplicadores.
+    // (Sencillo y jugable)
+    const basePerStar = 0.6;
+    return totalStars() * basePerStar * astrozStarMult() * totalMult();
+  }
+
+  // Destello/Platillo:
+  // Destello 1: te quita muchos sónicos para que después actúe su hermana
+  // Platillo 2: después de que actúe su hermana te multiplicará los sónicos restantes
+  function canActivateDestello(){
+    return state.hasDestello && !state.destelloActive && state.sonicos >= 50;
+  }
+
+  function activateDestello(){
+    // "quita mucho": paga 30% de tus sónicos (mín 50)
+    const cost = Math.max(50, Math.floor(state.sonicos * 0.30));
+    state.sonicos -= cost;
+    state.destelloActive = true;
+    const durationMs = 12000; // 12s
+    state.destelloEndsAt = now() + durationMs;
+    log(`Destello activado: pagas ${fmt(cost)} sónicos. En 12s se resolverá…`);
+  }
+
+  function resolveDestelloIfNeeded(){
+    if (!state.destelloActive) return;
+    if (now() < state.destelloEndsAt) return;
+
+    state.destelloActive = false;
+    // Si tienes Platillo, multiplica los sónicos restantes
+    if (state.hasPlatillo){
+      const factor = 2.0; // "te multiplicará" → x2 (simple)
+      state.sonicos = Math.floor(state.sonicos * factor);
+      log(`Platillo: ¡multiplicación aplicada! x${factor.toFixed(1)} a tus sónicos restantes.`);
+    } else {
+      log(`Destello terminó. (Sin Platillo, no hay multiplicación).`);
+    }
+  }
+
+  // Micrófono:
+  // "Te divide los sónicos por X para cuando quieras multiplicarlo por X"
+  const MICRO_X = 10;
+  function microCanTake(){ return state.sonicos >= MICRO_X; }
+  function microTake(){
+    const take = Math.floor(state.sonicos / MICRO_X);
+    state.sonicos -= take;
+    state.microStored += take;
+    log(`Micrófono: guardas ${fmt(take)} (división x${MICRO_X}).`);
+  }
+  function microCanGive(){ return state.microStored > 0; }
+  function microGive(){
+    const give = state.microStored * MICRO_X;
+    state.microStored = 0;
+    state.sonicos += give;
+    state.totalEarned += give;
+    log(`Micrófono: devuelves ${fmt(give)} (multiplicación x${MICRO_X}).`);
+  }
+
+  // Disco eléctrico: "te da sónicos" (regalo instantáneo)
+  function discoGift(){
+    const gift = Math.floor(250 * totalMult());
+    state.sonicos += gift;
+    state.totalEarned += gift;
+    log(`Disco eléctrico: +${fmt(gift)} sónicos.`);
+  }
+
+  // Radio: "te da prestigio" (lo modelamos como item comprable)
+  function buyPrestigePoint(){
+    state.prestigio += 1;
+    log(`Radio: ganas +1 prestigio. (Bono ahora x${prestigeBonus().toFixed(2)})`);
+  }
+
+  // DVD: "te quita quita sónicos para dártelos cuando prestigies"
+  function dvdDeposit(){
+    // Deposita 25% de los sónicos actuales en la bóveda (solo si tienes DVD)
+    if (!state.hasDVD) return;
+    const dep = Math.floor(state.sonicos * 0.25);
+    if (dep <= 0) return;
+    state.sonicos -= dep;
+    state.dvdVault += dep;
+    log(`DVD: guardas ${fmt(dep)} sónicos para el próximo prestigio.`);
+  }
+
+  // Prestigio (reset suave)
+  function prestigeGainFromTotal(){
+    // Prestigio adicional por progreso: 1 por cada 50K de totalEarned
+    return Math.floor(state.totalEarned / 50000);
+  }
+
+  function doPrestige(){
+    const extra = prestigeGainFromTotal();
+    if (extra <= 0 && state.prestigio <= 0){
+      log("Aún no tienes suficiente para que el prestigio merezca la pena.");
+    }
+    const keepPrestige = state.prestigio + extra;
+
+    // reinicio
+    const vault = state.dvdVault; // DVD te lo devuelve al prestigiar
+    Object.assign(state, structuredClone(DEFAULT));
+    state.prestigio = keepPrestige;
+    state.sonicos += vault;
+    state.totalEarned += vault;
+    log(`¡Prestigio! Te quedas con ${keepPrestige} prestigio y el DVD te devuelve ${fmt(vault)} sónicos.`);
+  }
+
+  // --------- UI: Shop definitions ----------
+  const shopItems = [
+    {
+      id:"estrellaMadre",
+      name:"Estrella madre",
+      desc:"Invoca al resto de estrellas. Sin esto, no hay estrellas orbitando.",
+      cost: 100,
+      buy(){
+        state.hasEstrellaMadre = true;
+        log("Comprada: Estrella madre (estrellas desbloqueadas).");
+      },
+      canBuy: ()=> !state.hasEstrellaMadre && state.sonicos >= 100,
+      meta: ()=> [`Coste: ${fmt(100)}`]
+    },
+    {
+      id:"lucia",
+      name:"Lucía",
+      desc:"Gira alrededor de la campana y ‘choca’ para generar sónicos. Además: cada Lucía da +1% a todo.",
+      cost: ()=> Math.floor(60 * Math.pow(1.18, state.lucias)),
+      buy(){
+        state.lucias += 1;
+        log(`Comprada: Lucía (ahora tienes ${state.lucias}).`);
+      },
+      canBuy: ()=> state.hasEstrellaMadre && state.sonicos >= Math.floor(60 * Math.pow(1.18, state.lucias)),
+      meta: ()=> [`Tienes: ${state.lucias}`, `Coste: ${fmt(Math.floor(60 * Math.pow(1.18, state.lucias)))}`]
+    },
+    {
+      id:"candelo",
+      name:"Candelo (x2 Lucía)",
+      desc:"Como Lucía, pero suma 2 estrellas más. Solo puede haber 1.",
+      cost: 1200,
+      buy(){ state.hasCandelo = true; log("Comprado: Candelo (2 estrellas extra)."); },
+      canBuy: ()=> state.hasEstrellaMadre && !state.hasCandelo && state.sonicos >= 1200,
+      meta: ()=> [`Único: sí`, `Coste: ${fmt(1200)}`]
+    },
+    {
+      id:"zolo",
+      name:"Zolo (x8 Lucía)",
+      desc:"Como Lucía, pero suma 8 estrellas más. Solo puede haber 1.",
+      cost: 6500,
+      buy(){ state.hasZolo = true; log("Comprado: Zolo (8 estrellas extra)."); },
+      canBuy: ()=> state.hasEstrellaMadre && !state.hasZolo && state.sonicos >= 6500,
+      meta: ()=> [`Único: sí`, `Coste: ${fmt(6500)}`]
+    },
+    {
+      id:"astroz",
+      name:"Astroz",
+      desc:"Mejora la campana y las estrellas. Campana +20%/nivel. Estrellas +25%/nivel.",
+      cost: ()=> Math.floor(400 * Math.pow(1.45, state.astrozLv)),
+      buy(){ state.astrozLv += 1; log(`Astroz sube a nivel ${state.astrozLv}.`); },
+      canBuy: ()=> state.sonicos >= Math.floor(400 * Math.pow(1.45, state.astrozLv)),
+      meta: ()=> [`Nivel: ${state.astrozLv}`, `Coste: ${fmt(Math.floor(400 * Math.pow(1.45, state.astrozLv)))}`]
+    },
+    {
+      id:"confetti",
+      name:"Confetti",
+      desc:"Te da un pequeño bonus (multiplicador): +10% por nivel.",
+      cost: ()=> Math.floor(300 * Math.pow(1.35, state.confettiLv)),
+      buy(){ state.confettiLv += 1; log(`Confetti sube a nivel ${state.confettiLv}.`); },
+      canBuy: ()=> state.sonicos >= Math.floor(300 * Math.pow(1.35, state.confettiLv)),
+      meta: ()=> [`Nivel: ${state.confettiLv}`, `Coste: ${fmt(Math.floor(300 * Math.pow(1.35, state.confettiLv)))}`]
+    },
+    {
+      id:"destello",
+      name:"Destello 1",
+      desc:"Te quita muchos sónicos para activar su efecto. Si tienes Platillo, al terminar te multiplicará los restantes.",
+      cost: 2200,
+      buy(){ state.hasDestello = true; log("Comprado: Destello 1 (habilidad desbloqueada)."); },
+      canBuy: ()=> !state.hasDestello && state.sonicos >= 2200,
+      meta: ()=> [`Coste: ${fmt(2200)}`]
+    },
+    {
+      id:"platillo",
+      name:"Platillo 2",
+      desc:"Después de Destello, multiplica tus sónicos restantes (x2).",
+      cost: 3500,
+      buy(){ state.hasPlatillo = true; log("Comprado: Platillo 2 (multiplicación habilitada)."); },
+      canBuy: ()=> state.hasDestello && !state.hasPlatillo && state.sonicos >= 3500,
+      meta: ()=> [`Requiere: Destello`, `Coste: ${fmt(3500)}`]
+    },
+    {
+      id:"microfono",
+      name:"Micrófono",
+      desc:`Divide tus sónicos por ${MICRO_X} para guardarlos y luego devolverlos multiplicados por ${MICRO_X}.`,
+      cost: 1800,
+      buy(){
+        // solo desbloquea botones (guardado/retorno ya en pantalla)
+        log("Comprado: Micrófono (botones activados).");
+        state._microUnlocked = true;
+      },
+      canBuy: ()=> !state._microUnlocked && state.sonicos >= 1800,
+      meta: ()=> [`Coste: ${fmt(1800)}`]
+    },
+    {
+      id:"disco",
+      name:"Disco eléctrico",
+      desc:"Te da sónicos (regalo instantáneo).",
+      cost: 900,
+      buy(){ discoGift(); },
+      canBuy: ()=> state.sonicos >= 900,
+      meta: ()=> [`Coste: ${fmt(900)}`, `Efecto: regalo`]
+    },
+    {
+      id:"dvd",
+      name:"DVD",
+      desc:"Te quita sónicos para guardarlos y devolvértelos cuando prestigies.",
+      cost: 2000,
+      buy(){ state.hasDVD = true; log("Comprado: DVD (bóveda activada)."); },
+      canBuy: ()=> !state.hasDVD && state.sonicos >= 2000,
+      meta: ()=> [`Coste: ${fmt(2000)}`]
+    },
+    {
+      id:"radio",
+      name:"Radio",
+      desc:"Te da prestigio (+1).",
+      cost: ()=> Math.floor(3000 * Math.pow(1.6, state.prestigio)),
+      buy(){ buyPrestigePoint(); },
+      canBuy: ()=> state.sonicos >= Math.floor(3000 * Math.pow(1.6, state.prestigio)),
+      meta: ()=> [`Coste: ${fmt(Math.floor(3000 * Math.pow(1.6, state.prestigio)))}`]
+    }
+  ];
+
+  // --------- Render Shop ----------
+  function renderShop(){
+    const root = $("shop");
+    root.innerHTML = "";
+    for (const it of shopItems){
+      const cost = (typeof it.cost === "function") ? it.cost() : it.cost;
+      const can = it.canBuy();
+      const div = document.createElement("div");
+      div.className = "item";
+      div.innerHTML = `
+        <div class="top">
+          <div>
+            <div class="name">${it.name}</div>
+          </div>
+          <button class="btn ${can ? "good":""}" ${can ? "" : "disabled"} data-buy="${it.id}">
+            Comprar
+          </button>
+        </div>
+        <div class="desc">${it.desc}</div>
+        <div class="meta">${it.meta().map(m=>`<span class="tag">${m}</span>`).join("")}</div>
+      `;
+      root.appendChild(div);
+    }
+
+    root.querySelectorAll("[data-buy]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.getAttribute("data-buy");
+        const it = shopItems.find(x=>x.id===id);
+        const cost = (typeof it.cost === "function") ? it.cost() : it.cost;
+        if (!it.canBuy()) return;
+
+        state.sonicos -= cost;
+        it.buy();
+        // DVD: cada compra puede "depositar" un poco para prestigio (si lo tienes)
+        dvdDeposit();
+        save();
+        updateUI();
+      });
+    });
+  }
+
+  // --------- Main loop: sps and timers ----------
+  let lastTick = now();
+  function tick(){
+    const t = now();
+    const dt = (t - lastTick) / 1000;
+    lastTick = t;
+
+    resolveDestelloIfNeeded();
+
+    const sps = starSPS();
+    if (sps > 0 && dt > 0){
+      const gain = sps * dt;
+      state.sonicos += gain;
+      state.totalEarned += gain;
+    }
+
+    updateUI(false);
+    requestAnimationFrame(tick);
+  }
+
+  // --------- Canvas: simple orbit visuals ----------
+  const cv = $("cv");
+  const ctx = cv.getContext("2d");
+  function draw(){
+    const w = cv.width, h = cv.height;
+    ctx.clearRect(0,0,w,h);
+
+    // bell (center)
+    const cx = w*0.5, cy = h*0.52;
+    const bellR = 46;
+
+    // glow
+    ctx.beginPath();
+    ctx.arc(cx, cy, bellR+18, 0, Math.PI*2);
+    ctx.fillStyle = "rgba(78,166,255,.10)";
+    ctx.fill();
+
+    // bell body
+    ctx.beginPath();
+    ctx.arc(cx, cy, bellR, 0, Math.PI*2);
+    ctx.fillStyle = "rgba(255,255,255,.06)";
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(78,166,255,.35)";
+    ctx.stroke();
+
+    // bell icon
+    ctx.font = "34px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "rgba(231,238,252,.95)";
+    ctx.fillText("🔔", cx, cy+2);
+
+    // stars
+    const n = totalStars();
+    if (n > 0){
+      const baseRadius = 92;
+      const t = performance.now() / 1000;
+      for (let i=0;i<n;i++){
+        const a = t*1.2 + (i * (Math.PI*2 / n));
+        const r = baseRadius + 12*Math.sin(t*0.7 + i);
+        const x = cx + Math.cos(a)*r;
+        const y = cy + Math.sin(a)*r;
+
+        // orbit line subtle
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI*2);
+        ctx.strokeStyle = "rgba(255,255,255,.03)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // star
+        ctx.beginPath();
+        ctx.arc(x,y, 7.5, 0, Math.PI*2);
+        ctx.fillStyle = "rgba(255,209,102,.75)";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,209,102,.20)";
+        ctx.stroke();
+      }
+    }
+
+    // destello status
+    if (state.destelloActive){
+      const p = clamp((state.destelloEndsAt - now()) / 12000, 0, 1);
+      ctx.fillStyle = "rgba(255,209,102,.15)";
+      ctx.fillRect(0,0,w,8);
+      ctx.fillStyle = "rgba(255,209,102,.65)";
+      ctx.fillRect(0,0,w*(1-p),8);
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  // --------- UI wiring ----------
+  function updateUI(renderShopToo=true){
+    $("sonicos").textContent = fmt(state.sonicos);
+    $("prestigio").textContent = fmt(state.prestigio);
+    $("pbonus").textContent = "x" + prestigeBonus().toFixed(2);
+    $("mult").textContent = "x" + totalMult().toFixed(2);
+    $("clickVal").textContent = fmt(clickValue());
+    $("totalEarned").textContent = fmt(state.totalEarned);
+
+    const sps = starSPS();
+    $("sps").textContent = (sps < 10 ? sps.toFixed(2) : fmt(sps));
+
+    // buttons enable/disable
+    $("btnDestello").disabled = !canActivateDestello();
+    $("btnMicroTake").disabled = !(state._microUnlocked && microCanTake());
+    $("btnMicroGive").disabled = !(state._microUnlocked && microCanGive());
+
+    // status line
+    const parts = [];
+    if (state._microUnlocked) parts.push(`Micrófono guardado: ${fmt(state.microStored)} (x${MICRO_X})`);
+    if (state.hasDVD) parts.push(`DVD bóveda: ${fmt(state.dvdVault)}`);
+    if (state.destelloActive){
+      const left = Math.max(0, (state.destelloEndsAt - now())/1000);
+      parts.push(`Destello activo: ${left.toFixed(1)}s`);
+    }
+    $("statusLine").textContent = parts.join(" • ");
+
+    if (renderShopToo) renderShop();
+    save();
+  }
+
+  $("btnBell").addEventListener("click", ()=>{
+    const gain = clickValue();
+    state.sonicos += gain;
+    state.totalEarned += gain;
+    // DVD deposita un poco con el movimiento (si lo tienes)
+    dvdDeposit();
+    updateUI();
+  });
+
+  $("btnDestello").addEventListener("click", ()=>{
+    if (!canActivateDestello()) return;
+    activateDestello();
+    updateUI();
+  });
+
+  $("btnMicroTake").addEventListener("click", ()=>{
+    if (!(state._microUnlocked && microCanTake())) return;
+    microTake();
+    updateUI();
+  });
+
+  $("btnMicroGive").addEventListener("click", ()=>{
+    if (!(state._microUnlocked && microCanGive())) return;
+    microGive();
+    updateUI();
+  });
+
+  $("btnPrestige").addEventListener("click", ()=>{
+    // exigir mínimo para no trolear al jugador
+    const extra = prestigeGainFromTotal();
+    if (extra <= 0 && state.prestigio === 0){
+      log("Prestigio: necesitas más progreso (total ganado) para ganar prestigio extra.");
+      updateUI();
+      return;
+    }
+    if (!confirm(`¿Prestigiar? Se reinician mejoras (excepto prestigio). Ganarás +${extra} prestigio extra por progreso.`)) return;
+    doPrestige();
+    updateUI();
+  });
+
+  $("btnSave").addEventListener("click", ()=>{
+    save();
+    log("Guardado manual.");
+    updateUI();
+  });
+
+  $("btnReset").addEventListener("click", ()=>{
+    if (!confirm("¿Reset total? Se borra la partida.")) return;
+    localStorage.removeItem(SAVE_KEY);
+    location.reload();
+  });
+
+  // init
+  log("Listo. Clica la campana. 🛎️");
+  updateUI();
+  requestAnimationFrame(tick);
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>

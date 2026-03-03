@@ -1,0 +1,1139 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mini Zelda 3D — Caballero vs Dragona</title>
+  <style>
+    html,body{margin:0;height:100%;background:#070a10;overflow:hidden;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif}
+    #ui{
+      position:fixed;left:12px;top:12px;z-index:10;
+      color:#e7eefc;max-width:420px;
+      background:rgba(10,14,22,.55);border:1px solid rgba(255,255,255,.12);
+      border-radius:14px;padding:12px 12px 10px;backdrop-filter: blur(6px);
+      box-shadow:0 12px 40px rgba(0,0,0,.45)
+    }
+    #title{font-weight:800;font-size:14px;letter-spacing:.3px;opacity:.95}
+    #quest{margin-top:6px;font-size:13px;line-height:1.25;color:#cfe0ff}
+    #hint{margin-top:8px;font-size:12px;color:#9fb1d1}
+    #stats{margin-top:10px;font-size:12px;color:#c7d6f5;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+    .bar{height:10px;border-radius:999px;background:rgba(255,255,255,.10);overflow:hidden;border:1px solid rgba(255,255,255,.12)}
+    .fill{height:100%;width:100%;background:linear-gradient(90deg,#37d67a,#4ea6ff)}
+    #combatNote{margin-top:10px;font-size:12px;color:#ffd166;display:none}
+    #dialog{
+      position:fixed;left:50%;bottom:20px;transform:translateX(-50%);
+      width:min(820px, calc(100% - 30px));
+      z-index:11;color:#e7eefc;
+      background:rgba(10,14,22,.75);border:1px solid rgba(255,255,255,.14);
+      border-radius:16px;padding:12px 14px;display:none;
+      box-shadow:0 18px 60px rgba(0,0,0,.55);backdrop-filter: blur(8px)
+    }
+    #dialog strong{color:#fff}
+    #dialogText{font-size:14px;line-height:1.35}
+    #dialogBtns{margin-top:10px;display:flex;gap:10px;flex-wrap:wrap}
+    button{
+      cursor:pointer;border:1px solid rgba(255,255,255,.16);
+      background:rgba(78,166,255,.18);color:#e7eefc;
+      padding:8px 10px;border-radius:12px;font-weight:700
+    }
+    button.secondary{background:rgba(255,255,255,.08)}
+    #crosshair{
+      position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+      width:10px;height:10px;border:1px solid rgba(255,255,255,.55);
+      border-radius:2px;z-index:9;opacity:.35
+    }
+    #corner{
+      position:fixed;right:12px;top:12px;z-index:10;
+      color:#9fb1d1;font-size:12px;text-align:right;
+      background:rgba(10,14,22,.35);border:1px solid rgba(255,255,255,.10);
+      border-radius:14px;padding:10px 10px 8px
+    }
+    #corner b{color:#e7eefc}
+    a{color:#8b5cf6}
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <div id="title">⚔️ Mini Zelda 3D — Caballero vs Dragona</div>
+    <div id="quest"></div>
+    <div id="hint"></div>
+
+    <div id="stats">
+      <div>
+        <div style="display:flex;justify-content:space-between;gap:10px">
+          <span>Vida</span><span id="hpText"></span>
+        </div>
+        <div class="bar"><div class="fill" id="hpFill"></div></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;gap:10px">
+          <span>Energía</span><span id="stText"></span>
+        </div>
+        <div class="bar"><div class="fill" id="stFill"></div></div>
+      </div>
+      <div>Daño: <b id="dmgText"></b></div>
+      <div>Defensa: <b id="defText"></b></div>
+    </div>
+
+    <div id="combatNote">⚠️ ¡En combate! Mantén distancia y esquiva con Espacio.</div>
+  </div>
+
+  <div id="corner">
+    <div><b>Controles</b></div>
+    <div>WASD mover • Shift correr</div>
+    <div>Espacio esquiva • Click atacar</div>
+    <div>Click derecho bloquear • E interactuar</div>
+  </div>
+
+  <div id="crosshair"></div>
+
+  <div id="dialog">
+    <div id="dialogText"></div>
+    <div id="dialogBtns"></div>
+  </div>
+
+  <!-- Three.js -->
+  <script type="module">
+    import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+
+    // =========================
+    // Utilidades simples
+    // =========================
+    const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+    const lerp  = (a,b,t)=>a+(b-a)*t;
+    const dist2 = (ax,az,bx,bz)=>((ax-bx)**2+(az-bz)**2);
+    const now = ()=>performance.now();
+
+    // =========================
+    // UI refs
+    // =========================
+    const $quest = document.getElementById("quest");
+    const $hint  = document.getElementById("hint");
+    const $hpText = document.getElementById("hpText");
+    const $stText = document.getElementById("stText");
+    const $hpFill = document.getElementById("hpFill");
+    const $stFill = document.getElementById("stFill");
+    const $dmgText = document.getElementById("dmgText");
+    const $defText = document.getElementById("defText");
+    const $combatNote = document.getElementById("combatNote");
+
+    const $dialog = document.getElementById("dialog");
+    const $dialogText = document.getElementById("dialogText");
+    const $dialogBtns = document.getElementById("dialogBtns");
+
+    function showDialog(html, buttons=[]) {
+      $dialog.style.display = "block";
+      $dialogText.innerHTML = html;
+      $dialogBtns.innerHTML = "";
+      for (const b of buttons) {
+        const btn = document.createElement("button");
+        btn.textContent = b.text;
+        if (b.secondary) btn.classList.add("secondary");
+        btn.onclick = b.onClick;
+        $dialogBtns.appendChild(btn);
+      }
+    }
+    function hideDialog(){
+      $dialog.style.display = "none";
+      $dialogText.innerHTML = "";
+      $dialogBtns.innerHTML = "";
+    }
+
+    // =========================
+    // Escena / cámara / render
+    // =========================
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x070a10, 10, 70);
+
+    const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 200);
+    const renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    addEventListener("resize", () => {
+      camera.aspect = innerWidth/innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+
+    // Luces
+    const hemi = new THREE.HemisphereLight(0xbdd6ff, 0x0a1020, 1.0);
+    scene.add(hemi);
+    const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+    dir.position.set(10,18,8);
+    scene.add(dir);
+
+    // Suelo principal
+    const groundMat = new THREE.MeshStandardMaterial({color:0x183022, roughness:.95});
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(260,260), groundMat);
+    ground.rotation.x = -Math.PI/2;
+    ground.position.y = 0;
+    scene.add(ground);
+
+    // =========================
+    // Zonas (pueblo / fuente / bosque / mazmorra)
+    // Coordenadas en XZ
+    // =========================
+    const ZONES = {
+      TOWN:     { x: 0,  z: 0 },
+      SWORD:    { x: 28, z: -18 },
+      FOUNTAIN: { x: -26,z: -18 },
+      SHIELD:   { x: 28, z: 26 },
+      DUNGEON:  { x: -34,z: 30 },
+      BOSS:     { x: -34,z: 46 }
+    };
+
+    // Marcadores visuales
+    function addMarker(pos, color, label) {
+      const g = new THREE.CylinderGeometry(0.25,0.25,2.2,12);
+      const m = new THREE.MeshStandardMaterial({color, emissive: color, emissiveIntensity:0.25});
+      const p = new THREE.Mesh(g,m);
+      p.position.set(pos.x, 1.1, pos.z);
+      scene.add(p);
+
+      // cartel simple
+      const sign = new THREE.Mesh(
+        new THREE.BoxGeometry(3.2,1.2,.2),
+        new THREE.MeshStandardMaterial({color:0x101a2a, roughness:.9})
+      );
+      sign.position.set(pos.x, 1.9, pos.z+2.3);
+      scene.add(sign);
+
+      // texto fake (no canvas) -> solo como “rayita” decorativa
+      const stripe = new THREE.Mesh(
+        new THREE.BoxGeometry(2.6,.12,.22),
+        new THREE.MeshStandardMaterial({color:0x4ea6ff})
+      );
+      stripe.position.copy(sign.position).add(new THREE.Vector3(0,.1,.02));
+      scene.add(stripe);
+
+      return { pillar:p, sign, label };
+    }
+
+    const markers = {
+      elder: addMarker(ZONES.TOWN,     0x8b5cf6, "Anciano"),
+      sword: addMarker(ZONES.SWORD,    0x4ea6ff, "Espada Divina"),
+      font:  addMarker(ZONES.FOUNTAIN, 0x37d67a, "Fuente Sagrada"),
+      shield:addMarker(ZONES.SHIELD,   0xffd166, "Escudo Mellizos Fantasmas"),
+      dung:  addMarker(ZONES.DUNGEON,  0xff6b6b, "Mazmorra"),
+    };
+
+    // “Casas” del pueblo
+    function house(x,z, w=6, d=6) {
+      const base = new THREE.Mesh(new THREE.BoxGeometry(w,3.5,d),
+        new THREE.MeshStandardMaterial({color:0x2a3c5e, roughness:.9}));
+      base.position.set(x, 1.75, z);
+      scene.add(base);
+
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(Math.max(w,d)*0.55, 2.5, 4),
+        new THREE.MeshStandardMaterial({color:0x5a2f2f, roughness:.95}));
+      roof.position.set(x, 4.1, z);
+      roof.rotation.y = Math.PI/4;
+      scene.add(roof);
+    }
+    house(-6, 6, 6, 6);
+    house( 8, 8, 7, 5);
+    house(-10,-6, 5, 7);
+
+    // Camino simple
+    function pathLine(ax,az,bx,bz) {
+      const len = Math.hypot(bx-ax, bz-az);
+      const geo = new THREE.BoxGeometry(1.8, 0.05, len);
+      const mat = new THREE.MeshStandardMaterial({color:0x3a2f1f, roughness:1});
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set((ax+bx)/2, 0.03, (az+bz)/2);
+      mesh.rotation.y = Math.atan2((bx-ax),(bz-az)); // ojo: por el eje Z
+      scene.add(mesh);
+    }
+    pathLine(0,0, ZONES.SWORD.x, ZONES.SWORD.z);
+    pathLine(0,0, ZONES.FOUNTAIN.x, ZONES.FOUNTAIN.z);
+    pathLine(0,0, ZONES.SHIELD.x, ZONES.SHIELD.z);
+    pathLine(0,0, ZONES.DUNGEON.x, ZONES.DUNGEON.z);
+
+    // Mazmorra (entrada)
+    const dungeon = new THREE.Mesh(
+      new THREE.BoxGeometry(10,6,10),
+      new THREE.MeshStandardMaterial({color:0x1a1f2c, roughness:.9})
+    );
+    dungeon.position.set(ZONES.DUNGEON.x, 3, ZONES.DUNGEON.z);
+    scene.add(dungeon);
+
+    const dungeonDoor = new THREE.Mesh(
+      new THREE.BoxGeometry(2.6,3.6,.4),
+      new THREE.MeshStandardMaterial({color:0x4b3b2b, roughness:.85})
+    );
+    dungeonDoor.position.set(ZONES.DUNGEON.x, 1.8, ZONES.DUNGEON.z + 5.2);
+    scene.add(dungeonDoor);
+
+    // Fuente sagrada
+    const fountain = new THREE.Mesh(
+      new THREE.CylinderGeometry(4.2,4.2,0.7,24),
+      new THREE.MeshStandardMaterial({color:0x253a4f, roughness:.9})
+    );
+    fountain.position.set(ZONES.FOUNTAIN.x, 0.35, ZONES.FOUNTAIN.z);
+    scene.add(fountain);
+
+    const water = new THREE.Mesh(
+      new THREE.CylinderGeometry(3.4,3.4,0.2,24),
+      new THREE.MeshStandardMaterial({color:0x2aa6ff, roughness:.2, metalness:.1, emissive:0x113355, emissiveIntensity:0.7})
+    );
+    water.position.set(ZONES.FOUNTAIN.x, 0.62, ZONES.FOUNTAIN.z);
+    scene.add(water);
+
+    // =========================
+    // Player (caballero)
+    // =========================
+    const player = {
+      pos: new THREE.Vector3(0, 0, 2),
+      vel: new THREE.Vector3(),
+      dir: new THREE.Vector3(0,0,1),
+      hp: 100, hpMax: 100,
+      st: 100, stMax: 100,
+      dmg: 10,
+      def: 0,
+      hasSword: false,
+      hasSwordPurified: false,
+      hasShield: false,
+      hasShieldPurified: false,
+      blocking: false,
+      dodging: false,
+      dodgeUntil: 0,
+      attackCdUntil: 0,
+      lastHitUntil: 0,
+    };
+
+    const knight = new THREE.Group();
+    scene.add(knight);
+
+    const body = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.65, 1.0, 6, 10),
+      new THREE.MeshStandardMaterial({color:0xc9d6ff, roughness:.8, metalness:.1})
+    );
+    body.position.y = 1.35;
+    knight.add(body);
+
+    const helm = new THREE.Mesh(
+      new THREE.SphereGeometry(0.45, 16, 12),
+      new THREE.MeshStandardMaterial({color:0x95a3c2, roughness:.7, metalness:.15})
+    );
+    helm.position.y = 2.35;
+    knight.add(helm);
+
+    const cape = new THREE.Mesh(
+      new THREE.BoxGeometry(0.9,1.2,0.12),
+      new THREE.MeshStandardMaterial({color:0x8b1d1d, roughness:.9})
+    );
+    cape.position.set(0, 1.55, -0.55);
+    knight.add(cape);
+
+    // arma/escudo visibles (activamos según progreso)
+    const swordMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(0.12,1.2,0.12),
+      new THREE.MeshStandardMaterial({color:0xdfe8ff, emissive:0x0, metalness:.35, roughness:.35})
+    );
+    swordMesh.position.set(0.62, 1.45, 0.05);
+    swordMesh.rotation.z = Math.PI/8;
+    swordMesh.visible = false;
+    knight.add(swordMesh);
+
+    const shieldMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.55,0.55,0.12,18),
+      new THREE.MeshStandardMaterial({color:0x283a70, metalness:.1, roughness:.7})
+    );
+    shieldMesh.rotation.x = Math.PI/2;
+    shieldMesh.position.set(-0.72, 1.35, 0.05);
+    shieldMesh.visible = false;
+    knight.add(shieldMesh);
+
+    // =========================
+    // Enemigos (duendes) y dragona
+    // =========================
+    const enemies = [];
+    const projectiles = [];
+
+    function makeGoblin(level, x, z, tag="") {
+      const g = new THREE.Group();
+      g.position.set(x, 0, z);
+
+      const mat = new THREE.MeshStandardMaterial({color: level===2 ? 0x2bb673 : 0x3ae58e, roughness:.9});
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 14, 10), mat);
+      head.position.y = 1.75;
+      g.add(head);
+
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.1, 0.7), mat);
+      torso.position.y = 1.05;
+      g.add(torso);
+
+      const club = new THREE.Mesh(
+        new THREE.BoxGeometry(0.18, 0.9, 0.18),
+        new THREE.MeshStandardMaterial({color:0x6b4a2b, roughness:.95})
+      );
+      club.position.set(0.65, 1.0, 0.0);
+      club.rotation.z = -0.5;
+      g.add(club);
+
+      // equipamiento “de lore” solo decorativo
+      if (tag.includes("telaraña")) {
+        const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,1.5,10),
+          new THREE.MeshStandardMaterial({color:0x2b2f3a, roughness:.6}));
+        staff.position.set(-0.7, 1.1, 0.0);
+        staff.rotation.z = 0.35;
+        g.add(staff);
+      }
+
+      scene.add(g);
+
+      const hpBase = level===2 ? 55 : 75;
+      const dmgBase = level===2 ? 10 : 13;
+
+      return {
+        type:"goblin",
+        level,
+        tag,
+        mesh:g,
+        hp: hpBase,
+        hpMax: hpBase,
+        dmg: dmgBase,
+        speed: level===2 ? 2.2 : 2.5,
+        aggro: 10 + level*2,
+        attackRange: 1.55,
+        attackCdUntil: 0,
+        alive: true
+      };
+    }
+
+    function makeDragon(x,z) {
+      const g = new THREE.Group();
+      g.position.set(x, 0, z);
+
+      const body = new THREE.Mesh(
+        new THREE.SphereGeometry(1.4, 18, 14),
+        new THREE.MeshStandardMaterial({color:0x6b2cff, roughness:.75, metalness:.05, emissive:0x120022, emissiveIntensity:0.7})
+      );
+      body.position.y = 2.0;
+      g.add(body);
+
+      const belly = new THREE.Mesh(
+        new THREE.SphereGeometry(1.05, 18, 14),
+        new THREE.MeshStandardMaterial({color:0x2b0b45, roughness:.9})
+      );
+      belly.position.set(0,1.7,0.65);
+      g.add(belly);
+
+      const head = new THREE.Mesh(
+        new THREE.SphereGeometry(0.95, 18, 14),
+        new THREE.MeshStandardMaterial({color:0x5a1fe0, roughness:.7, emissive:0x180028, emissiveIntensity:0.9})
+      );
+      head.position.set(0,2.65,-1.25);
+      g.add(head);
+
+      const horn1 = new THREE.Mesh(
+        new THREE.ConeGeometry(0.18,0.75,10),
+        new THREE.MeshStandardMaterial({color:0x111827, roughness:.4})
+      );
+      horn1.position.set(0.45,3.1,-1.6);
+      horn1.rotation.z = -0.35;
+      g.add(horn1);
+
+      const horn2 = horn1.clone();
+      horn2.position.x = -0.45;
+      horn2.rotation.z = 0.35;
+      g.add(horn2);
+
+      const wingMat = new THREE.MeshStandardMaterial({color:0x2a124f, roughness:.85, side:THREE.DoubleSide});
+      const wingGeo = new THREE.PlaneGeometry(2.8,1.6);
+      const w1 = new THREE.Mesh(wingGeo, wingMat);
+      w1.position.set(1.8,2.2,0.1); w1.rotation.y = 0.6;
+      g.add(w1);
+      const w2 = w1.clone();
+      w2.position.x = -1.8; w2.rotation.y = -0.6;
+      g.add(w2);
+
+      scene.add(g);
+
+      return {
+        type:"dragon",
+        mesh:g,
+        hp: 260,
+        hpMax: 260,
+        dmg: 20,
+        speed: 1.65,
+        aggro: 18,
+        attackRange: 3.0,
+        breathCdUntil: 0,
+        meleeCdUntil: 0,
+        alive: true
+      };
+    }
+
+    // =========================
+    // Progreso / historia (misiones)
+    // =========================
+    const QUEST = {
+      MEET_ELDER: 0,
+      GET_SWORD: 1,
+      REPORT_GOBLIN2: 2,
+      PURIFY_SWORD: 3,
+      GET_SHIELD: 4,
+      PURIFY_SHIELD: 5,
+      GO_DUNGEON: 6,
+      CLEAR_GUARDIANS: 7,
+      KILL_DRAGON: 8,
+      DONE: 9,
+    };
+    let quest = QUEST.MEET_ELDER;
+
+    // Spawns control
+    let goblinSword = null;   // lvl2
+    let goblinShield = null;  // lvl3 + cetro telaraña
+    let guardianA = null;     // lvl3 - bosque/hielo
+    let guardianB = null;     // lvl3 - rayo oscuro/fuego
+    let dragon = null;
+
+    function setQuest(q) {
+      quest = q;
+      updateUI();
+      // spawns por fase
+      if (quest === QUEST.GET_SWORD && !goblinSword) {
+        goblinSword = makeGoblin(2, ZONES.SWORD.x + 3, ZONES.SWORD.z - 2, "hipnotizado");
+        enemies.push(goblinSword);
+      }
+      if (quest === QUEST.GET_SHIELD && !goblinShield) {
+        goblinShield = makeGoblin(3, ZONES.SHIELD.x - 2, ZONES.SHIELD.z + 2, "con escudo + cetro telaraña");
+        enemies.push(goblinShield);
+      }
+      if ((quest === QUEST.GO_DUNGEON || quest === QUEST.CLEAR_GUARDIANS) && (!guardianA || !guardianB)) {
+        if (!guardianA) { guardianA = makeGoblin(3, ZONES.DUNGEON.x + 2.5, ZONES.DUNGEON.z + 9, "guardia: escudo bosque + espada hielo"); enemies.push(guardianA); }
+        if (!guardianB) { guardianB = makeGoblin(3, ZONES.DUNGEON.x - 2.5, ZONES.DUNGEON.z + 9, "guardia: espada rayo oscuro + escudo fuego"); enemies.push(guardianB); }
+      }
+      if (quest === QUEST.KILL_DRAGON && !dragon) {
+        dragon = makeDragon(ZONES.BOSS.x, ZONES.BOSS.z);
+        enemies.push(dragon);
+      }
+    }
+
+    function questText() {
+      switch (quest) {
+        case QUEST.MEET_ELDER:
+          return "Habla con el anciano del pueblo (ve al marcador morado) y pulsa <b>E</b>.";
+        case QUEST.GET_SWORD:
+          return "Ve a por la <b>Espada Divina</b> (marcador azul). Cuidado: hay un duende <b>nivel 2</b> hipnotizado.";
+        case QUEST.REPORT_GOBLIN2:
+          return "Vuelve con el anciano y avísale de la amenaza (pulsa <b>E</b>).";
+        case QUEST.PURIFY_SWORD:
+          return "Ve a la <b>Fuente Sagrada</b> (marcador verde). El sacerdote purifica la espada (pulsa <b>E</b>).";
+        case QUEST.GET_SHIELD:
+          return "Ve a por el <b>Escudo de los Mellizos Fantasmas</b> (marcador amarillo). Hay un duende <b>nivel 3</b> con un <b>cetro telaraña</b>.";
+        case QUEST.PURIFY_SHIELD:
+          return "Vuelve a la <b>Fuente Sagrada</b> para purificar el escudo (pulsa <b>E</b>).";
+        case QUEST.GO_DUNGEON:
+          return "Entra en la <b>Mazmorra</b> (marcador rojo). Llega a la puerta de la sala de la dragona.";
+        case QUEST.CLEAR_GUARDIANS:
+          return "Derrota a los <b>2 duendes nivel 3</b> guardianes frente a la puerta.";
+        case QUEST.KILL_DRAGON:
+          return "Entra en la sala y derrota a la <b>Dragona</b> (magia oscura).";
+        case QUEST.DONE:
+          return "✅ ¡Has derrotado a la Dragona! El pueblo queda libre.";
+        default:
+          return "";
+      }
+    }
+
+    function updateUI() {
+      $quest.innerHTML = "🎯 Misión: " + questText();
+      $hint.innerHTML = "Tip: si bloqueas (click derecho) reduces daño, pero consumes energía. Si esquivas (Espacio) eres invencible un instante.";
+      $hpText.textContent = `${Math.ceil(player.hp)}/${player.hpMax}`;
+      $stText.textContent = `${Math.ceil(player.st)}/${player.stMax}`;
+      $hpFill.style.width = `${clamp(player.hp/player.hpMax,0,1)*100}%`;
+      $stFill.style.width = `${clamp(player.st/player.stMax,0,1)*100}%`;
+      $dmgText.textContent = player.dmg;
+      $defText.textContent = player.def;
+    }
+
+    // =========================
+    // Input
+    // =========================
+    const keys = new Set();
+    addEventListener("keydown", (e) => {
+      keys.add(e.code);
+      if (e.code === "KeyE") tryInteract();
+      if (e.code === "Escape") hideDialog();
+    });
+    addEventListener("keyup", (e)=>keys.delete(e.code));
+
+    // Evitar menú click derecho (para bloquear)
+    addEventListener("contextmenu", (e)=>e.preventDefault());
+
+    let mouseDownL = false;
+    let mouseDownR = false;
+
+    addEventListener("mousedown", (e) => {
+      if (e.button === 0) mouseDownL = true;
+      if (e.button === 2) mouseDownR = true;
+    });
+    addEventListener("mouseup", (e) => {
+      if (e.button === 0) mouseDownL = false;
+      if (e.button === 2) mouseDownR = false;
+    });
+
+    // =========================
+    // Interacciones / diálogos
+    // =========================
+    const ELDER_STORY = `"<b>Hace tiempo</b> un caballero consiguió derrotar a la <b>malvada dragona</b> que nos tenía como esclavos.
+    Por suerte el gran caballero contaba con la <b>espada divina</b> y el <b>escudo de los mellizos fantasmas</b>.
+    La dragona murió y el caballero nos liberó, pero la dragona hizo un trato con la muerte;
+    si la dragona revivía tendría <b>magia oscura</b> pero tendría que <b>sacrificar al caballero</b> y <b>capturar todas las almas</b> de los que pueda."`;
+
+    function tryInteract() {
+      if ($dialog.style.display === "block") return;
+
+      // Anciano
+      if (dist2(player.pos.x, player.pos.z, ZONES.TOWN.x, ZONES.TOWN.z) < 3.6*3.6) {
+        if (quest === QUEST.MEET_ELDER) {
+          showDialog(
+            `<strong>Anciano:</strong> ${ELDER_STORY}<br><br>
+             <strong>Anciano:</strong> Tú puedes detenerla. La <b>Espada Divina</b> está al este del pueblo y el <b>Escudo de los Mellizos Fantasmas</b> al noreste.
+             Ve con cuidado...`,
+            [
+              { text:"Acepto la misión", onClick: ()=>{ hideDialog(); setQuest(QUEST.GET_SWORD); } },
+              { text:"Cerrar", secondary:true, onClick: hideDialog }
+            ]
+          );
+          return;
+        }
+
+        if (quest === QUEST.REPORT_GOBLIN2) {
+          showDialog(
+            `<strong>Tú:</strong> Hay un duende hipnotizado por la maldad de la dragona en la zona de la espada.<br>
+             <strong>Anciano:</strong> Lo temía... Ve a la <b>Fuente Sagrada</b>. El sacerdote puede purificar la espada cuando la consigas.`,
+            [
+              { text:"Entendido", onClick: ()=>{ hideDialog(); setQuest(QUEST.PURIFY_SWORD); } },
+              { text:"Cerrar", secondary:true, onClick: hideDialog }
+            ]
+          );
+          return;
+        }
+
+        showDialog(
+          `<strong>Anciano:</strong> No pierdas tiempo. La dragona quiere almas... y tú tienes cara de héroe con prisa.`,
+          [{ text:"Cerrar", secondary:true, onClick: hideDialog }]
+        );
+        return;
+      }
+
+      // Espada
+      if (dist2(player.pos.x, player.pos.z, ZONES.SWORD.x, ZONES.SWORD.z) < 3.2*3.2) {
+        if (quest === QUEST.GET_SWORD) {
+          if (goblinSword && goblinSword.alive) {
+            showDialog(`<strong>Nota:</strong> Un duende niv.2 protege la zona. Primero derrótalo.`, [{text:"Ok", onClick: hideDialog}]);
+          } else {
+            player.hasSword = true;
+            swordMesh.visible = true;
+            player.dmg = 14; // espada sin purificar
+            showDialog(`<strong>Has obtenido:</strong> <b>Espada Divina</b> (sin purificar).<br>Daño aumentado.`, [
+              { text:"Volver con el anciano", onClick: ()=>{ hideDialog(); setQuest(QUEST.REPORT_GOBLIN2); } }
+            ]);
+          }
+          updateUI();
+          return;
+        }
+      }
+
+      // Fuente
+      if (dist2(player.pos.x, player.pos.z, ZONES.FOUNTAIN.x, ZONES.FOUNTAIN.z) < 4.8*4.8) {
+        if (quest === QUEST.PURIFY_SWORD) {
+          if (!player.hasSword) {
+            showDialog(`<strong>Sacerdote:</strong> No puedo purificar lo que no traes.`, [{text:"Vale", onClick: hideDialog}]);
+          } else {
+            player.hasSwordPurified = true;
+            player.dmg = 18;
+            swordMesh.material.emissive = new THREE.Color(0x4ea6ff);
+            swordMesh.material.emissiveIntensity = 0.6;
+            showDialog(`<strong>Sacerdote:</strong> La luz del agua sagrada limpia la sombra.<br><strong>Espada purificada.</strong>`, [
+              { text:"Ir a por el escudo", onClick: ()=>{ hideDialog(); setQuest(QUEST.GET_SHIELD); } }
+            ]);
+          }
+          updateUI();
+          return;
+        }
+        if (quest === QUEST.PURIFY_SHIELD) {
+          if (!player.hasShield) {
+            showDialog(`<strong>Sacerdote:</strong> Trae el escudo primero.`, [{text:"Ok", onClick: hideDialog}]);
+          } else {
+            player.hasShieldPurified = true;
+            player.def = 6;
+            shieldMesh.material.emissive = new THREE.Color(0xffd166);
+            shieldMesh.material.emissiveIntensity = 0.45;
+            showDialog(`<strong>Sacerdote:</strong> Los Mellizos Fantasmas protegen a quien no teme.<br><strong>Escudo purificado.</strong>`, [
+              { text:"A la mazmorra", onClick: ()=>{ hideDialog(); setQuest(QUEST.GO_DUNGEON); } }
+            ]);
+          }
+          updateUI();
+          return;
+        }
+        showDialog(`<strong>Sacerdote:</strong> El agua sagrada no hace milagros… pero ayuda. Y tú vas a necesitar ambos.`, [{text:"Cerrar", secondary:true, onClick: hideDialog}]);
+        return;
+      }
+
+      // Escudo
+      if (dist2(player.pos.x, player.pos.z, ZONES.SHIELD.x, ZONES.SHIELD.z) < 3.2*3.2) {
+        if (quest === QUEST.GET_SHIELD) {
+          if (goblinShield && goblinShield.alive) {
+            showDialog(`<strong>Nota:</strong> Un duende niv.3 con <b>cetro telaraña</b> protege el escudo. Derrótalo.`, [{text:"Ok", onClick: hideDialog}]);
+          } else {
+            player.hasShield = true;
+            shieldMesh.visible = true;
+            player.def = 3; // sin purificar
+            showDialog(`<strong>Has obtenido:</strong> <b>Escudo de los Mellizos Fantasmas</b> (sin purificar).<br>Defensa aumentada.`, [
+              { text:"Ir a purificarlo", onClick: ()=>{ hideDialog(); setQuest(QUEST.PURIFY_SHIELD); } }
+            ]);
+          }
+          updateUI();
+          return;
+        }
+      }
+
+      // Puerta mazmorra
+      const doorX = ZONES.DUNGEON.x, doorZ = ZONES.DUNGEON.z + 7.6;
+      if (dist2(player.pos.x, player.pos.z, doorX, doorZ) < 3.2*3.2) {
+        if (quest === QUEST.GO_DUNGEON) {
+          showDialog(`<strong>Puerta:</strong> Se oye un susurro oscuro detrás...<br>Hay presencia de guardianes.`, [
+            { text:"Entrar y enfrentar guardianes", onClick: ()=>{ hideDialog(); setQuest(QUEST.CLEAR_GUARDIANS); } }
+          ]);
+          return;
+        }
+        if (quest === QUEST.CLEAR_GUARDIANS) {
+          showDialog(`<strong>Puerta:</strong> No se abrirá hasta que caigan los dos guardianes.`, [{text:"Entendido", onClick: hideDialog}]);
+          return;
+        }
+        if (quest === QUEST.KILL_DRAGON) {
+          showDialog(`<strong>Puerta:</strong> Está abierta. La oscuridad… respira.`, [
+            { text:"Entrar a la sala de la dragona", onClick: ()=>{ hideDialog(); } }
+          ]);
+          return;
+        }
+      }
+    }
+
+    // =========================
+    // Combate
+    // =========================
+    function inCombat() {
+      for (const e of enemies) {
+        if (!e.alive) continue;
+        const d = dist2(player.pos.x, player.pos.z, e.mesh.position.x, e.mesh.position.z);
+        if (d < (e.aggro*e.aggro)) return true;
+      }
+      return false;
+    }
+
+    function playerAttack() {
+      const t = now();
+      if (t < player.attackCdUntil) return;
+      if (player.st < 10) return;
+
+      player.st -= 10;
+      player.attackCdUntil = t + 420;
+
+      // golpe en cono sencillo
+      const px = player.pos.x, pz = player.pos.z;
+      const forward = new THREE.Vector3(player.dir.x,0,player.dir.z).normalize();
+      let hitSomeone = false;
+
+      for (const e of enemies) {
+        if (!e.alive) continue;
+        const ex = e.mesh.position.x, ez = e.mesh.position.z;
+        const v = new THREE.Vector3(ex - px, 0, ez - pz);
+        const d = v.length();
+        if (d > 2.2) continue;
+        v.normalize();
+        const dot = forward.dot(v);
+        if (dot < 0.2) continue;
+
+        // daño
+        const dmg = player.dmg;
+        e.hp -= dmg;
+        hitSomeone = true;
+
+        // “flash” al recibir
+        e.mesh.traverse(obj=>{
+          if (obj.isMesh) obj.material.emissive = new THREE.Color(0x220000), obj.material.emissiveIntensity = 0.9;
+        });
+        setTimeout(()=> {
+          if (!e.mesh) return;
+          e.mesh.traverse(obj=>{
+            if (obj.isMesh) obj.material.emissiveIntensity = 0.0;
+          });
+        }, 110);
+
+        if (e.hp <= 0) {
+          e.alive = false;
+          scene.remove(e.mesh);
+          // progresos por muerte
+          if (e === goblinSword && quest === QUEST.GET_SWORD) {
+            showDialog(`<strong>Duende derrotado.</strong><br>Ahora puedes recoger la espada (pulsa <b>E</b> cerca del marcador).`, [{text:"Ok", onClick: hideDialog}]);
+          }
+          if (e === goblinShield && quest === QUEST.GET_SHIELD) {
+            showDialog(`<strong>Duende derrotado.</strong><br>Puedes recoger el escudo (pulsa <b>E</b>).`, [{text:"Ok", onClick: hideDialog}]);
+          }
+          if ((e === guardianA || e === guardianB) && quest === QUEST.CLEAR_GUARDIANS) {
+            const aDead = guardianA && !guardianA.alive;
+            const bDead = guardianB && !guardianB.alive;
+            if (aDead && bDead) {
+              showDialog(`<strong>Guardianes caídos.</strong><br>La puerta cede. La dragona te espera.`, [
+                { text:"Entrar a la sala", onClick: ()=>{ hideDialog(); setQuest(QUEST.KILL_DRAGON); } }
+              ]);
+            }
+          }
+          if (e === dragon && quest === QUEST.KILL_DRAGON) {
+            setQuest(QUEST.DONE);
+            showDialog(`<strong>Victoria.</strong><br>La magia oscura se disipa. El pueblo queda libre.<br><br>
+                        (Sí, suena épico. Y lo es.)`, [{text:"Fin", onClick: hideDialog}]);
+          }
+        }
+      }
+
+      // efecto de “slash”
+      const slash = new THREE.Mesh(
+        new THREE.RingGeometry(0.3, 1.0, 22, 1, 0, Math.PI*1.2),
+        new THREE.MeshBasicMaterial({color:0x9fd2ff, transparent:true, opacity:0.45, side:THREE.DoubleSide})
+      );
+      slash.position.set(player.pos.x + forward.x*1.1, 1.2, player.pos.z + forward.z*1.1);
+      slash.rotation.x = -Math.PI/2;
+      slash.rotation.z = Math.atan2(forward.x, forward.z);
+      scene.add(slash);
+      setTimeout(()=>scene.remove(slash), 120);
+
+      updateUI();
+    }
+
+    function enemyMeleeHit(e, dmg) {
+      const t = now();
+      if (player.dodging && t < player.dodgeUntil) return;
+
+      let final = dmg;
+      if (player.blocking && player.st > 0) {
+        // bloqueo reduce daño
+        player.st = Math.max(0, player.st - 12);
+        final *= 0.45;
+      }
+      final = Math.max(1, final - player.def);
+
+      player.hp -= final;
+      player.lastHitUntil = t + 250;
+
+      // pequeño retroceso
+      const ex = e.mesh.position.x, ez = e.mesh.position.z;
+      const push = new THREE.Vector3(player.pos.x - ex, 0, player.pos.z - ez).normalize().multiplyScalar(0.6);
+      player.pos.add(push);
+
+      if (player.hp <= 0) {
+        player.hp = 0;
+        updateUI();
+        showDialog(`<strong>Has caído.</strong><br>La dragona se ríe en tu cara (con mucha educación, pero se ríe).`, [
+          { text:"Revivir en el pueblo", onClick: ()=>{ hideDialog(); respawn(); } }
+        ]);
+      } else {
+        updateUI();
+      }
+    }
+
+    function dragonBreath(e) {
+      const t = now();
+      if (t < e.breathCdUntil) return;
+      e.breathCdUntil = t + 2200;
+
+      // proyectil “magia oscura”
+      const orb = new THREE.Mesh(
+        new THREE.SphereGeometry(0.22, 14, 10),
+        new THREE.MeshStandardMaterial({color:0x8b5cf6, emissive:0x2a003a, emissiveIntensity:1.1, roughness:.35})
+      );
+      orb.position.copy(e.mesh.position).add(new THREE.Vector3(0,2.2,-1.0));
+
+      const dir = new THREE.Vector3(player.pos.x - e.mesh.position.x, 0, player.pos.z - e.mesh.position.z).normalize();
+      const vel = dir.multiplyScalar(10);
+
+      scene.add(orb);
+      projectiles.push({ mesh:orb, vel, born:t, dmg: 16 });
+    }
+
+    // =========================
+    // Respawn
+    // =========================
+    function respawn() {
+      player.pos.set(0,0,2);
+      player.hp = player.hpMax;
+      player.st = player.stMax;
+      player.blocking = false;
+      player.dodging = false;
+      player.dodgeUntil = 0;
+
+      // Reiniciar quest suavemente (manteniendo items)
+      if (quest !== QUEST.DONE) {
+        // si ya tienes items, no los quites
+        // solo te manda al objetivo actual
+      }
+      updateUI();
+    }
+
+    // =========================
+    // Movimiento / cámara
+    // =========================
+    function updatePlayer(dt) {
+      // bloqueo con click derecho
+      player.blocking = mouseDownR && player.hasShield;
+
+      // ataque con click izquierdo
+      if (mouseDownL) {
+        mouseDownL = false; // golpe por click
+        playerAttack();
+      }
+
+      // esquiva
+      if (keys.has("Space")) {
+        const t = now();
+        if (!player.dodging && player.st >= 18) {
+          player.dodging = true;
+          player.st -= 18;
+          player.dodgeUntil = t + 260;
+          player.dodgeCdUntil = t + 520;
+          updateUI();
+        }
+      }
+      if (player.dodging && now() > player.dodgeUntil) player.dodging = false;
+
+      // regeneración stamina
+      player.st = clamp(player.st + dt*16, 0, player.stMax);
+
+      let moveX = 0, moveZ = 0;
+      if (keys.has("KeyW")) moveZ -= 1;
+      if (keys.has("KeyS")) moveZ += 1;
+      if (keys.has("KeyA")) moveX -= 1;
+      if (keys.has("KeyD")) moveX += 1;
+
+      const running = keys.has("ShiftLeft") || keys.has("ShiftRight");
+      let speed = running ? 6.2 : 4.2;
+      if (player.blocking) speed *= 0.65;
+
+      const v = new THREE.Vector3(moveX, 0, moveZ);
+      if (v.lengthSq() > 0) {
+        v.normalize();
+        player.dir.copy(v);
+        const step = v.multiplyScalar(speed * dt);
+        if (player.dodging) step.multiplyScalar(2.1);
+        player.pos.add(step);
+      }
+
+      // límites del mapa
+      player.pos.x = clamp(player.pos.x, -120, 120);
+      player.pos.z = clamp(player.pos.z, -120, 120);
+
+      // aplicar a mesh
+      knight.position.set(player.pos.x, 0, player.pos.z);
+      const yaw = Math.atan2(player.dir.x, player.dir.z);
+      knight.rotation.y = yaw;
+
+      // cámara tercera persona
+      const camBack = new THREE.Vector3(0, 0, 1.0).applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
+      const camPos = new THREE.Vector3(
+        player.pos.x - camBack.x*7.5,
+        6.2,
+        player.pos.z - camBack.z*7.5
+      );
+      camera.position.lerp(camPos, 0.08);
+      camera.lookAt(player.pos.x, 1.5, player.pos.z);
+
+      // agua anim
+      water.position.y = 0.62 + Math.sin(now()/350)*0.03;
+      water.material.emissiveIntensity = 0.55 + Math.sin(now()/500)*0.15;
+    }
+
+    // =========================
+    // IA Enemiga
+    // =========================
+    function updateEnemies(dt) {
+      const t = now();
+      let combat = false;
+
+      for (const e of enemies) {
+        if (!e.alive) continue;
+
+        const ex = e.mesh.position.x, ez = e.mesh.position.z;
+        const px = player.pos.x, pz = player.pos.z;
+
+        const d2 = dist2(ex,ez,px,pz);
+        const aggro2 = e.aggro*e.aggro;
+
+        if (d2 < aggro2) combat = true;
+
+        if (e.type === "goblin") {
+          if (d2 < aggro2) {
+            const d = Math.sqrt(d2);
+            const dir = new THREE.Vector3(px-ex, 0, pz-ez).normalize();
+
+            // acercarse si está lejos
+            if (d > e.attackRange) {
+              e.mesh.position.add(dir.multiplyScalar(e.speed * dt));
+            } else {
+              // atacar si cd listo
+              if (t > e.attackCdUntil) {
+                e.attackCdUntil = t + 700 - e.level*60;
+                enemyMeleeHit(e, e.dmg);
+              }
+            }
+
+            // mirar al player
+            e.mesh.rotation.y = Math.atan2(px-ex, pz-ez);
+          }
+        }
+
+        if (e.type === "dragon") {
+          if (quest !== QUEST.KILL_DRAGON && quest !== QUEST.DONE) continue;
+
+          const d = Math.sqrt(d2);
+          const dir = new THREE.Vector3(px-ex, 0, pz-ez).normalize();
+
+          // presión lenta + alternar ataques
+          if (d > e.attackRange) {
+            e.mesh.position.add(dir.multiplyScalar(e.speed * dt));
+          } else {
+            // melee
+            if (t > e.meleeCdUntil) {
+              e.meleeCdUntil = t + 950;
+              enemyMeleeHit(e, e.dmg);
+            }
+          }
+
+          // breath a media distancia
+          if (d < 18 && d > 6) {
+            dragonBreath(e);
+          }
+
+          e.mesh.rotation.y = Math.atan2(px-ex, pz-ez);
+
+          // “pulsación” mágica
+          e.mesh.traverse(o=>{
+            if (o.isMesh && o.material && o.material.emissiveIntensity !== undefined) {
+              o.material.emissiveIntensity = 0.55 + Math.sin(t/260)*0.25;
+            }
+          });
+        }
+      }
+
+      $combatNote.style.display = combat ? "block" : "none";
+    }
+
+    // =========================
+    // Proyectiles
+    // =========================
+    function updateProjectiles(dt) {
+      const t = now();
+      for (let i=projectiles.length-1;i>=0;i--) {
+        const p = projectiles[i];
+        p.mesh.position.x += p.vel.x * dt;
+        p.mesh.position.z += p.vel.z * dt;
+
+        // colisión con player
+        const d2p = dist2(p.mesh.position.x, p.mesh.position.z, player.pos.x, player.pos.z);
+        if (d2p < 1.2*1.2) {
+          // bloqueo reduce bastante
+          if (player.dodging && t < player.dodgeUntil) {
+            // esquiva total
+          } else {
+            let final = p.dmg;
+            if (player.blocking && player.st > 0) {
+              player.st = Math.max(0, player.st - 14);
+              final *= 0.35;
+            }
+            final = Math.max(1, final - player.def);
+            player.hp -= final;
+            if (player.hp <= 0) player.hp = 0;
+            updateUI();
+          }
+          scene.remove(p.mesh);
+          projectiles.splice(i,1);
+          continue;
+        }
+
+        // vida
+        if (t - p.born > 2400) {
+          scene.remove(p.mesh);
+          projectiles.splice(i,1);
+        }
+      }
+    }
+
+    // =========================
+    // Lógica de progreso automática (cuando cumples condiciones)
+    // =========================
+    function updateQuestProgress() {
+      if (quest === QUEST.GO_DUNGEON) {
+        // al acercarte a la puerta, te sugiere guardianes
+        const doorX = ZONES.DUNGEON.x, doorZ = ZONES.DUNGEON.z + 7.6;
+        if (dist2(player.pos.x, player.pos.z, doorX, doorZ) < 3.2*3.2) {
+          // nada automático, lo maneja interact
+        }
+      }
+      if (quest === QUEST.CLEAR_GUARDIANS) {
+        const aDead = guardianA && !guardianA.alive;
+        const bDead = guardianB && !guardianB.alive;
+        if (aDead && bDead) setQuest(QUEST.KILL_DRAGON);
+      }
+      if (quest === QUEST.KILL_DRAGON) {
+        // si estás en sala boss, ok (sin carga)
+      }
+    }
+
+    // =========================
+    // Arranque: intro rápida
+    // =========================
+    function intro() {
+      updateUI();
+      showDialog(
+        `<strong>Bienvenido, caballero.</strong><br><br>
+         Llegas a un pueblo asustado. El anciano te espera.<br>
+         <span style="color:#9fb1d1">Ve al marcador morado y pulsa <b>E</b>.</span>`,
+        [
+          {text:"Empezar", onClick: hideDialog},
+        ]
+      );
+    }
+
+    // =========================
+    // Loop
+    // =========================
+    let last = performance.now();
+    function loop() {
+      const t = performance.now();
+      const dt = Math.min(0.033, (t - last)/1000);
+      last = t;
+
+      updatePlayer(dt);
+      updateEnemies(dt);
+      updateProjectiles(dt);
+      updateQuestProgress();
+
+      // feedback visual al recibir daño
+      if (t < player.lastHitUntil) {
+        renderer.setClearColor(0x14040a, 1);
+      } else {
+        renderer.setClearColor(0x070a10, 1);
+      }
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(loop);
+    }
+
+    // Prevenir scroll con espacio en algunos navegadores
+    window.addEventListener("keydown", (e) => {
+      if (["Space"].includes(e.code)) e.preventDefault();
+    }, {passive:false});
+
+    // Iniciar
+    intro();
+    setQuest(QUEST.MEET_ELDER);
+    loop();
+  </script>
+</body>
+</html>

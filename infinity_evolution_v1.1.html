@@ -1,0 +1,1998 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Infinity Evolution — Juegos JC</title>
+  <meta name="description" content="Infinity Evolution — juego de oleadas con evolución infinita, prestigio y modo ranking."/>
+  <style>
+    :root{
+      --bg:#070b12;
+      --panel:rgba(18,28,48,.78);
+      --panel2:rgba(10,16,28,.78);
+      --line:rgba(120,150,220,.18);
+      --text:#eaf1ff;
+      --muted:#a6b6d6;
+      --good:#37d67a;
+      --warn:#ffd166;
+      --bad:#ff4d6d;
+      --a:#4ea6ff;
+      --b:#8b5cf6;
+      --shadow:0 18px 60px rgba(0,0,0,.55);
+      --r:18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:var(--sans);
+      color:var(--text);
+      background:
+        radial-gradient(1000px 600px at 15% 10%, rgba(78,166,255,.18), transparent 55%),
+        radial-gradient(900px 520px at 85% 0%, rgba(139,92,246,.16), transparent 55%),
+        radial-gradient(900px 520px at 70% 90%, rgba(55,214,122,.10), transparent 55%),
+        var(--bg);
+      overflow:hidden;
+    }
+    a{color:inherit}
+    .wrap{
+      height:100%;
+      display:grid;
+      grid-template-columns: 340px 1fr 360px;
+      gap:14px;
+      padding:14px;
+    }
+    @media (max-width: 1150px){
+      body{overflow:auto}
+      .wrap{grid-template-columns:1fr; overflow:auto}
+      canvas{height:56vh !important}
+    }
+    .card{
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, var(--panel), var(--panel2));
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding:14px;
+      overflow:hidden;
+    }
+    .titleRow{
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+      margin-bottom:10px;
+    }
+    .brand{display:flex; align-items:center; gap:10px}
+    .logo{
+      width:44px; height:44px; border-radius:14px;
+      background: linear-gradient(135deg, rgba(78,166,255,.95), rgba(139,92,246,.95));
+      position:relative;
+      box-shadow: 0 14px 30px rgba(78,166,255,.18);
+      flex:0 0 auto;
+    }
+    .logo:after{
+      content:"∞";
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      color:#07111a;
+      font-weight:900;
+      font-size:22px;
+      letter-spacing:.2px;
+    }
+    .h1{margin:0;font-size:15px;line-height:1.15;letter-spacing:.2px}
+    .sub{margin:3px 0 0;color:var(--muted);font-size:12px;line-height:1.2}
+    .badge{
+      font-family:var(--mono);
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(10,16,28,.55);
+      color: var(--muted);
+      white-space:nowrap;
+    }
+    .hr{height:1px;background:var(--line);margin:10px 0}
+    .grid{display:grid; gap:10px}
+    .row{display:flex; align-items:center; justify-content:space-between; gap:10px}
+    .k{color:var(--muted); font-size:12px}
+    .v{font-family:var(--mono); font-size:12px}
+    .big{font-family:var(--mono);font-size:18px;font-weight:800;letter-spacing:.2px}
+    .btnRow{display:flex; gap:10px; flex-wrap:wrap}
+    .btn{
+      cursor:pointer;
+      user-select:none;
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background: rgba(10,16,28,.55);
+      color: var(--text);
+      transition: transform .12s ease, border-color .12s ease, background .12s ease, opacity .12s ease;
+      font-weight:700;
+    }
+    .btn:hover{transform: translateY(-1px); border-color: rgba(78,166,255,.55)}
+    .btn:active{transform: translateY(0px)}
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(78,166,255,.95), rgba(139,92,246,.86));
+      border-color: rgba(255,255,255,.15);
+      color:#061018;
+      font-weight:900;
+    }
+    .btn.danger{border-color: rgba(255,77,109,.35); background: rgba(255,77,109,.08)}
+    .btn.good{border-color: rgba(55,214,122,.35); background: rgba(55,214,122,.08)}
+    .btn.small{padding:8px 10px; border-radius:12px; font-weight:800; font-size:12px}
+    .btn[disabled]{opacity:.45; cursor:not-allowed}
+    .pill{
+      display:inline-flex; align-items:center; gap:7px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(10,16,28,.55);
+      color: var(--muted);
+      font-size:12px;
+      font-family: var(--mono);
+      white-space:nowrap;
+    }
+    .dot{width:8px;height:8px;border-radius:999px;background:var(--good);box-shadow:0 0 0 4px rgba(55,214,122,.10)}
+    .dot.w{background:var(--warn);box-shadow:0 0 0 4px rgba(255,209,102,.10)}
+    .dot.r{background:var(--bad);box-shadow:0 0 0 4px rgba(255,77,109,.10)}
+    .list{display:grid; gap:10px; max-height: 44vh; overflow:auto; padding-right:4px}
+    .item{
+      border:1px solid var(--line);
+      background: rgba(10,16,28,.45);
+      border-radius: 14px;
+      padding:10px;
+    }
+    .item h3{margin:0 0 6px; font-size:13px}
+    .item p{margin:0;color:var(--muted);font-size:12px;line-height:1.35}
+    .tag{
+      font-family:var(--mono);
+      font-size:11px;
+      padding:3px 8px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(10,16,28,.6);
+      color: var(--muted);
+      display:inline-flex; align-items:center; gap:7px;
+      margin-right:6px;
+      margin-top:6px;
+    }
+    .tag b{color:var(--text); font-weight:900}
+    .canvasCard{padding:0}
+    canvas{
+      width:100%;
+      height:100%;
+      display:block;
+      background:
+        radial-gradient(900px 450px at 20% 15%, rgba(78,166,255,.16), transparent 60%),
+        radial-gradient(900px 450px at 80% 10%, rgba(139,92,246,.14), transparent 60%),
+        radial-gradient(900px 450px at 60% 85%, rgba(55,214,122,.08), transparent 60%),
+        #060a11;
+      border-radius: var(--r);
+    }
+    .overlay{
+      position:absolute; inset:0;
+      display:none;
+      align-items:center; justify-content:center;
+      padding:18px;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(8px);
+    }
+    .modal{
+      width:min(720px, 100%);
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(18,28,48,.92), rgba(10,16,28,.86));
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding:16px;
+    }
+    .modal h2{margin:0 0 6px; font-size:16px}
+    .modal p{margin:0; color:var(--muted); font-size:13px; line-height:1.45}
+    .twoCol{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px}
+    @media (max-width: 700px){.twoCol{grid-template-columns:1fr}}
+    .input{
+      width:100%;
+      border-radius: 12px;
+      border:1px solid var(--line);
+      background: rgba(10,16,28,.6);
+      color: var(--text);
+      padding:10px 10px;
+      font-family: var(--mono);
+      font-size:12px;
+      outline:none;
+    }
+    .input:focus{border-color: rgba(78,166,255,.6)}
+    .hint{color:var(--muted); font-size:12px; margin-top:6px}
+    .kbd{
+      font-family: var(--mono);
+      font-size:11px;
+      padding:3px 7px;
+      border-radius: 10px;
+      border:1px solid var(--line);
+      background: rgba(10,16,28,.6);
+      color: var(--muted);
+      display:inline-block;
+      margin-left:3px;
+    }
+    .toast{
+      position:fixed;
+      left:14px; bottom:14px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background: rgba(10,16,28,.75);
+      color: var(--muted);
+      font-size:12px;
+      box-shadow: var(--shadow);
+      opacity:0;
+      transform: translateY(8px);
+      transition: opacity .16s ease, transform .16s ease;
+      pointer-events:none;
+      max-width:min(560px, calc(100% - 28px));
+    }
+    .toast.show{opacity:1; transform: translateY(0)}
+    .mono{font-family:var(--mono)}
+    .muted{color:var(--muted)}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <!-- LEFT -->
+    <section class="card" id="leftPanel">
+      <div class="titleRow">
+        <div class="brand">
+          <div class="logo"></div>
+          <div>
+            <h1 class="h1">Infinity Evolution</h1>
+            <div class="sub">Juegos JC · oleadas, builds, prestigio, ranking</div>
+          </div>
+        </div>
+        <span class="badge" id="uiVersion">v1.3</span>
+      </div>
+
+      <div class="grid">
+        <div class="row">
+          <span class="k">Modo</span>
+          <span class="pill" id="uiMode"><span class="dot w"></span><span id="uiModeText">Menú</span></span>
+        </div>
+        <div class="row">
+          <span class="k">Seed (ranking semanal)</span>
+          <span class="v" id="uiSeed">—</span>
+        </div>
+        <div class="row">
+          <span class="k">Oleada</span>
+          <span class="big" id="uiWave">1</span>
+        </div>
+        <div class="row">
+          <span class="k">Oro</span>
+          <span class="big" id="uiGold">0</span>
+        </div>
+        <div class="row">
+          <span class="k">Monedas</span>
+          <span class="big" id="uiCoins">0</span>
+        </div>
+        <div class="row">
+          <span class="k">Vida</span>
+          <span class="big" id="uiHP">100</span>
+        </div>
+        <div class="row">
+          <span class="k">Daño</span>
+          <span class="v" id="uiDmg">10</span>
+        </div>
+        <div class="row">
+          <span class="k">Vel. disparo</span>
+          <span class="v" id="uiRof">1.00/s</span>
+        </div>
+        <div class="row">
+          <span class="k">Crítico</span>
+          <span class="v" id="uiCrit">10% ×1.50</span>
+        </div>
+        <div class="row">
+          <span class="k">Multishot</span>
+          <span class="v" id="uiMulti">1</span>
+        </div>
+        <div class="row">
+          <span class="k">Drones</span>
+          <span class="v" id="uiDrones">0</span>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="btnRow">
+        <button class="btn primary" id="btnPlay">▶ JUGAR</button>
+        <button class="btn" id="btnPause">⏸ Pausa</button>
+        <button class="btn" id="btnShop">🛒 Tienda</button>
+        <button class="btn" id="btnUpgrades">⚡ Mejoras</button>
+        <button class="btn" id="btnMissions">📌 Misiones</button>
+        <button class="btn" id="btnSkins">🎨 Skins</button>
+        <button class="btn" id="btnLeaderboard">🏆 Ranking</button>
+        <button class="btn danger" id="btnReset">🧨 Reset run</button>
+        <button class="btn good" id="btnPrestige">✨ Prestigio</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="item">
+        <h3>Controles</h3>
+        <p>
+          Mover: <span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span> ·
+          Dash: <span class="kbd">Shift</span> ·
+          Pausa: <span class="kbd">P</span> ·
+          Tienda: <span class="kbd">B</span> ·
+          Mejoras: <span class="kbd">U</span> ·
+          Reiniciar: <span class="kbd">R</span>
+        </p>
+        <div class="tag"><b>Tip</b> A los 6–8 min deberías sentirte “dios”.</div>
+      </div>
+    </section>
+
+    <!-- CENTER -->
+    <section class="card canvasCard" style="position:relative;">
+      <canvas id="cv"></canvas>
+
+      <div class="overlay" id="overlay">
+        <div class="modal">
+          <div class="titleRow" style="margin-bottom:8px">
+            <div>
+              <h2 id="ovTitle">Infinity Evolution</h2>
+              <p id="ovText">Pulsa JUGAR para empezar.</p>
+            </div>
+            <span class="badge" id="ovBadge">—</span>
+          </div>
+
+          <div class="twoCol" id="ovBody"></div>
+
+          <div class="hr"></div>
+          <div class="btnRow" id="ovBtns"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT -->
+    <section class="card" id="rightPanel">
+      <div class="titleRow">
+        <div>
+          <h1 class="h1">Panel</h1>
+          <div class="sub">Eventos, compras, consejos y estado</div>
+        </div>
+        <span class="badge" id="uiClock">00:00</span>
+      </div>
+
+      <div class="grid">
+        <div class="row">
+          <span class="k">Dificultad</span>
+          <span class="pill"><span class="dot w"></span><span id="uiDiff">Normal</span></span>
+        </div>
+        <div class="row">
+          <span class="k">FPS</span>
+          <span class="v" id="uiFps">—</span>
+        </div>
+        <div class="row">
+          <span class="k">Auto-guardado</span>
+          <span class="pill"><span class="dot"></span><span id="uiSave">ON</span></span>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="item">
+        <h3>Objetivo run</h3>
+        <p>Ranking: oleada alcanzada + desempate por tiempo. Normal: progresa y haz prestigio.</p>
+        <div class="tag"><b>Ranking semanal</b> seed fija para todos</div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="item">
+        <h3>Registro</h3>
+        <p class="muted">Lo último que ha pasado en tu run:</p>
+      </div>
+
+      <div class="list" id="log"></div>
+    </section>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+  /***********************************************************************
+   * INFINITY EVOLUTION — SINGLE FILE (LIMPIO) v1.3
+   * - Un solo motor (NO duplicados, NO scripts extra)
+   * - Normal (progreso + prestigio) / Ranking semanal (justo)
+   * - Oleadas, elites, boss, tienda, mejoras perm, misiones, skins, ranking local
+   ***********************************************************************/
+
+  // ========= UTIL =========
+  const $ = (id)=>document.getElementById(id);
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+  const now = ()=>performance.now();
+  const fmt = (n)=>{
+    if(!isFinite(n)) return "∞";
+    const abs = Math.abs(n);
+    if(abs<1000) return (Math.round(n*10)/10).toString();
+    const units = ["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No"];
+    let u=-1, x=n;
+    while(Math.abs(x)>=1000 && u<units.length-1){ x/=1000; u++; }
+    return (Math.round(x*100)/100)+units[u];
+  };
+  function toast(msg){
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toast._tm);
+    toast._tm = setTimeout(()=>t.classList.remove("show"), 1600);
+  }
+  function log(msg, kind="info"){
+    const el = document.createElement("div");
+    el.className = "item";
+    const dot = kind==="good" ? "dot" : kind==="warn" ? "dot w" : kind==="bad" ? "dot r" : "dot";
+    el.innerHTML = `<div class="row"><span class="pill"><span class="${dot}"></span><span>${kind.toUpperCase()}</span></span><span class="badge">${new Date().toLocaleTimeString()}</span></div>
+                    <div style="margin-top:8px;color:var(--text);font-size:13px">${msg}</div>`;
+    const list = $("log");
+    list.prepend(el);
+    while(list.children.length>25) list.removeChild(list.lastChild);
+  }
+
+  // ========= RNG =========
+  function xmur3(str){
+    let h = 1779033703 ^ str.length;
+    for(let i=0;i<str.length;i++){
+      h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+      h = (h<<13) | (h>>>19);
+    }
+    return function(){
+      h = Math.imul(h ^ (h>>>16), 2246822507);
+      h = Math.imul(h ^ (h>>>13), 3266489909);
+      h ^= h>>>16;
+      return h>>>0;
+    }
+  }
+  function mulberry32(a){
+    return function(){
+      let t = a += 0x6D2B79F5;
+      t = Math.imul(t ^ (t>>>15), t | 1);
+      t ^= t + Math.imul(t ^ (t>>>7), t | 61);
+      return ((t ^ (t>>>14)) >>> 0) / 4294967296;
+    }
+  }
+  function isoWeekSeed(date=new Date()){
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    const year = d.getUTCFullYear();
+    return `W${year}-${String(weekNo).padStart(2,"0")}`;
+  }
+
+  // ========= STORAGE =========
+  const VERSION = "v1.3";
+  const STORAGE_KEY  = "jc_infinity_evolution_save_v13";
+  const RANK_KEY     = "jc_infinity_evolution_rank_v13";
+  const SETTINGS_KEY = "jc_infinity_evolution_settings_v13";
+  const SKINS_KEY    = "jc_infinity_evolution_skins_v13";
+  const MISSIONS_KEY = "jc_infinity_evolution_missions_v13";
+
+  function loadJSON(key, fallback){
+    try{
+      const raw = localStorage.getItem(key);
+      if(!raw) return fallback;
+      return JSON.parse(raw);
+    }catch(e){ return fallback; }
+  }
+  function saveJSON(key, obj){
+    try{ localStorage.setItem(key, JSON.stringify(obj)); }catch(e){}
+  }
+
+  // ========= SETTINGS / PROGRESS =========
+  const Settings = loadJSON(SETTINGS_KEY, {
+    audio: true,
+    screenshake: 0.35,
+    particles: 0.85,
+    uiScale: 1.0,
+    showHitboxes: false,
+  });
+
+  const Skins = loadJSON(SKINS_KEY, {
+    owned: { "Default": true },
+    equipped: "Default"
+  });
+
+  const Rank = loadJSON(RANK_KEY, {
+    bestAllTime: [],
+    bestWeekly: {},
+    playerName: "JC"
+  });
+
+  let MissionsData = loadJSON(MISSIONS_KEY, { dayKey:"", missions:[] });
+
+  let Save = loadJSON(STORAGE_KEY, null);
+  if(!Save){
+    Save = {
+      coins: 0,
+      prestige: 0,
+      perm: {
+        dmg: 0, hp: 0, rof: 0, critChance: 0, critMult: 0, speed: 0, drones: 0, burn: 0, multishot: 0
+      },
+      stats: { totalKills: 0, totalRuns: 0, totalPrestiges: 0, bestWaveNormal: 1 }
+    };
+  }
+
+  // ========= BALANCE =========
+  const BAL = {
+    baseHP: 100,
+    baseDmg: 10,
+    baseRof: 1.0,
+    baseSpeed: 240,
+    dashSpeed: 580,
+    dashTime: 0.14,
+    dashCd: 0.85,
+    iFrame: 0.22,
+
+    goldPerKill: 1,
+    goldWaveBonus: 12,
+
+    enemyHPBase: 18,
+    enemyHPWave: 1.18,
+    enemyDmgBase: 10,
+    enemyDmgWave: 1.07,
+    enemySpeedBase: 90,
+    enemySpeedWave: 1.015,
+
+    waveTimeBase: 22,
+    waveTimeMin: 10,
+
+    bossEvery: 10,
+    bossHpMult: 18,
+    bossDmgMult: 2.2,
+    bossSize: 28,
+
+    eliteChance: 0.10,
+    eliteHpMult: 3.2,
+    eliteDmgMult: 1.5,
+    eliteSpeedMult: 1.15,
+
+    coinRate: 100,
+
+    prestigeCoinBase: 10,
+    prestigeCoinWaveFactor: 0.55,
+    prestigeSoftCap: 220,
+  };
+
+  // ========= GAME STATE =========
+  const G = {
+    mode: "menu",     // menu | normal | ranked
+    paused: true,
+    seed: "—",
+    rng: mulberry32(123),
+
+    t0: now(),
+    last: now(),
+    timeSurvived: 0,
+
+    wave: 1,
+    waveTimer: 0,
+    waveDuration: BAL.waveTimeBase,
+    gold: 0,
+
+    bullets: [],
+    enemies: [],
+    parts: [],
+    texts: [],
+    pickups: [],
+
+    keys: new Set(),
+    mouse: {x:0,y:0, down:false},
+
+    lastShot: 0,
+    lastSpawn: 0,
+    spawnRate: 0.55,
+
+    fps: 0,
+    fpsAcc: 0,
+    fpsCount: 0,
+
+    shake: 0,
+  };
+
+  const Player = {
+    x: 0, y: 0, r: 12,
+    vx: 0, vy: 0,
+    hp: BAL.baseHP,
+    maxHp: BAL.baseHP,
+    dmg: BAL.baseDmg,
+    rof: BAL.baseRof,
+    speed: BAL.baseSpeed,
+    multishot: 1,
+    spread: 0.14,
+    critChance: 0.10,
+    critMult: 1.5,
+    drones: 0,
+    droneDmg: 3,
+    burnChance: 0,
+    burnDps: 0,
+    iTime: 0,
+    dashT: 0,
+    dashCd: 0,
+    skin: "Default",
+    alive: true,
+  };
+
+  // ========= CANVAS =========
+  const cv = $("cv");
+  const ctx = cv.getContext("2d");
+  function resize(){
+    const rect = cv.getBoundingClientRect();
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    cv.width = Math.floor(rect.width * dpr);
+    cv.height = Math.floor(rect.height * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener("resize", resize);
+
+  // ========= AUDIO =========
+  let AC = null;
+  function beep(freq=440, dur=0.06, type="sine", gain=0.04){
+    if(!Settings.audio) return;
+    try{
+      if(!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+      const t0 = AC.currentTime;
+      const o = AC.createOscillator();
+      const g = AC.createGain();
+      o.type = type;
+      o.frequency.setValueAtTime(freq, t0);
+      g.gain.setValueAtTime(gain, t0);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); g.connect(AC.destination);
+      o.start(t0); o.stop(t0 + dur);
+    }catch(e){}
+  }
+
+  // ========= HELPERS =========
+  function rand(){ return G.rng(); }
+  function randRange(a,b){ return a + (b-a)*rand(); }
+  function chance(p){ return rand() < p; }
+
+  function overlay(show){ $("overlay").style.display = show ? "flex" : "none"; }
+  function setOverlay(title, text, badge, bodyHtml, btns){
+    $("ovTitle").textContent = title;
+    $("ovText").innerHTML = text;
+    $("ovBadge").textContent = badge || "";
+    $("ovBody").innerHTML = bodyHtml || "";
+    const row = $("ovBtns");
+    row.innerHTML = "";
+    for(const b of (btns||[])){
+      const btn = document.createElement("button");
+      btn.className = "btn " + (b.kind||"");
+      btn.textContent = b.text;
+      if(b.disabled) btn.disabled = true;
+      btn.onclick = b.onClick;
+      row.appendChild(btn);
+    }
+    overlay(true);
+  }
+
+  function screenShake(intensity=0.35){ G.shake += intensity*Settings.screenshake; }
+  function popText(x,y,text,kind="info"){ G.texts.push({x,y,vy:-22, life:0.85, text, kind}); }
+
+  function burst(x,y, n=14, power=1){
+    const pCount = Math.floor(n * (0.35 + 0.65*Settings.particles));
+    for(let i=0;i<pCount;i++){
+      const a = rand()*Math.PI*2;
+      const s = randRange(70, 240) * power;
+      G.parts.push({
+        x,y,
+        vx:Math.cos(a)*s,
+        vy:Math.sin(a)*s,
+        r:randRange(1.2,2.6),
+        life:randRange(0.25,0.85),
+        hue: randRange(190, 280)
+      });
+    }
+  }
+
+  // ========= SKINS =========
+  const SkinCatalog = [
+    { name:"Default",   price:0,  desc:"Clásico.",       colorA:"#4ea6ff", colorB:"#8b5cf6" },
+    { name:"Neon Lime", price:20, desc:"Verde tóxico.",  colorA:"#37d67a", colorB:"#b6ff3a" },
+    { name:"Crimson",   price:25, desc:"Rojo agresivo.", colorA:"#ff4d6d", colorB:"#ffd166" },
+    { name:"Void",      price:30, desc:"Oscuro pro.",    colorA:"#8b5cf6", colorB:"#4ea6ff" },
+    { name:"Gold Rush", price:40, desc:"Dorado pro.",    colorA:"#ffd166", colorB:"#ff9f1c" },
+  ];
+  function getSkin(name){ return SkinCatalog.find(s=>s.name===name) || SkinCatalog[0]; }
+
+  // ========= MISSIONS =========
+  function dayKey(d=new Date()){
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  }
+  function ensureMissions(){
+    const dk = dayKey();
+    if(MissionsData.dayKey === dk && Array.isArray(MissionsData.missions) && MissionsData.missions.length>0) return;
+    MissionsData.dayKey = dk;
+
+    const seed = xmur3("MISS-"+dk)();
+    const r = mulberry32(seed);
+
+    const pool = [
+      { id:"kills", name:"Caza", desc:"Haz 120 eliminaciones.", goal:120, reward: 8,  type:"kills" },
+      { id:"wave",  name:"Superviviente", desc:"Llega a la oleada 8.", goal:8, reward: 10, type:"wave" },
+      { id:"gold",  name:"Avaricia", desc:"Consigue 500 de oro.", goal:500, reward: 9, type:"gold" },
+      { id:"crit",  name:"Precisión", desc:"Haz 25 críticos.", goal:25, reward: 10, type:"crit" },
+      { id:"boss",  name:"Cazajefes", desc:"Mata 1 boss.", goal:1, reward: 12, type:"boss" },
+    ];
+    const pick = ()=>{
+      const i = Math.floor(r()*pool.length);
+      return pool.splice(i,1)[0];
+    };
+    MissionsData.missions = [pick(),pick(),pick()].map(m=>({ ...m, progress:0, done:false, claimed:false }));
+    saveJSON(MISSIONS_KEY, MissionsData);
+  }
+  ensureMissions();
+
+  function missionEvent(type, amount){
+    for(const m of (MissionsData.missions||[])){
+      if(m.done) continue;
+      if(m.type !== type) continue;
+      m.progress = clamp(m.progress + amount, 0, m.goal);
+      if(m.progress >= m.goal){
+        m.done = true;
+        log(`Misión completada: <b>${m.name}</b> (+${m.reward} monedas)`, "good");
+        beep(560,0.06,"sine",0.05);
+      }
+    }
+    saveJSON(MISSIONS_KEY, MissionsData);
+  }
+  function claimMission(idx){
+    const m = MissionsData.missions[idx];
+    if(!m || !m.done || m.claimed) return;
+    m.claimed = true;
+    if(G.mode==="normal"){
+      Save.coins += m.reward;
+      saveJSON(STORAGE_KEY, Save);
+      toast(`+${m.reward} monedas`);
+    }else{
+      toast("Recompensas solo en Normal");
+    }
+    saveJSON(MISSIONS_KEY, MissionsData);
+  }
+
+  // ========= UPGRADES =========
+  const RunBuys = {}; // id -> count
+
+  const ShopItems = [
+    { id:"dmg",   name:"Daño +10%",       desc:"Sube daño (run).",           cost:(s)=>Math.floor(40*Math.pow(1.18,s)), apply:()=>{ Player.dmg*=1.10; } },
+    { id:"rof",   name:"Vel. disparo +12%",desc:"Más disparos por segundo.",  cost:(s)=>Math.floor(45*Math.pow(1.17,s)), apply:()=>{ Player.rof*=1.12; } },
+    { id:"hp",    name:"Vida máxima +15", desc:"Más margen de error.",        cost:(s)=>Math.floor(35*Math.pow(1.16,s)), apply:()=>{ Player.maxHp+=15; Player.hp+=15; } },
+    { id:"critC", name:"Crítico +2%",     desc:"Más críticos.",              cost:(s)=>Math.floor(60*Math.pow(1.18,s)), apply:()=>{ Player.critChance = clamp(Player.critChance+0.02,0,0.70); } },
+    { id:"critM", name:"Crit mult +0.15", desc:"Críticos más fuertes.",       cost:(s)=>Math.floor(70*Math.pow(1.18,s)), apply:()=>{ Player.critMult += 0.15; } },
+    { id:"multi", name:"Multishot +1",    desc:"Más proyectiles.",           cost:(s)=>Math.floor(120*Math.pow(1.22,s)),apply:()=>{ Player.multishot += 1; } },
+    { id:"drones",name:"Drone +1",        desc:"Drones orbitan y dañan.",     cost:(s)=>Math.floor(160*Math.pow(1.25,s)),apply:()=>{ Player.drones += 1; } },
+    { id:"burn",  name:"Quemadura",       desc:"+5% chance burn; +DPS",      cost:(s)=>Math.floor(95*Math.pow(1.20,s)), apply:()=>{ Player.burnChance = clamp(Player.burnChance+0.05,0,0.55); Player.burnDps += 1.0; } },
+    { id:"heal",  name:"Curación +25",    desc:"Recupera vida ahora.",        cost:(s)=>Math.floor(55*Math.pow(1.12,s)), apply:()=>{ Player.hp = clamp(Player.hp+25,0,Player.maxHp); } },
+    { id:"nova",  name:"Nova",            desc:"Explosión (1 uso).",          cost:(s)=>Math.floor(130*Math.pow(1.20,s)),apply:()=>{ castNova(); } },
+  ];
+
+  const PermUpgrades = [
+    { id:"dmg",        name:"Daño +6% (perm)",        desc:"Base más fuerte en Normal.", max:80, cost:(lvl)=>Math.floor(8*Math.pow(1.18,lvl)) },
+    { id:"hp",         name:"Vida +8% (perm)",        desc:"Más HP en Normal.",          max:80, cost:(lvl)=>Math.floor(7*Math.pow(1.18,lvl)) },
+    { id:"rof",        name:"Cadencia +5% (perm)",    desc:"Más disparos en Normal.",    max:80, cost:(lvl)=>Math.floor(9*Math.pow(1.18,lvl)) },
+    { id:"critChance", name:"Crítico +1% (perm)",     desc:"Más probabilidad de crit.",  max:60, cost:(lvl)=>Math.floor(10*Math.pow(1.17,lvl)) },
+    { id:"critMult",   name:"Crit mult +0.06 (perm)", desc:"Crits más fuertes.",         max:60, cost:(lvl)=>Math.floor(11*Math.pow(1.17,lvl)) },
+    { id:"speed",      name:"Velocidad +4% (perm)",   desc:"Más movilidad.",             max:50, cost:(lvl)=>Math.floor(8*Math.pow(1.16,lvl)) },
+    { id:"multishot",  name:"Multishot +1 (perm)",    desc:"Empiezas con más tiros.",    max:6,  cost:(lvl)=>Math.floor(60*Math.pow(1.35,lvl)) },
+    { id:"drones",     name:"Drones +1 (perm)",       desc:"Empiezas con drones.",       max:6,  cost:(lvl)=>Math.floor(65*Math.pow(1.35,lvl)) },
+    { id:"burn",       name:"Quemadura (perm)",       desc:"Quemaduras desde el inicio.",max:10, cost:(lvl)=>Math.floor(25*Math.pow(1.30,lvl)) },
+  ];
+
+  // ========= RANKING =========
+  function pushRank(list, entry, cap=25){
+    list.push(entry);
+    list.sort((a,b)=>{
+      if(b.wave!==a.wave) return b.wave-a.wave;
+      return b.time-a.time;
+    });
+    while(list.length>cap) list.pop();
+  }
+  function submitScore(){
+    const name = (Rank.playerName || "JC").slice(0,18);
+    const entry = { name, wave:G.wave, time:Math.round(G.timeSurvived*100)/100, modeSeed:G.seed, date:new Date().toISOString() };
+    pushRank(Rank.bestAllTime, entry);
+    if(!Rank.bestWeekly[G.seed]) Rank.bestWeekly[G.seed] = [];
+    pushRank(Rank.bestWeekly[G.seed], entry);
+    saveJSON(RANK_KEY, Rank);
+  }
+
+  // ========= MODE / RUN =========
+  function applyStatsFromPerm(ranked){
+    const perm = Save.perm || {};
+    const dmg = BAL.baseDmg * (1 + 0.06*(perm.dmg||0));
+    const hp  = BAL.baseHP  * (1 + 0.08*(perm.hp||0));
+    const rof = BAL.baseRof * (1 + 0.05*(perm.rof||0));
+    const critC = 0.10 + 0.01*(perm.critChance||0);
+    const critM = 1.50 + 0.06*(perm.critMult||0);
+    const speed = BAL.baseSpeed * (1 + 0.04*(perm.speed||0));
+    const multi = 1 + (perm.multishot||0);
+    const drones = (perm.drones||0);
+    const burnLvl = (perm.burn||0);
+
+    Player.dmg        = ranked ? BAL.baseDmg   : dmg;
+    Player.maxHp      = ranked ? BAL.baseHP    : hp;
+    Player.hp         = Player.maxHp;
+    Player.rof        = ranked ? BAL.baseRof   : rof;
+    Player.critChance = ranked ? 0.10         : critC;
+    Player.critMult   = ranked ? 1.50         : critM;
+    Player.speed      = ranked ? BAL.baseSpeed: speed;
+    Player.multishot  = ranked ? 1            : multi;
+    Player.drones     = ranked ? 0            : drones;
+
+    Player.burnChance = ranked ? 0 : clamp(0.05*burnLvl, 0, 0.45);
+    Player.burnDps    = ranked ? 0 : (burnLvl>0 ? 1.6*burnLvl : 0);
+
+    Player.droneDmg = Math.max(2.5, Player.dmg*0.22);
+  }
+
+  function prestigeGain(){
+    const raw = BAL.prestigeCoinBase + Math.floor(Math.pow(G.wave, 1.22) * BAL.prestigeCoinWaveFactor);
+    return Math.min(raw, BAL.prestigeSoftCap);
+  }
+  function doPrestige(){
+    if(G.mode!=="normal"){ toast("Prestigio solo en Normal"); return; }
+    const gain = prestigeGain();
+    Save.coins += gain;
+    Save.prestige += 1;
+    Save.stats.totalPrestiges += 1;
+    Save.stats.bestWaveNormal = Math.max(Save.stats.bestWaveNormal, G.wave);
+    saveJSON(STORAGE_KEY, Save);
+    log(`Prestigio: +<b>${gain}</b> monedas (total ${Save.coins})`, "good");
+    beep(620,0.08,"triangle",0.06);
+    setMode("menu");
+  }
+
+  function resetRun(mode){
+    G.mode = mode;
+    G.paused = false;
+    G.timeSurvived = 0;
+
+    G.wave = 1;
+    G.waveTimer = 0;
+    G.waveDuration = BAL.waveTimeBase;
+    G.gold = 0;
+
+    G.bullets.length=0;
+    G.enemies.length=0;
+    G.parts.length=0;
+    G.texts.length=0;
+    G.pickups.length=0;
+
+    for(const k of Object.keys(RunBuys)) delete RunBuys[k];
+
+    // seed
+    if(mode==="ranked"){
+      G.seed = isoWeekSeed(new Date());
+    }else{
+      G.seed = "N-" + Math.floor(Math.random()*1e9).toString(16);
+    }
+    const seedFn = xmur3(G.seed);
+    G.rng = mulberry32(seedFn());
+
+    // spawn player mid
+    const rect = cv.getBoundingClientRect();
+    Player.x = rect.width*0.5;
+    Player.y = rect.height*0.5;
+    Player.vx = 0; Player.vy = 0;
+    Player.alive = true;
+    Player.iTime = 0;
+    Player.dashT = 0;
+    Player.dashCd = 0;
+
+    Player.skin = Skins.equipped || "Default";
+    applyStatsFromPerm(mode==="ranked");
+
+    if(mode==="normal"){
+      Save.stats.totalRuns++;
+      saveJSON(STORAGE_KEY, Save);
+    }
+
+    log(`Nueva run: <b>${mode.toUpperCase()}</b> · seed <span class="mono">${G.seed}</span>`, "good");
+    toast(`${mode==="ranked"?"Ranking semanal":"Normal"} · seed ${G.seed}`);
+    startWave(1);
+    updateUI();
+  }
+
+  function setMode(mode){
+    if(mode==="menu"){
+      G.mode="menu"; G.paused=true;
+      showMenu();
+      updateUI();
+      return;
+    }
+    if(mode==="paused"){
+      if(G.mode==="menu") return;
+      G.paused = true;
+      showPause();
+      updateUI();
+      return;
+    }
+  }
+
+  // ========= WAVES / ENEMIES =========
+  function waveConfig(wave){
+    const base = Math.max(BAL.waveTimeMin, BAL.waveTimeBase - 0.28*(wave-1));
+    const isBoss = wave % BAL.bossEvery === 0;
+    return {
+      duration: base,
+      isBoss,
+      targetSpawns: isBoss ? 1 : Math.floor(10 + wave*1.45),
+      spawnRate: isBoss ? 999 : Math.max(0.12, 0.72 - wave*0.01),
+    };
+  }
+
+  function spawnEnemy(isBoss=false){
+    const rect = cv.getBoundingClientRect();
+    const w = rect.width, h = rect.height;
+
+    const edge = Math.floor(rand()*4);
+    let x=0,y=0;
+    if(edge===0){ x=-20; y=rand()*h; }
+    if(edge===1){ x=w+20; y=rand()*h; }
+    if(edge===2){ x=rand()*w; y=-20; }
+    if(edge===3){ x=rand()*w; y=h+20; }
+
+    const wave = G.wave;
+    const hpBase = BAL.enemyHPBase * Math.pow(BAL.enemyHPWave, wave-1);
+    const dmgBase = BAL.enemyDmgBase * Math.pow(BAL.enemyDmgWave, wave-1);
+    const spBase = BAL.enemySpeedBase * Math.pow(BAL.enemySpeedWave, wave-1);
+
+    let hp = hpBase, dmg = dmgBase, sp = spBase, r = 10, elite=false;
+
+    if(!isBoss && chance(BAL.eliteChance)){
+      elite = true;
+      hp *= BAL.eliteHpMult;
+      dmg *= BAL.eliteDmgMult;
+      sp *= BAL.eliteSpeedMult;
+      r = 14;
+    }
+    if(isBoss){
+      hp *= BAL.bossHpMult;
+      dmg *= BAL.bossDmgMult;
+      sp *= 0.85;
+      r = BAL.bossSize;
+    }
+
+    G.enemies.push({
+      x,y,r,
+      hp, maxHp:hp,
+      dmg, sp,
+      elite, boss:isBoss,
+      burnT:0, burnDps:0,
+      knock:{x:0,y:0,t:0},
+      phase: rand()*Math.PI*2
+    });
+  }
+
+  function startWave(wave){
+    const cfg = waveConfig(wave);
+    G.waveDuration = cfg.duration;
+    G.waveTimer = 0;
+    G.spawnRate = cfg.spawnRate;
+
+    if(wave>1){
+      const bonus = BAL.goldWaveBonus + Math.floor(wave*0.6);
+      G.gold += bonus;
+      popText(Player.x, Player.y-26, `+${bonus} oro`, "good");
+      log(`Oleada <b>${wave}</b> · Bonus ${bonus} oro`, "good");
+      beep(520,0.05,"sine",0.04);
+      missionEvent("wave", 1);
+    }
+
+    if(cfg.isBoss){
+      spawnEnemy(true);
+      log(`¡BOSS en oleada ${wave}!`, "warn");
+      beep(180,0.08,"sawtooth",0.06);
+    }
+  }
+
+  // ========= COMBAT =========
+  function fireBullet(angle, dmgMult=1){
+    const sp = 640;
+    const b = {
+      x: Player.x,
+      y: Player.y,
+      vx: Math.cos(angle)*sp,
+      vy: Math.sin(angle)*sp,
+      r: 3.2,
+      dmg: Player.dmg*dmgMult,
+      life: 1.4,
+      crit: false
+    };
+    if(chance(Player.critChance)){
+      b.crit = true;
+      b.dmg *= Player.critMult;
+      missionEvent("crit", 1);
+      popText(Player.x, Player.y-18, "CRIT", "warn");
+      beep(690, 0.03, "triangle", 0.04);
+    }else{
+      beep(420, 0.02, "sine", 0.02);
+    }
+    G.bullets.push(b);
+  }
+
+  function castNova(){
+    const rad = 140;
+    const base = Player.dmg * 2.2;
+    let hits=0;
+    for(const e of G.enemies){
+      const dx=e.x-Player.x, dy=e.y-Player.y;
+      if(dx*dx+dy*dy <= rad*rad){
+        const dmg = base * (e.boss?0.65:1);
+        damageEnemy(e, dmg, true);
+        hits++;
+      }
+    }
+    if(hits>0){
+      burst(Player.x, Player.y, 40, 1.4);
+      screenShake(0.65);
+      popText(Player.x, Player.y-30, `NOVA x${hits}`, "warn");
+      log(`Nova lanzada: ${hits} objetivos`, "warn");
+      beep(150,0.10,"sawtooth",0.07);
+    }else{
+      popText(Player.x, Player.y-30, "NOVA (0)", "info");
+    }
+  }
+
+  function damageEnemy(e, dmg, isNova=false){
+    e.hp -= dmg;
+
+    if(!isNova){
+      const dx = e.x-Player.x, dy = e.y-Player.y;
+      const d = Math.hypot(dx,dy)||1;
+      e.knock.x = (dx/d)*120;
+      e.knock.y = (dy/d)*120;
+      e.knock.t = 0.09;
+    }
+    if(Player.burnChance>0 && chance(Player.burnChance)){
+      e.burnT = 1.6;
+      e.burnDps = Player.burnDps;
+    }
+    if(e.hp<=0) killEnemy(e);
+  }
+
+  function killEnemy(e){
+    const idx = G.enemies.indexOf(e);
+    if(idx>=0) G.enemies.splice(idx,1);
+
+    if(G.mode==="normal"){ Save.stats.totalKills++; saveJSON(STORAGE_KEY, Save); }
+
+    const gold = BAL.goldPerKill + (e.elite?2:0) + (e.boss?10:0);
+    G.gold += gold;
+
+    burst(e.x,e.y, e.boss?44:(e.elite?24:14), e.boss?1.35:1);
+    screenShake(e.boss?0.75:(e.elite?0.35:0.18));
+
+    missionEvent("kills", 1);
+    missionEvent("gold", gold);
+    if(e.boss) missionEvent("boss", 1);
+
+    if(e.boss){
+      popText(e.x,e.y-20, "BOSS DOWN", "good");
+      log("Boss eliminado. ¡Bien!", "good");
+      beep(720,0.08,"triangle",0.06);
+    }
+  }
+
+  // ========= UI MENUS =========
+  function showMenu(){
+    const seed = isoWeekSeed(new Date());
+    $("uiSeed").textContent = seed;
+    setOverlay(
+      "Infinity Evolution",
+      `Elige modo. <span class="muted">Normal</span> usa mejoras permanentes y permite prestigio. <span class="muted">Ranking</span> es justo (sin prestigio) con seed semanal.`,
+      VERSION,
+      `
+      <div class="item">
+        <h3>Normal (progreso)</h3>
+        <p>Mejoras permanentes, misiones y skins. Prestigio para ganar monedas.</p>
+        <div class="tag"><b>Monedas</b> ${Save.coins}</div>
+        <div class="tag"><b>Prestigios</b> ${Save.prestige}</div>
+        <div class="tag"><b>Mejor oleada</b> ${Save.stats.bestWaveNormal}</div>
+      </div>
+      <div class="item">
+        <h3>Ranking semanal</h3>
+        <p>Todos empiezan igual. Seed fija: <span class="mono">${seed}</span>. Ranking por oleada.</p>
+        <div class="tag"><b>Objetivo</b> romper la oleada</div>
+        <div class="tag"><b>Justicia</b> máxima</div>
+      </div>
+      `,
+      [
+        {text:"▶ Normal", kind:"primary", onClick:()=>{ overlay(false); resetRun("normal"); } },
+        {text:"🏆 Ranking semanal", onClick:()=>{ overlay(false); resetRun("ranked"); } },
+        {text:"⚡ Mejoras (perm)", onClick:()=>showUpgrades()},
+        {text:"🎨 Skins", onClick:()=>showSkins()},
+        {text:"📌 Misiones", onClick:()=>showMissions()},
+        {text:"🏆 Ranking", onClick:()=>showLeaderboard()},
+        {text:"⚙️ Ajustes", onClick:()=>showSettings()},
+        {text:"❌ Cerrar", onClick:()=>overlay(false)}
+      ]
+    );
+  }
+
+  function showPause(){
+    setOverlay(
+      "Pausa",
+      `Run en pausa. <span class="muted">Consejo:</span> si vas flojo, sube vida/cadencia.`,
+      `${(G.mode||"").toUpperCase()} · ${fmt(G.timeSurvived)}s`,
+      `
+      <div class="item">
+        <h3>Estado</h3>
+        <p>Oleada <b>${G.wave}</b> · Oro <b>${fmt(G.gold)}</b> · Vida <b>${Math.round(Player.hp)}/${Math.round(Player.maxHp)}</b></p>
+        <div class="tag"><b>Daño</b> ${fmt(Player.dmg)}</div>
+        <div class="tag"><b>Cadencia</b> ${(Math.round(Player.rof*100)/100)}/s</div>
+        <div class="tag"><b>Crítico</b> ${(Player.critChance*100).toFixed(0)}% ×${Player.critMult.toFixed(2)}</div>
+        <div class="tag"><b>Multishot</b> ${Player.multishot}</div>
+      </div>
+      <div class="item">
+        <h3>Atajos</h3>
+        <p><span class="kbd">P</span> reanudar · <span class="kbd">B</span> tienda · <span class="kbd">U</span> mejoras · <span class="kbd">R</span> reset</p>
+      </div>
+      `,
+      [
+        {text:"▶ Reanudar", kind:"primary", onClick:()=>{ overlay(false); G.paused=false; }},
+        {text:"🛒 Tienda", onClick:()=>showShop()},
+        {text:"⚡ Mejoras", onClick:()=>showUpgrades()},
+        {text:"🏆 Ranking", onClick:()=>showLeaderboard()},
+        {text:"🧨 Reset run", kind:"danger", onClick:()=>{ overlay(false); setMode("menu"); }},
+      ]
+    );
+  }
+
+  function showDead(){
+    G.paused = true;
+
+    if(G.mode==="ranked"){
+      submitScore();
+    }else if(G.mode==="normal"){
+      Save.stats.bestWaveNormal = Math.max(Save.stats.bestWaveNormal, G.wave);
+      saveJSON(STORAGE_KEY, Save);
+    }
+
+    const gain = (G.mode==="normal") ? prestigeGain() : 0;
+    const msg = G.mode==="ranked"
+      ? `Has caído en oleada <b>${G.wave}</b>. Se guarda tu score en ranking local.`
+      : `Has caído en oleada <b>${G.wave}</b>. Prestigia cuando te convenga.`;
+
+    setOverlay(
+      "Derrota",
+      msg,
+      `${fmt(G.timeSurvived)}s · oleada ${G.wave}`,
+      `
+      <div class="item">
+        <h3>Resumen</h3>
+        <p>Tiempo: <b>${fmt(G.timeSurvived)}s</b> · Oro: <b>${fmt(G.gold)}</b> · Seed: <span class="mono">${G.seed}</span></p>
+        ${G.mode==="normal"
+          ? `<div class="tag"><b>Prestigio posible</b> +${gain} monedas</div>`
+          : `<div class="tag"><b>Ranking</b> guardado</div>`}
+      </div>
+      <div class="item">
+        <h3>Tip</h3>
+        <p>Si mueres pronto: sube <b>vida</b> o <b>cadencia</b>. Si mueres tarde: sube <b>multishot</b> o <b>críticos</b>.</p>
+      </div>
+      `,
+      [
+        {text:"↻ Reintentar", kind:"primary", onClick:()=>{ overlay(false); resetRun(G.mode); }},
+        {text:"🏆 Ranking", onClick:()=>showLeaderboard()},
+        {text:"⚡ Mejoras", onClick:()=>showUpgrades()},
+        ...(G.mode==="normal" ? [{text:`✨ Prestigio (+${gain})`, kind:"good", onClick:()=>{ overlay(false); doPrestige(); }}] : []),
+        {text:"⬅ Menú", onClick:()=>{ overlay(false); setMode("menu"); } }
+      ]
+    );
+  }
+
+  function showShop(){
+    const ranked = (G.mode==="ranked");
+    const body = ShopItems.map(it=>{
+      const bought = RunBuys[it.id]||0;
+      const cost = it.cost(bought);
+      const can = (!ranked) && (G.gold >= cost);
+      return `
+        <div class="item">
+          <div class="row">
+            <h3 style="margin:0;font-size:13px">${it.name}</h3>
+            <span class="badge">Coste ${cost} oro</span>
+          </div>
+          <p>${it.desc}</p>
+          <div class="row" style="margin-top:8px">
+            <span class="tag"><b>Compras</b> ${bought}</span>
+            <button class="btn small ${can?"primary":""}" ${can?"":"disabled"} data-buy="${it.id}">
+              Comprar
+            </button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    setOverlay(
+      "Tienda (run)",
+      ranked ? `Modo ranking: tienda desactivada para que sea <b>justo</b>.` : `Gasta oro para potenciar esta run.`,
+      `Oro: ${fmt(G.gold)}`,
+      `<div class="item"><h3>Nota</h3><p>En Ranking no hay tienda (fair play). En Normal sí.</p></div>` + body,
+      [{text:"Cerrar", onClick:()=>overlay(false)}]
+    );
+
+    [...document.querySelectorAll("[data-buy]")].forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        if(G.mode==="ranked"){ toast("Tienda desactivada en Ranking"); return; }
+        const id = btn.getAttribute("data-buy");
+        const it = ShopItems.find(x=>x.id===id);
+        const bought = RunBuys[id]||0;
+        const cost = it.cost(bought);
+        if(G.gold < cost){ toast("No tienes oro"); return; }
+        G.gold -= cost;
+        RunBuys[id] = bought+1;
+        it.apply();
+        log(`Comprado: <b>${it.name}</b> (-${cost} oro)`, "good");
+        updateUI();
+        showShop();
+      });
+    });
+  }
+
+  function showUpgrades(){
+    const ranked = (G.mode==="ranked");
+
+    const rows = PermUpgrades.map(u=>{
+      const lvl = Save.perm[u.id]||0;
+      const maxed = lvl >= u.max;
+      const cost = u.cost(lvl);
+      const can = !ranked && !maxed && Save.coins >= cost;
+      return `
+        <div class="item">
+          <div class="row">
+            <h3 style="margin:0;font-size:13px">${u.name}</h3>
+            <span class="badge">Nivel ${lvl}/${u.max}</span>
+          </div>
+          <p>${u.desc}</p>
+          <div class="row" style="margin-top:8px">
+            <span class="tag"><b>Coste</b> ${cost} monedas</span>
+            <button class="btn small ${can?"primary":""}" ${can?"":"disabled"} data-perm="${u.id}">
+              Mejorar
+            </button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    const conv = `
+      <div class="item">
+        <h3>Monedas (permanentes)</h3>
+        <p>Las monedas mejoran tu cuenta (Normal). Ranking ignora todo para ser justo.</p>
+        <div class="row" style="margin-top:8px">
+          <span class="tag"><b>Tus monedas</b> ${Save.coins}</span>
+          <span class="tag"><b>Tu oro actual</b> ${fmt(G.gold)}</span>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn small" id="btnConvert" ${ranked?"disabled":""}>Convertir 100 oro → 1 moneda</button>
+          <button class="btn small" id="btnConvertAll" ${ranked?"disabled":""}>Convertir TODO</button>
+        </div>
+        <div class="hint">Consejo: convierte en menú, no a mitad de run.</div>
+      </div>
+    `;
+
+    setOverlay(
+      "Mejoras permanentes",
+      ranked ? `Modo ranking: mejoras permanentes <b>bloqueadas</b>.` : `Compra mejoras permanentes para Normal.`,
+      `Monedas: ${Save.coins}`,
+      conv + rows,
+      [{text:"Cerrar", onClick:()=>overlay(false)}]
+    );
+
+    const btnC = $("btnConvert");
+    const btnCA = $("btnConvertAll");
+    if(btnC) btnC.onclick = ()=>{
+      if(G.mode==="ranked") return;
+      if(G.gold < BAL.coinRate){ toast("Necesitas 100 oro"); return; }
+      G.gold -= BAL.coinRate;
+      Save.coins += 1;
+      saveJSON(STORAGE_KEY, Save);
+      toast("+1 moneda");
+      showUpgrades();
+      updateUI();
+    };
+    if(btnCA) btnCA.onclick = ()=>{
+      if(G.mode==="ranked") return;
+      const x = Math.floor(G.gold / BAL.coinRate);
+      if(x<=0){ toast("No hay oro para convertir"); return; }
+      G.gold -= BAL.coinRate * x;
+      Save.coins += x;
+      saveJSON(STORAGE_KEY, Save);
+      toast(`+${x} monedas`);
+      showUpgrades();
+      updateUI();
+    };
+
+    [...document.querySelectorAll("[data-perm]")].forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        if(G.mode==="ranked") return;
+        const id = btn.getAttribute("data-perm");
+        const u = PermUpgrades.find(x=>x.id===id);
+        const lvl = Save.perm[id]||0;
+        const cost = u.cost(lvl);
+        if(Save.coins < cost){ toast("No tienes monedas"); return; }
+        if(lvl >= u.max){ toast("Max"); return; }
+        Save.coins -= cost;
+        Save.perm[id] = lvl+1;
+        saveJSON(STORAGE_KEY, Save);
+        toast("Mejora comprada");
+        // si estás en normal y en menú, se aplica al empezar; si estás en run normal, aplica al siguiente reset
+        showUpgrades();
+        updateUI();
+      });
+    });
+  }
+
+  function showMissions(){
+    ensureMissions();
+    const ranked = (G.mode==="ranked");
+    const cards = (MissionsData.missions||[]).map((m,i)=>{
+      const pct = Math.floor((m.progress/m.goal)*100);
+      const canClaim = m.done && !m.claimed && !ranked && (G.mode==="normal" || G.mode==="menu" || G.mode==="paused");
+      return `
+        <div class="item">
+          <div class="row">
+            <h3 style="margin:0;font-size:13px">${m.name}</h3>
+            <span class="badge">${m.progress}/${m.goal}</span>
+          </div>
+          <p>${m.desc}</p>
+          <div class="row" style="margin-top:8px">
+            <span class="tag"><b>Progreso</b> ${pct}%</span>
+            <span class="tag"><b>Recompensa</b> +${m.reward} monedas</span>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn small ${canClaim?"primary":""}" ${canClaim?"":"disabled"} data-claim="${i}">Cobrar</button>
+            <span class="muted" style="font-size:12px">${m.claimed?"Cobrada":(m.done?"Lista":"En curso")}</span>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    setOverlay(
+      "Misiones diarias",
+      ranked ? `Modo ranking: puedes completarlas, pero <b>no cobrar</b> (solo Normal).` : `Completa misiones y cobra monedas (Normal).`,
+      dayKey(),
+      cards || `<div class="item"><p>No hay misiones.</p></div>`,
+      [{text:"Cerrar", onClick:()=>overlay(false)}]
+    );
+
+    [...document.querySelectorAll("[data-claim]")].forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const idx = parseInt(btn.getAttribute("data-claim"),10);
+        claimMission(idx);
+        showMissions();
+        updateUI();
+      });
+    });
+  }
+
+  function showSkins(){
+    const ranked = (G.mode==="ranked");
+    const cards = SkinCatalog.map(s=>{
+      const owned = !!Skins.owned[s.name];
+      const equipped = Skins.equipped===s.name;
+      const canBuy = !ranked && !owned && Save.coins >= s.price;
+      const canEquip = owned && !equipped;
+      return `
+        <div class="item">
+          <div class="row">
+            <h3 style="margin:0;font-size:13px">${s.name}</h3>
+            <span class="badge">${owned ? "OWNED" : (s.price+" monedas")}</span>
+          </div>
+          <p>${s.desc}</p>
+          <div class="row" style="margin-top:8px">
+            <span class="tag"><b>A</b> <span class="mono">${s.colorA}</span></span>
+            <span class="tag"><b>B</b> <span class="mono">${s.colorB}</span></span>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn small ${canBuy?"primary":""}" ${canBuy?"":"disabled"} data-buy-skin="${s.name}">Comprar</button>
+            <button class="btn small ${canEquip?"primary":""}" ${canEquip?"":"disabled"} data-equip-skin="${s.name}">Equipar</button>
+            <span class="muted" style="font-size:12px">${equipped?"(equipada)":""}</span>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    setOverlay(
+      "Skins",
+      ranked ? `Modo ranking: skins bloqueadas (cosmético y justo).` : `Cosmético. Se compra con monedas (Normal).`,
+      `Monedas: ${Save.coins}`,
+      cards,
+      [{text:"Cerrar", onClick:()=>overlay(false)}]
+    );
+
+    [...document.querySelectorAll("[data-buy-skin]")].forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        if(G.mode==="ranked") return;
+        const name = btn.getAttribute("data-buy-skin");
+        const s = getSkin(name);
+        if(Skins.owned[name]) return;
+        if(Save.coins < s.price){ toast("No tienes monedas"); return; }
+        Save.coins -= s.price;
+        Skins.owned[name] = true;
+        saveJSON(STORAGE_KEY, Save);
+        saveJSON(SKINS_KEY, Skins);
+        toast("Skin comprada");
+        showSkins();
+        updateUI();
+      });
+    });
+
+    [...document.querySelectorAll("[data-equip-skin]")].forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const name = btn.getAttribute("data-equip-skin");
+        if(!Skins.owned[name]) return;
+        Skins.equipped = name;
+        saveJSON(SKINS_KEY, Skins);
+        Player.skin = name;
+        toast("Skin equipada");
+        showSkins();
+      });
+    });
+  }
+
+  function showLeaderboard(){
+    const weekly = Rank.bestWeekly[G.seed] || [];
+    const all = Rank.bestAllTime || [];
+    const mk = (arr)=> arr.slice(0,10).map((e,i)=>`
+      <div class="item">
+        <div class="row">
+          <h3 style="margin:0;font-size:13px">#${i+1} · ${e.name}</h3>
+          <span class="badge">W${e.wave} · ${fmt(e.time)}s</span>
+        </div>
+        <p>Seed: <span class="mono">${e.modeSeed}</span></p>
+      </div>
+    `).join("");
+
+    setOverlay(
+      "Ranking (local)",
+      `Semanal (seed actual) + histórico. Consejo: juega Ranking para “fair play”.`,
+      G.seed,
+      `
+      <div class="item">
+        <h3>Tu nombre</h3>
+        <p>Se guarda solo en tu navegador.</p>
+        <input class="input" id="inpName" value="${(Rank.playerName||"JC").replace(/"/g,"&quot;")}" />
+        <div class="hint">Máx 18 chars. Cambia y se guarda.</div>
+      </div>
+      <div class="item">
+        <h3>Semanal</h3>
+        <p>Top local para seed <span class="mono">${G.seed}</span>.</p>
+      </div>
+      ${weekly.length?mk(weekly):`<div class="item"><p>No hay scores esta semana.</p></div>`}
+      <div class="item">
+        <h3>Histórico</h3>
+        <p>Mejores runs guardadas.</p>
+      </div>
+      ${all.length?mk(all):`<div class="item"><p>No hay scores aún.</p></div>`}
+      `,
+      [
+        {text:"Cerrar", onClick:()=>overlay(false)},
+        {text:"Borrar ranking", kind:"danger", onClick:()=>{
+          if(!confirm("¿Borrar ranking local?")) return;
+          Rank.bestAllTime = [];
+          Rank.bestWeekly = {};
+          saveJSON(RANK_KEY, Rank);
+          showLeaderboard();
+        }}
+      ]
+    );
+
+    const inp = $("inpName");
+    if(inp){
+      inp.addEventListener("input", ()=>{
+        Rank.playerName = inp.value.slice(0,18);
+        saveJSON(RANK_KEY, Rank);
+      });
+    }
+  }
+
+  function showSettings(){
+    setOverlay(
+      "Ajustes",
+      "Cosas que no rompen el juego 🙂",
+      VERSION,
+      `
+      <div class="item">
+        <h3>Audio</h3>
+        <p>Beep básico (opcional).</p>
+        <div class="row" style="margin-top:8px">
+          <button class="btn small ${Settings.audio?"primary":""}" id="togAudio">${Settings.audio?"ON":"OFF"}</button>
+          <span class="muted" style="font-size:12px">Si no suena: el navegador bloquea audio hasta interacción.</span>
+        </div>
+      </div>
+      <div class="item">
+        <h3>Partículas</h3>
+        <p>Menos partículas = más FPS.</p>
+        <input class="input" id="inpPart" type="range" min="0" max="1" step="0.05" value="${Settings.particles}">
+        <div class="hint">Valor: <span class="mono">${Settings.particles}</span></div>
+      </div>
+      <div class="item">
+        <h3>Screen shake</h3>
+        <p>Impacto visual.</p>
+        <input class="input" id="inpShake" type="range" min="0" max="1" step="0.05" value="${Settings.screenshake}">
+        <div class="hint">Valor: <span class="mono">${Settings.screenshake}</span></div>
+      </div>
+      `,
+      [{text:"Cerrar", onClick:()=>overlay(false)}]
+    );
+
+    $("togAudio").onclick = ()=>{
+      Settings.audio = !Settings.audio;
+      saveJSON(SETTINGS_KEY, Settings);
+      toast(`Audio ${Settings.audio?"ON":"OFF"}`);
+      showSettings();
+    };
+    $("inpPart").oninput = (e)=>{
+      Settings.particles = parseFloat(e.target.value);
+      saveJSON(SETTINGS_KEY, Settings);
+    };
+    $("inpShake").oninput = (e)=>{
+      Settings.screenshake = parseFloat(e.target.value);
+      saveJSON(SETTINGS_KEY, Settings);
+    };
+  }
+
+  // ========= INPUT =========
+  function keyOf(e){
+    const k = e.key;
+    if(k==="Shift") return "Shift";
+    return k.length===1 ? k.toLowerCase() : k;
+  }
+  window.addEventListener("keydown", (e)=>{
+    const k = keyOf(e);
+    G.keys.add(k);
+
+    if(k==="p"){
+      if(G.mode==="menu") return;
+      if(G.paused){ overlay(false); G.paused=false; }
+      else setMode("paused");
+    }
+    if(k==="b"){ if(G.mode!=="menu") showShop(); }
+    if(k==="u"){ showUpgrades(); }
+    if(k==="r"){ setMode("menu"); }
+  });
+  window.addEventListener("keyup", (e)=>{ G.keys.delete(keyOf(e)); });
+
+  cv.addEventListener("mousemove", (e)=>{
+    const rect = cv.getBoundingClientRect();
+    G.mouse.x = e.clientX - rect.left;
+    G.mouse.y = e.clientY - rect.top;
+  });
+  cv.addEventListener("mousedown", ()=>{ G.mouse.down=true; });
+  window.addEventListener("mouseup", ()=>{ G.mouse.down=false; });
+
+  // ========= BUTTONS =========
+  $("btnPlay").onclick = ()=>{
+    if(G.mode==="menu") setMode("menu");
+    else { overlay(false); G.paused=false; }
+    if(G.mode==="menu") showMenu();
+    else toast("En run");
+  };
+  $("btnPause").onclick = ()=> setMode("paused");
+  $("btnShop").onclick = ()=> showShop();
+  $("btnUpgrades").onclick = ()=> showUpgrades();
+  $("btnMissions").onclick = ()=> showMissions();
+  $("btnSkins").onclick = ()=> showSkins();
+  $("btnLeaderboard").onclick = ()=> showLeaderboard();
+  $("btnReset").onclick = ()=> setMode("menu");
+  $("btnPrestige").onclick = ()=> doPrestige();
+
+  // ========= UPDATE/RENDER =========
+  function updateUI(){
+    $("uiVersion").textContent = VERSION;
+    $("uiSeed").textContent = isoWeekSeed(new Date());
+
+    const modeText = (G.mode==="menu") ? "Menú" : (G.mode==="ranked" ? "Ranking" : "Normal");
+    const modeDot = (G.mode==="ranked") ? "dot w" : (G.mode==="normal" ? "dot" : "dot w");
+    $("uiMode").innerHTML = `<span class="${modeDot}"></span><span id="uiModeText">${modeText}${G.paused && G.mode!=="menu" ? " (Pausa)" : ""}</span>`;
+
+    $("uiWave").textContent = G.wave;
+    $("uiGold").textContent = fmt(G.gold);
+    $("uiCoins").textContent = Save.coins;
+    $("uiHP").textContent = `${Math.max(0,Math.round(Player.hp))}/${Math.round(Player.maxHp)}`;
+    $("uiDmg").textContent = fmt(Player.dmg);
+    $("uiRof").textContent = `${(Math.round(Player.rof*100)/100).toFixed(2)}/s`;
+    $("uiCrit").textContent = `${Math.round(Player.critChance*100)}% ×${Player.critMult.toFixed(2)}`;
+    $("uiMulti").textContent = Player.multishot;
+    $("uiDrones").textContent = Player.drones;
+
+    $("uiDiff").textContent = (G.mode==="ranked") ? "Ranking" : "Normal";
+    $("uiFps").textContent = G.fps ? Math.round(G.fps) : "—";
+    $("uiSave").textContent = (G.mode==="normal") ? "ON" : "OFF";
+  }
+
+  function playerMovement(dt){
+    let mx=0,my=0;
+    if(G.keys.has("w")) my -= 1;
+    if(G.keys.has("s")) my += 1;
+    if(G.keys.has("a")) mx -= 1;
+    if(G.keys.has("d")) mx += 1;
+
+    const len = Math.hypot(mx,my)||1;
+    mx/=len; my/=len;
+
+    // dash
+    if(Player.dashCd>0) Player.dashCd -= dt;
+    if(Player.dashT>0){
+      Player.dashT -= dt;
+      Player.x += Player.dashVec.x * BAL.dashSpeed * dt;
+      Player.y += Player.dashVec.y * BAL.dashSpeed * dt;
+    }else{
+      if(G.keys.has("Shift") && Player.dashCd<=0 && (mx||my)){
+        Player.dashT = BAL.dashTime;
+        Player.dashCd = BAL.dashCd;
+        Player.iTime = Math.max(Player.iTime, BAL.iFrame);
+        Player.dashVec.x = mx; Player.dashVec.y = my;
+        beep(320,0.03,"sine",0.03);
+      }else{
+        Player.x += mx*Player.speed*dt;
+        Player.y += my*Player.speed*dt;
+      }
+    }
+
+    // clamp inside canvas
+    const rect = cv.getBoundingClientRect();
+    Player.x = clamp(Player.x, Player.r, rect.width-Player.r);
+    Player.y = clamp(Player.y, Player.r, rect.height-Player.r);
+  }
+
+  function autoShoot(dt){
+    G.lastShot += dt;
+    const need = 1/Math.max(0.15, Player.rof);
+    if(G.lastShot < need) return;
+    G.lastShot = 0;
+
+    // aim at nearest enemy; if none -> mouse
+    let targetX = G.mouse.x, targetY = G.mouse.y;
+    if(G.enemies.length){
+      let best=null, bestD=1e18;
+      for(const e of G.enemies){
+        const dx=e.x-Player.x, dy=e.y-Player.y;
+        const d=dx*dx+dy*dy;
+        if(d<bestD){ bestD=d; best=e; }
+      }
+      if(best){ targetX=best.x; targetY=best.y; }
+    }
+    const baseA = Math.atan2(targetY-Player.y, targetX-Player.x);
+
+    const m = Player.multishot;
+    const spread = Player.spread;
+    if(m<=1){
+      fireBullet(baseA, 1);
+    }else{
+      const mid = (m-1)/2;
+      for(let i=0;i<m;i++){
+        const off = (i-mid) * spread;
+        fireBullet(baseA + off, 0.88);
+      }
+    }
+  }
+
+  function dronesTick(dt){
+    if(Player.drones<=0) return;
+    const n = Player.drones;
+    const t = G.timeSurvived*1.25;
+    for(let i=0;i<n;i++){
+      const a = t + i*(Math.PI*2/n);
+      const dx = Math.cos(a)*36;
+      const dy = Math.sin(a)*36;
+      const x = Player.x + dx;
+      const y = Player.y + dy;
+
+      // hit nearest enemy in small radius
+      if(G.enemies.length && chance(0.55*dt)){
+        let best=null, bestD=1e18;
+        for(const e of G.enemies){
+          const ex=e.x-x, ey=e.y-y;
+          const d=ex*ex+ey*ey;
+          if(d<bestD){ bestD=d; best=e; }
+        }
+        if(best && bestD < 220*220){
+          damageEnemy(best, Player.droneDmg, true);
+          burst(x,y,6,0.6);
+          beep(520,0.012,"triangle",0.015);
+        }
+      }
+    }
+  }
+
+  function updateEnemies(dt){
+    for(const e of G.enemies){
+      // burn
+      if(e.burnT>0){
+        e.burnT -= dt;
+        e.hp -= e.burnDps*dt;
+        if(e.hp<=0){ killEnemy(e); continue; }
+      }
+
+      // knockback
+      if(e.knock.t>0){
+        e.knock.t -= dt;
+        e.x += e.knock.x*dt;
+        e.y += e.knock.y*dt;
+      }
+
+      // chase
+      const dx = Player.x - e.x;
+      const dy = Player.y - e.y;
+      const d = Math.hypot(dx,dy)||1;
+      e.x += (dx/d) * e.sp * dt;
+      e.y += (dy/d) * e.sp * dt;
+
+      // touch damage
+      if(Player.iTime<=0 && d < (Player.r + e.r)){
+        Player.hp -= e.dmg * dt;
+        screenShake(e.boss?0.55:0.22);
+        if(Player.hp<=0){
+          Player.hp = 0;
+          showDead();
+          return;
+        }
+      }
+    }
+  }
+
+  function updateBullets(dt){
+    for(const b of G.bullets){
+      b.x += b.vx*dt;
+      b.y += b.vy*dt;
+      b.life -= dt;
+    }
+    // bullet collisions
+    for(const b of G.bullets){
+      if(b.life<=0) continue;
+      for(const e of G.enemies){
+        const dx=b.x-e.x, dy=b.y-e.y;
+        const d2=dx*dx+dy*dy;
+        const rr=(b.r+e.r)*(b.r+e.r);
+        if(d2<=rr){
+          b.life = -1;
+          damageEnemy(e, b.dmg, false);
+          burst(b.x,b.y,10,0.8);
+          break;
+        }
+      }
+    }
+    G.bullets = G.bullets.filter(b=>b.life>0);
+  }
+
+  function spawnLogic(dt){
+    // wave timer
+    G.waveTimer += dt;
+    if(G.waveTimer >= G.waveDuration){
+      G.wave++;
+      startWave(G.wave);
+    }
+
+    // spawn normal enemies (not during boss-only wave? still allow spawns except boss wave config)
+    const cfg = waveConfig(G.wave);
+    if(cfg.isBoss) return;
+    G.lastSpawn += dt;
+    if(G.lastSpawn >= G.spawnRate){
+      G.lastSpawn = 0;
+      spawnEnemy(false);
+    }
+  }
+
+  function updateParticles(dt){
+    for(const p of G.parts){
+      p.x += p.vx*dt;
+      p.y += p.vy*dt;
+      p.vx *= (1-2.2*dt);
+      p.vy *= (1-2.2*dt);
+      p.life -= dt;
+    }
+    G.parts = G.parts.filter(p=>p.life>0);
+
+    for(const t of G.texts){
+      t.y += t.vy*dt;
+      t.life -= dt;
+    }
+    G.texts = G.texts.filter(t=>t.life>0);
+
+    if(Player.iTime>0) Player.iTime -= dt;
+
+    // screenshake decay
+    G.shake *= (1-4.5*dt);
+    if(G.shake<0.001) G.shake=0;
+  }
+
+  function drawGame(){
+    const rect = cv.getBoundingClientRect();
+    const w = rect.width, h = rect.height;
+
+    // shake
+    const sx = (randRange(-1,1) * G.shake * 18);
+    const sy = (randRange(-1,1) * G.shake * 18);
+    ctx.save();
+    ctx.translate(sx, sy);
+
+    // clear
+    ctx.clearRect(-sx,-sy,w,h);
+
+    // grid subtle
+    ctx.globalAlpha = 0.08;
+    ctx.strokeStyle = "#9bb7ff";
+    ctx.lineWidth = 1;
+    for(let x=0;x<w;x+=64){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+    for(let y=0;y<h;y+=64){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+
+    // player
+    const skin = getSkin(Player.skin);
+    const grad = ctx.createLinearGradient(Player.x-14, Player.y-14, Player.x+14, Player.y+14);
+    grad.addColorStop(0, skin.colorA);
+    grad.addColorStop(1, skin.colorB);
+    ctx.fillStyle = grad;
+
+    ctx.beginPath();
+    ctx.arc(Player.x, Player.y, Player.r, 0, Math.PI*2);
+    ctx.fill();
+
+    // iFrame ring
+    if(Player.iTime>0){
+      ctx.globalAlpha = 0.35;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(Player.x, Player.y, Player.r+6, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // drones (visual)
+    if(Player.drones>0){
+      const n = Player.drones;
+      const t = G.timeSurvived*1.25;
+      for(let i=0;i<n;i++){
+        const a = t + i*(Math.PI*2/n);
+        const x = Player.x + Math.cos(a)*36;
+        const y = Player.y + Math.sin(a)*36;
+        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = "#ffd166";
+        ctx.beginPath();
+        ctx.arc(x,y,5.2,0,Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // bullets
+    ctx.fillStyle = "#ffd166";
+    for(const b of G.bullets){
+      ctx.globalAlpha = b.crit ? 1 : 0.85;
+      ctx.beginPath();
+      ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // enemies
+    for(const e of G.enemies){
+      const hpPct = clamp(e.hp/e.maxHp, 0, 1);
+      ctx.fillStyle = e.boss ? "rgba(255,77,109,.95)" : e.elite ? "rgba(255,209,102,.95)" : "rgba(255,77,109,.75)";
+      ctx.beginPath();
+      ctx.arc(e.x,e.y,e.r,0,Math.PI*2);
+      ctx.fill();
+
+      // hp bar
+      ctx.globalAlpha = 0.7;
+      ctx.fillStyle = "rgba(0,0,0,.35)";
+      ctx.fillRect(e.x-e.r, e.y-e.r-10, e.r*2, 4);
+      ctx.fillStyle = "rgba(55,214,122,.9)";
+      ctx.fillRect(e.x-e.r, e.y-e.r-10, e.r*2*hpPct, 4);
+      ctx.globalAlpha = 1;
+
+      // burn
+      if(e.burnT>0){
+        ctx.globalAlpha = 0.6;
+        ctx.strokeStyle = "rgba(255,209,102,.9)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(e.x,e.y,e.r+5,0,Math.PI*2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // particles
+    for(const p of G.parts){
+      ctx.globalAlpha = clamp(p.life, 0, 1);
+      ctx.fillStyle = `hsl(${p.hue} 90% 65%)`;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // floating texts
+    for(const t of G.texts){
+      ctx.globalAlpha = clamp(t.life, 0, 1);
+      ctx.font = "12px ui-monospace, Menlo, Consolas, monospace";
+      ctx.fillStyle = t.kind==="good" ? "#37d67a" : t.kind==="warn" ? "#ffd166" : t.kind==="bad" ? "#ff4d6d" : "#eaf1ff";
+      ctx.fillText(t.text, t.x-ctx.measureText(t.text).width/2, t.y);
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.restore();
+  }
+
+  function tick(dt){
+    if(G.mode==="menu") return;
+    if(G.paused) return;
+
+    G.timeSurvived += dt;
+
+    playerMovement(dt);
+    autoShoot(dt);
+    dronesTick(dt);
+    spawnLogic(dt);
+    updateBullets(dt);
+    updateEnemies(dt);
+    updateParticles(dt);
+
+    // UI clock
+    const mm = Math.floor(G.timeSurvived/60);
+    const ss = Math.floor(G.timeSurvived%60);
+    $("uiClock").textContent = `${String(mm).padStart(2,"0")}:${String(ss).padStart(2,"0")}`;
+
+    // fps
+    G.fpsAcc += dt;
+    G.fpsCount++;
+    if(G.fpsAcc>=0.5){
+      G.fps = G.fpsCount / G.fpsAcc;
+      G.fpsAcc = 0;
+      G.fpsCount = 0;
+    }
+
+    // autosave normal
+    if(G.mode==="normal" && Math.floor(G.timeSurvived)%10===0){
+      // solo guardamos el save permanente (no la run)
+      saveJSON(STORAGE_KEY, Save);
+    }
+
+    updateUI();
+  }
+
+  // ========= LOOP =========
+  function loop(){
+    const t = now();
+    let dt = (t - G.last) / 1000;
+    G.last = t;
+    dt = clamp(dt, 0, 0.05);
+
+    tick(dt);
+    drawGame();
+
+    requestAnimationFrame(loop);
+  }
+
+  // ========= INIT =========
+  function init(){
+    resize();
+    $("uiVersion").textContent = VERSION;
+    G.seed = isoWeekSeed(new Date());
+    updateUI();
+    setMode("menu");
+
+    log("Bienvenido. Consejo: en Normal, haz prestigio cuando llegues a un techo.", "good");
+    requestAnimationFrame(loop);
+  }
+
+  // Start wave from menu actions
+  // (Show menu immediately)
+  init();
+
+  </script>
+</body>
+</html>
