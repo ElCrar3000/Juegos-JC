@@ -1,40 +1,270 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Juegos JC | Juegos indie, ideas grandes</title>
-  <meta name="description" content="Juegos JC: juegos indie con ideas originales, personajes épicos y proyectos que evolucionan de verdad." />
-  <style>
-    :root {
-      --bg: #07111f;
-      --bg-soft: #0d1b2f;
-      --panel: rgba(15, 27, 47, 0.72);
-      --panel-strong: rgba(10, 22, 40, 0.92);
-      --line: rgba(255,255,255,0.08);
-      --text: #f4f8ff;
-      --muted: #9fb0c9;
-      --primary: #5ee7ff;
-      --secondary: #9d7bff;
-      --accent: #ffe56c;
-      --good: #7dffb2;
-      --shadow: 0 20px 60px rgba(0,0,0,.35);
-      --radius: 24px;
-      --radius-sm: 16px;
-      --max: 1200px;
-    }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Juegos JC</title>
+  <meta name="description" content="Juegos JC - Juegos indie, demos y proyectos en evolución constante." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="index.html" aria-label="Ir a inicio">
+        <div class="logo"></div>
+        <div>
+          <h1>Juegos JC</h1>
+          <small>Indie. Mecánicas. Evolución.</small>
+        </div>
+      </a>
 
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at 20% 20%, rgba(94,231,255,.14), transparent 30%),
-        radial-gradient(circle at 80% 0%, rgba(157,123,255,.16), transparent 28%),
-        radial-gradient(circle at 50% 90%, rgba(255,229,108,.10), transparent 22%),
-        linear-gradient(180deg, #06101d 0%, #081424 45%, #09111d 100%);
+      <nav class="links">
+        <a class="chip" href="index.html">Inicio</a>
+        <a class="chip" href="#destacados">Destacados</a>
+        <a class="chip" href="#demos">Demos</a>
+        <a class="chip" href="#sobre">Sobre mí</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container hero">
+
+    <!-- HERO -->
+    <section class="hero-grid">
+      <div class="card">
+        <div class="kicker">Proyecto independiente • Juegos hechos por José Carlos</div>
+        <h2 class="title">Juegos que se juegan de verdad, no solo se enseñan</h2>
+        <p class="subtitle">
+          Aquí encontrarás mis juegos más potentes, demos jugables y proyectos que van creciendo versión a versión.
+          Acción, aventura, progresión y muchas ideas con mala leche.
+        </p>
+
+        <div class="cta-row">
+          <a class="btn primary" href="infinity_evolution_v1.2.3.html">▶ JUGAR AHORA</a>
+          <a class="btn" href="#destacados">Ver destacados</a>
+          <span class="badge">Actualizando catálogo</span>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="note">
+          <div class="dot"></div>
+          <div>
+            <strong>Juego principal:</strong> Infinity Evolution.  
+            Shooter con progresión, builds, prestigio y sensación de poder real.
+          </div>
+        </div>
+      </div>
+
+      <aside class="card">
+        <div class="panel-title">
+          <h2>Ahora mismo</h2>
+          <span class="badge">Top 3</span>
+        </div>
+
+        <div class="list">
+          <div class="item">
+            <h3>Infinity Evolution</h3>
+            <p>Acción, oleadas, builds y progreso infinito.</p>
+          </div>
+          <div class="item">
+            <h3>Zelda Dragona</h3>
+            <p>Aventura 3D con combate, NPCs, misión y mazmorra.</p>
+          </div>
+          <div class="item">
+            <h3>La Maldición del Programador</h3>
+            <p>Arcade rápido con oleadas, mejoras y bosses.</p>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- DESTACADO -->
+    <section id="destacados" style="margin-top:18px;">
+      <div class="card">
+        <div class="panel-title">
+          <h2>🔥 Juego destacado</h2>
+          <span class="pill"><span class="p"></span> recomendado</span>
+        </div>
+
+        <div class="grid2">
+          <div class="item">
+            <h3 style="font-size:20px; margin-bottom:10px;">Infinity Evolution</h3>
+            <p style="margin-bottom:12px;">
+              Mi juego más sólido ahora mismo. Sobrevive oleadas, mejora tu build, escala estadísticas y haz runs cada vez más bestias.
+            </p>
+
+            <div class="cta-row">
+              <a class="btn primary" href="infinity_evolution_v1.2.3.html">JUGAR AHORA</a>
+              <a class="btn" href="game.html">Ver más juegos</a>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="note">
+              <div class="dot"></div>
+              <div>Ideal si quieres empezar por el juego más completo de toda la web.</div>
+            </div>
+          </div>
+
+          <div class="item" style="min-height:220px; display:flex; align-items:center; justify-content:center;">
+            <div style="text-align:center; color:var(--muted);">
+              <div style="font-size:18px; margin-bottom:8px;">🎮 Aquí puedes poner un GIF o imagen del juego</div>
+              <p style="margin:0;">Pon una captura potente de Infinity Evolution en acción.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- JUEGOS PRINCIPALES -->
+    <section style="margin-top:18px;">
+      <div class="panel-title">
+        <h2>⭐ Juegos principales</h2>
+        <span class="badge">para enseñar sin miedo</span>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h3>Infinity Evolution</h3>
+          <p class="subtitle">Shooter de oleadas con mejoras, progresión y prestigio.</p>
+          <div class="cta-row">
+            <a class="btn primary" href="infinity_evolution_v1.2.3.html">JUGAR</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Zelda Dragona</h3>
+          <p class="subtitle">Aventura 3D con combate, misiones, NPCs y mazmorra.</p>
+          <div class="cta-row">
+            <a class="btn primary" href="Zelda_Dragona.html">JUGAR</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>La Maldición del Programador v2</h3>
+          <p class="subtitle">Arcade con oleadas, mejoras permanentes y mini-bosses.</p>
+          <div class="cta-row">
+            <a class="btn primary" href="maldicion_del_programador2.0.html">JUGAR</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Mini Brawl / Circle Brawl</h3>
+          <p class="subtitle">Combate rápido con héroes y habilidades distintas.</p>
+          <div class="cta-row">
+            <a class="btn" href="Circle_Brawl_v0.2.html">PROBAR DEMO</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DEMOS -->
+    <section id="demos" style="margin-top:18px;">
+      <div class="panel-title">
+        <h2>🧪 Demos y experimentos</h2>
+        <span class="badge">alpha / beta</span>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h3>Isla Titán</h3>
+          <p class="subtitle">Supervivencia 3D con exploración, isla y eventos.</p>
+          <div class="cta-row">
+            <a class="btn" href="isla_titan.html">PROBAR DEMO</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Juego de Trincheras</h3>
+          <p class="subtitle">Defensa cooperativa para dos jugadores con oleadas.</p>
+          <div class="cta-row">
+            <a class="btn" href="juego_trincheras.html">PROBAR DEMO</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Desert War</h3>
+          <p class="subtitle">Shooter 3D con zombis, bombas y caos en el desierto.</p>
+          <div class="cta-row">
+            <a class="btn" href="desertwar.html">PROBAR</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Empire Clicker</h3>
+          <p class="subtitle">Clicker simple con ingresos, negocios y prestigio.</p>
+          <div class="cta-row">
+            <a class="btn" href="empire.html">JUGAR</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BLOQUE DE CREDIBILIDAD -->
+    <section style="margin-top:18px;">
+      <div class="card">
+        <div class="panel-title">
+          <h2>🚀 Proyecto en evolución</h2>
+          <span class="pill"><span class="p"></span> activo</span>
+        </div>
+
+        <div class="grid2">
+          <div class="item">
+            <h3>+ varios juegos ya hechos</h3>
+            <p>No es una idea suelta: ya hay catálogo, versiones y sistemas jugables reales.</p>
+          </div>
+          <div class="item">
+            <h3>Desarrollo continuo</h3>
+            <p>Cada juego puede crecer con nuevas mecánicas, contenido y mejoras visuales.</p>
+          </div>
+          <div class="item">
+            <h3>Aprendiendo creando</h3>
+            <p>La web no es solo escaparate. También es laboratorio para construir juegos cada vez mejores.</p>
+          </div>
+          <div class="item">
+            <h3>Objetivo</h3>
+            <p>Que cada juego nuevo suba el nivel del proyecto entero.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SOBRE -->
+    <section id="sobre" style="margin-top:18px;">
+      <div class="card">
+        <div class="panel-title">
+          <h2>Sobre mí</h2>
+          <span class="badge">Juegos JC</span>
+        </div>
+        <p class="subtitle" style="margin-bottom:0;">
+          Soy José Carlos y este es mi proyecto de juegos. Aquí voy subiendo mis ideas, mis versiones y mis experimentos:
+          algunos son más arcade, otros más aventura, y otros son locuras que igual salen demasiado bien.
+        </p>
+      </div>
+    </section>
+
+    <!-- CTA FINAL -->
+    <section style="margin-top:18px;">
+      <div class="card" style="text-align:center;">
+        <h2 style="margin-top:0;">¿Quieres probar lo mejor?</h2>
+        <p class="subtitle">Empieza por Infinity Evolution y luego salta al resto.</p>
+        <div class="cta-row" style="justify-content:center;">
+          <a class="btn primary" href="infinity_evolution_v1.2.3.html">▶ JUGAR AHORA</a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      © <span id="year"></span> Juegos JC • Hecho para evolucionar.
+    </footer>
+  </main>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>        linear-gradient(180deg, #06101d 0%, #081424 45%, #09111d 100%);
       min-height: 100vh;
       overflow-x: hidden;
     }
