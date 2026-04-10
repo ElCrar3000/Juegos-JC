@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Base & Trincheras (2 jugadores)</title>
+<style>
+  html,body{margin:0;height:100%;background:#0c0f14;color:#e8eef7;font-family:system-ui,Segoe UI,Roboto,Arial}
+  #wrap{display:flex;flex-direction:column;height:100%}
+  #topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.08);background:#0b0e13;user-select:none}
+  .pill{padding:6px 10px;border:1px solid rgba(255,255,255,.12);border-radius:999px;font-size:13px;opacity:.95}
+  .hint{opacity:.85;font-size:13px}
+  canvas{flex:1;display:block;width:100%;height:100%}
+  #msg{position:fixed;left:50%;top:14%;transform:translateX(-50%);background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.18);padding:10px 12px;border-radius:14px;font-size:14px;display:none;backdrop-filter:blur(6px)}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="topbar">
+    <div class="pill" id="hudP1">Carlos HP: 100</div>
+    <div class="pill" id="hudP2">Rodrigo HP: 100</div>
+    <div class="pill" id="hudAmmo1">P1 Balas: 8/8</div>
+    <div class="pill" id="hudAmmo2">P2 Balas: 8/8</div>
+    <div class="pill" id="hudWave">Oleada: 1</div>
+    <div class="pill" id="hudScore">Puntos: 0</div>
+    <div class="hint">
+      P1: WASD + Click + R + E (trinchera) + 1-4 ·
+      P2: F T G H + U (disparo) + I (recarga) + Y (trinchera) + 7-0 · Reiniciar: P
+    </div>
+  </div>
+  <canvas id="c"></canvas>
+</div>
+<div id="msg"></div>
+
+<script>
+(() => {
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+  function resize(){
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio||1));
+    canvas.width = Math.floor(canvas.clientWidth*dpr);
+    canvas.height = Math.floor(canvas.clientHeight*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener("resize", resize);
+
+  const hudP1 = document.getElementById("hudP1");
+  const hudP2 = document.getElementById("hudP2");
+  const hudAmmo1 = document.getElementById("hudAmmo1");
+  const hudAmmo2 = document.getElementById("hudAmmo2");
+  const hudWave = document.getElementById("hudWave");
+  const hudScore = document.getElementById("hudScore");
+  const msg = document.getElementById("msg");
+  let msgT = 0;
+  function toast(t,ms=1200){ msg.textContent=t; msg.style.display="block"; msgT=performance.now()+ms; }
+
+  const keys = new Set();
+  window.addEventListener("keydown",(e)=>{ keys.add(e.key.toLowerCase()); if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(e.key.toLowerCase())) e.preventDefault(); },{passive:false});
+  window.addEventListener("keyup",(e)=> keys.delete(e.key.toLowerCase()));
+
+  // P1 mouse aim + click
+  let mouse = {x:0,y:0,down:false};
+  canvas.addEventListener("mousemove",(e)=>{ const r=canvas.getBoundingClientRect(); mouse.x=e.clientX-r.left; mouse.y=e.clientY-r.top; });
+  canvas.addEventListener("mousedown",()=> mouse.down=true);
+  window.addEventListener("mouseup",()=> mouse.down=false);
+
+  const world = { w:()=>canvas.clientWidth, h:()=>canvas.clientHeight, walls:[], bullets:[], enemyBullets:[], enemies:[] };
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const dist=(ax,ay,bx,by)=>Math.hypot(ax-bx,ay-by);
+  function rectHitCircle(rx,ry,rw,rh,cx,cy,cr){
+    const nx=clamp(cx,rx,rx+rw), ny=clamp(cy,ry,ry+rh);
+    return dist(nx,ny,cx,cy)<=cr;
+  }
+  function hitWallAt(x,y,r){
+    for(const w of world.walls) if(rectHitCircle(w.x,w.y,w.w,w.h,x,y,r)) return w;
+    return null;
+  }
+  function addWall(x,y){
+    const wall={x,y,w:54,h:26,hp:120};
+    world.walls.push(wall);
+  }
+
+  const base={x:0,y:0,r:42,hp:200};
+
+  const weapons=[
+    {name:"Gris",   color:"#9aa3ad", mag:8,  reloadMs:900,  fireMs:210, dmg:12, spread:0.02, pellets:1, speed:9.0},
+    {name:"Verde",  color:"#48d27b", mag:14, reloadMs:850,  fireMs:150, dmg:11, spread:0.03, pellets:1, speed:9.5},
+    {name:"Morada", color:"#b56cff", mag:18, reloadMs:780,  fireMs:115, dmg:10, spread:0.04, pellets:1, speed:10.0},
+    {name:"Escopeta",color:"#ffd166",mag:6,  reloadMs:1050, fireMs:420, dmg:8,  spread:0.22, pellets:5, speed:9.2},
+  ];
+
+  function makePlayer(label){
+    return {label, x:0,y:0,r:14,hp:100,speed:3.1,inv:0, wIdx:0, gun:{ammo:weapons[0].mag,reloading:false,lastFire:0,reloadEnd:0}};
+  }
+  const p1 = makePlayer("Carlos");
+  const p2 = makePlayer("Rodrigo");
+
+  function setWeapon(p, idx){
+    p.wIdx = clamp(idx,0,weapons.length-1);
+    const w=weapons[p.wIdx];
+    p.gun.ammo = Math.min(p.gun.ammo, w.mag);
+    p.gun.reloading=false;
+    toast(p.label+" arma: "+w.name);
+  }
+
+  let wave=1, score=0, nextWaveAt=0, paused=false;
+
+  function reset(){
+    world.walls.length=0; world.bullets.length=0; world.enemyBullets.length=0; world.enemies.length=0;
+    base.x=world.w()/2; base.y=world.h()/2; base.hp=200;
+    p1.x=base.x-40; p1.y=base.y+90; p1.hp=100; p1.inv=0; setWeapon(p1,0); p1.gun.ammo=weapons[0].mag;
+    p2.x=base.x+40; p2.y=base.y+90; p2.hp=100; p2.inv=0; setWeapon(p2,0); p2.gun.ammo=weapons[0].mag;
+    wave=1; score=0; nextWaveAt=performance.now()+800; paused=false;
+    toast("2 jugadores listos. Defended la base.");
+  }
+
+  function spawnWave(n){
+    const count=6+n*2;
+    const tankChance=Math.min(0.2,0.04*n);
+    for(let i=0;i<count;i++){
+      const side=Math.floor(Math.random()*4);
+      let x,y; const pad=40;
+      if(side===0){x=-pad;y=Math.random()*world.h();}
+      if(side===1){x=world.w()+pad;y=Math.random()*world.h();}
+      if(side===2){x=Math.random()*world.w();y=-pad;}
+      if(side===3){x=Math.random()*world.w();y=world.h()+pad;}
+      const isTank=Math.random()<tankChance;
+      world.enemies.push({x,y,r:isTank?18:14,hp:isTank?(90+n*10):(40+n*6),spd:isTank?1.15:1.6,fireMs:isTank?900:1200,lastShot:performance.now()-Math.random()*900,type:isTank?"tanque":"soldado"});
+    }
+  }
+
+  function fireBullet(fromX,fromY,ang,cfg,isEnemy=false){
+    const v=cfg.speed;
+    const b={x:fromX,y:fromY,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,r:3,dmg:cfg.dmg,life:1200,born:performance.now(),color:cfg.color||"#fff"};
+    (isEnemy?world.enemyBullets:world.bullets).push(b);
+  }
+
+  function startReload(p, now){
+    const w=weapons[p.wIdx];
+    if(p.gun.reloading) return;
+    p.gun.reloading=true;
+    p.gun.reloadEnd=now+w.reloadMs;
+    toast(p.label+": recargando");
+  }
+
+  function tryShootPlayer(p, now, aimAng){
+    const w=weapons[p.wIdx];
+    if(p.gun.reloading) return;
+    if(now-p.gun.lastFire<w.fireMs) return;
+
+    if(p.gun.ammo<=0){ startReload(p,now); return; }
+    p.gun.lastFire=now;
+    p.gun.ammo--;
+
+    for(let k=0;k<w.pellets;k++){
+      const spread=(Math.random()-0.5)*w.spread;
+      fireBullet(p.x,p.y, aimAng+spread, {speed:w.speed,dmg:w.dmg,color:w.color}, false);
+    }
+  }
+
+  function stepBullets(arr, isEnemy, dt, now){
+    for(let i=arr.length-1;i>=0;i--){
+      const b=arr[i];
+      b.x += b.vx*dt; b.y += b.vy*dt;
+
+      const wall=hitWallAt(b.x,b.y,b.r);
+      if(wall){
+        wall.hp -= b.dmg; arr.splice(i,1);
+        if(wall.hp<=0){ const idx=world.walls.indexOf(wall); if(idx>=0) world.walls.splice(idx,1); }
+        continue;
+      }
+      if(b.x<-30||b.x>world.w()+30||b.y<-30||b.y>world.h()+30){ arr.splice(i,1); continue; }
+      if(now-b.born>b.life){ arr.splice(i,1); continue; }
+
+      if(!isEnemy){
+        for(let j=world.enemies.length-1;j>=0;j--){
+          const e=world.enemies[j];
+          if(dist(b.x,b.y,e.x,e.y)<=b.r+e.r){
+            e.hp -= b.dmg; arr.splice(i,1);
+            if(e.hp<=0){
+              world.enemies.splice(j,1);
+              score += (e.type==="tanque"?25:10);
+              if(Math.random()<0.08) { p1.hp=Math.min(100,p1.hp+5); p2.hp=Math.min(100,p2.hp+5); }
+            }
+            break;
+          }
+        }
+      } else {
+        const hitP = (p)=> (p.inv<=0 && dist(b.x,b.y,p.x,p.y)<=b.r+p.r);
+        if(hitP(p1)){ p1.hp-=b.dmg; p1.inv=380; arr.splice(i,1); continue; }
+        if(hitP(p2)){ p2.hp-=b.dmg; p2.inv=380; arr.splice(i,1); continue; }
+        if(dist(b.x,b.y,base.x,base.y)<=b.r+base.r){ base.hp-=b.dmg; arr.splice(i,1); continue; }
+      }
+    }
+  }
+
+  function update(dt, now){
+    // P1 movement (WASD)
+    let mx1=0,my1=0;
+    if(keys.has("w")) my1-=1; if(keys.has("s")) my1+=1; if(keys.has("a")) mx1-=1; if(keys.has("d")) mx1+=1;
+    let l1=Math.hypot(mx1,my1)||1; mx1/=l1; my1/=l1;
+    p1.x += mx1*p1.speed*dt; p1.y += my1*p1.speed*dt;
+
+    // P2 movement (F T G H)
+    let mx2=0,my2=0;
+    if(keys.has("f")) mx2-=1; if(keys.has("h")) mx2+=1; if(keys.has("t")) my2-=1; if(keys.has("g")) my2+=1;
+    let l2=Math.hypot(mx2,my2)||1; mx2/=l2; my2/=l2;
+    p2.x += mx2*p2.speed*dt; p2.y += my2*p2.speed*dt;
+
+    for(const p of [p1,p2]){
+      p.x=clamp(p.x,p.r,world.w()-p.r);
+      p.y=clamp(p.y,p.r,world.h()-p.r);
+      const db=dist(p.x,p.y,base.x,base.y);
+      if(db<base.r+p.r){
+        const a=Math.atan2(p.y-base.y,p.x-base.x);
+        const target=base.r+p.r;
+        p.x=base.x+Math.cos(a)*target;
+        p.y=base.y+Math.sin(a)*target;
+      }
+      if(p.gun.reloading && now>=p.gun.reloadEnd){
+        const w=weapons[p.wIdx];
+        p.gun.reloading=false;
+        p.gun.ammo=w.mag;
+        toast(p.label+": listo");
+      }
+      p.inv=Math.max(0, p.inv-(dt*16.666));
+    }
+
+    // Place trenches
+    if(keys.has("e")){ keys.delete("e");
+      const px=p1.x-27, py=p1.y+18;
+      if(dist(px+27,py+10,base.x,base.y)>base.r+28) addWall(clamp(px,6,world.w()-60), clamp(py,6,world.h()-40));
+    }
+    if(keys.has("y")){ keys.delete("y");
+      const px=p2.x-27, py=p2.y+18;
+      if(dist(px+27,py+10,base.x,base.y)>base.r+28) addWall(clamp(px,6,world.w()-60), clamp(py,6,world.h()-40));
+    }
+
+    // Weapon switches
+    if(keys.has("1")){keys.delete("1"); setWeapon(p1,0);}
+    if(keys.has("2")){keys.delete("2"); setWeapon(p1,1);}
+    if(keys.has("3")){keys.delete("3"); setWeapon(p1,2);}
+    if(keys.has("4")){keys.delete("4"); setWeapon(p1,3);}
+    if(keys.has("7")){keys.delete("7"); setWeapon(p2,0);}
+    if(keys.has("8")){keys.delete("8"); setWeapon(p2,1);}
+    if(keys.has("9")){keys.delete("9"); setWeapon(p2,2);}
+    if(keys.has("0")){keys.delete("0"); setWeapon(p2,3);}
+
+    // Reload keys
+    if(keys.has("r")){ keys.delete("r"); startReload(p1, now); }
+    if(keys.has("i")){ keys.delete("i"); startReload(p2, now); }
+
+    // Shooting
+    if(mouse.down){
+      const ang = Math.atan2(mouse.y-p1.y, mouse.x-p1.x);
+      tryShootPlayer(p1, now, ang);
+    }
+    if(keys.has("u")){
+      const ang = Math.atan2(base.y-p2.y, base.x-p2.x);
+      tryShootPlayer(p2, now, ang);
+    }
+
+    stepBullets(world.bullets,false,dt,now);
+    stepBullets(world.enemyBullets,true,dt,now);
+
+    for(const e of world.enemies){
+      const ang=Math.atan2(base.y-e.y, base.x-e.x);
+      e.x += Math.cos(ang)*e.spd*dt;
+      e.y += Math.sin(ang)*e.spd*dt;
+
+      const d=dist(e.x,e.y,base.x,base.y);
+      if(d<e.r+base.r) base.hp -= 0.08*dt*(e.type==="tanque"?2.0:1.0);
+
+      if(now-e.lastShot>e.fireMs){
+        e.lastShot=now;
+        const target = (Math.random()<0.5)?p1:p2;
+        const a=Math.atan2(target.y-e.y, target.x-e.x);
+        fireBullet(e.x,e.y,a,{speed:6.4,dmg:e.type==="tanque"?10:7,color:"#ff5d5d"},true);
+      }
+    }
+
+    if(now>=nextWaveAt && world.enemies.length===0){
+      spawnWave(wave);
+      toast("Oleada "+wave);
+      wave++;
+      nextWaveAt=now+1200;
+    }
+
+    if((p1.hp<=0 && p2.hp<=0) || base.hp<=0){
+      toast("GAME OVER. Pulsa P para reiniciar.", 999999);
+      paused=true;
+    }
+
+    if(msg.style.display==="block" && now>msgT) msg.style.display="none";
+
+    // HUD
+    hudP1.textContent = "Carlos HP: "+Math.max(0,Math.floor(p1.hp));
+    hudP2.textContent = "Rodrigo HP: "+Math.max(0,Math.floor(p2.hp));
+    const w1=weapons[p1.wIdx], w2=weapons[p2.wIdx];
+    hudAmmo1.textContent = p1.gun.reloading ? "P1 recargando" : ("P1 Balas: "+p1.gun.ammo+"/"+w1.mag+" ("+w1.name+")");
+    hudAmmo2.textContent = p2.gun.reloading ? "P2 recargando" : ("P2 Balas: "+p2.gun.ammo+"/"+w2.mag+" ("+w2.name+")");
+    hudWave.textContent = "Oleada: "+Math.max(1,wave-1);
+    hudScore.textContent = "Puntos: "+score;
+  }
+
+  function roundRect(c,x,y,w,h,r){
+    r=Math.min(r,w/2,h/2);
+    c.beginPath();
+    c.moveTo(x+r,y);
+    c.arcTo(x+w,y,x+w,y+h,r);
+    c.arcTo(x+w,y+h,x,y+h,r);
+    c.arcTo(x,y+h,x,y,r);
+    c.arcTo(x,y,x+w,y,r);
+    c.closePath();
+  }
+
+  function drawPlayer(p){
+    const w=weapons[p.wIdx];
+    ctx.globalAlpha = (p.inv>0?0.6:1);
+    ctx.beginPath();
+    ctx.fillStyle = w.color;
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha=1;
+
+    ctx.fillStyle="rgba(255,255,255,.85)";
+    ctx.font="12px system-ui";
+    ctx.fillText(p.label, p.x-18, p.y-20);
+  }
+
+  function draw(){
+    const W=world.w(), H=world.h();
+    ctx.clearRect(0,0,W,H);
+
+    ctx.globalAlpha=.18; ctx.strokeStyle="#d7e3ff"; ctx.lineWidth=1;
+    const step=40;
+    for(let x=0;x<W;x+=step){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for(let y=0;y<H;y+=step){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    ctx.globalAlpha=1;
+
+    ctx.globalAlpha=.22; ctx.fillStyle="#2a4cff";
+    ctx.beginPath(); ctx.arc(base.x,base.y,base.r,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=1; ctx.strokeStyle="rgba(120,150,255,.9)"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(base.x,base.y,base.r,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle="rgba(255,255,255,.85)"; ctx.font="12px system-ui";
+    ctx.fillText("BASE HP "+Math.max(0,Math.floor(base.hp)), base.x-36, base.y+4);
+
+    for(const w of world.walls){
+      ctx.fillStyle="rgba(160,190,220,.18)";
+      ctx.strokeStyle="rgba(200,230,255,.45)";
+      ctx.lineWidth=2;
+      roundRect(ctx,w.x,w.y,w.w,w.h,10);
+      ctx.fill(); ctx.stroke();
+    }
+
+    drawPlayer(p1);
+    drawPlayer(p2);
+
+    for(const e of world.enemies){
+      ctx.beginPath();
+      ctx.fillStyle = e.type==="tanque" ? "#ffb703" : "#ff4d6d";
+      ctx.arc(e.x,e.y,e.r,0,Math.PI*2);
+      ctx.fill();
+    }
+
+    for(const b of world.bullets){
+      ctx.beginPath(); ctx.fillStyle=b.color; ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill();
+    }
+    for(const b of world.enemyBullets){
+      ctx.beginPath(); ctx.fillStyle="#ff5d5d"; ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill();
+    }
+
+    ctx.fillStyle="rgba(255,255,255,.55)";
+    ctx.font="12px system-ui";
+    ctx.fillText("Tip: Poned trincheras (E/Y) para bloquear balas. P2 dispara hacia la base con U.", 12, H-14);
+  }
+
+  let last=performance.now();
+  function loop(now){
+    if(!canvas.clientWidth||!canvas.clientHeight) return requestAnimationFrame(loop);
+    if(canvas.width===0) resize();
+    const dt = clamp((now-last)/16.666, 0.25, 2.2);
+    last=now;
+
+    if(!paused) update(dt, now);
+    draw();
+
+    if(paused && keys.has("p")){
+      keys.delete("p");
+      msg.style.display="none";
+      reset();
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  resize();
+  reset();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

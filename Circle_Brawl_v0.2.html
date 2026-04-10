@@ -1,0 +1,1661 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mini Brawl (Chispa / Reina Glacial / Iris)</title>
+  <style>
+    :root{
+      --bg:#0b0f16; --panel:#101a2a; --panel2:#0f1726;
+      --text:#e7eefc; --muted:#9fb1d1; --line:#1f2a40;
+      --accent:#4ea6ff; --good:#37d67a; --warn:#ffd166; --bad:#ff5d5d;
+      --shadow: 0 12px 40px rgba(0,0,0,.45);
+      --radius: 16px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0; background:radial-gradient(1200px 700px at 40% 20%, #17233a 0%, var(--bg) 45%, #070a10 100%);
+      color:var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    .wrap{
+      display:grid;
+      grid-template-columns: 340px 1fr;
+      gap:14px;
+      padding:14px;
+      max-width: 1200px;
+      margin:0 auto;
+    }
+    .card{
+      background: linear-gradient(180deg, rgba(16,26,42,.92), rgba(15,23,38,.92));
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card h2, .card h3{ margin:0; }
+    .left{ padding:14px; display:flex; flex-direction:column; gap:12px; }
+    .title{
+      display:flex; align-items:center; gap:10px;
+      padding-bottom:10px; border-bottom:1px solid var(--line);
+    }
+    .title .logo{
+      width:42px; height:42px; border-radius:12px; border:1px solid var(--line);
+      background: radial-gradient(circle at 35% 35%, #2a3a5b 0, #0f1726 60%);
+      display:grid; place-items:center;
+    }
+    .title .logo span{ font-weight:800; letter-spacing:.5px; color:var(--accent); }
+    .small{ color:var(--muted); font-size:12px; line-height:1.35; }
+    .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    .btn{
+      cursor:pointer;
+      padding:10px 12px;
+      background: linear-gradient(180deg, rgba(78,166,255,.18), rgba(78,166,255,.06));
+      border:1px solid rgba(78,166,255,.35);
+      color:var(--text);
+      border-radius: 12px;
+      font-weight:700;
+      user-select:none;
+    }
+    .btn:hover{ filter:brightness(1.08); }
+    .btn:active{ transform: translateY(1px); }
+    .btn.secondary{
+      background: linear-gradient(180deg, rgba(255,209,102,.16), rgba(255,209,102,.06));
+      border:1px solid rgba(255,209,102,.35);
+    }
+    .btn.danger{
+      background: linear-gradient(180deg, rgba(255,93,93,.18), rgba(255,93,93,.06));
+      border:1px solid rgba(255,93,93,.35);
+    }
+    .picker{
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .heroRow{
+      display:grid;
+      grid-template-columns: 56px 1fr;
+      gap:10px;
+      align-items:center;
+      padding:10px;
+      border:1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(7,10,16,.35);
+    }
+    .heroIcon{
+      width:56px; height:56px;
+      border-radius: 18px;
+      border:1px solid var(--line);
+      display:grid; place-items:center;
+      background: rgba(0,0,0,.15);
+      overflow:hidden;
+    }
+    .heroIcon img{ width:56px; height:56px; display:block; }
+    .heroMeta .name{ font-weight:900; font-size:14px; }
+    .heroMeta .desc{ color:var(--muted); font-size:12px; line-height:1.25; margin-top:2px; }
+    .kpi{
+      display:grid; grid-template-columns: 1fr 1fr; gap:10px;
+    }
+    .pill{
+      padding:10px;
+      border:1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(0,0,0,.18);
+    }
+    .pill .label{ color:var(--muted); font-size:12px; }
+    .pill .value{ font-weight:900; font-size:16px; margin-top:4px; }
+    .barWrap{ margin-top:8px; height:10px; border-radius: 999px; background:#0b1220; border:1px solid var(--line); overflow:hidden; }
+    .bar{ height:100%; width:60%; background: linear-gradient(90deg, rgba(55,214,122,.9), rgba(78,166,255,.9)); }
+    .controls{
+      border-top:1px solid var(--line);
+      padding-top:10px;
+      display:grid; gap:8px;
+    }
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size:12px;
+      padding:2px 6px;
+      border:1px solid var(--line);
+      border-radius: 7px;
+      background: rgba(0,0,0,.25);
+      color:var(--text);
+      white-space:nowrap;
+    }
+    .row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .right{
+      display:flex; flex-direction:column;
+      gap:10px;
+    }
+    .topHud{
+      display:flex; gap:10px; align-items:stretch;
+    }
+    .hudCard{ flex:1; padding:12px; }
+    .hudTitle{ font-weight:900; }
+    .hudSub{ color:var(--muted); font-size:12px; margin-top:4px; }
+    canvas{
+      width:100%;
+      height: calc(100vh - 170px);
+      min-height: 560px;
+      background:
+        radial-gradient(900px 650px at 55% 40%, rgba(78,166,255,.08), transparent 55%),
+        radial-gradient(900px 650px at 35% 60%, rgba(255,209,102,.07), transparent 55%),
+        linear-gradient(180deg, rgba(0,0,0,.0), rgba(0,0,0,.20));
+      border-top:1px solid var(--line);
+      display:block;
+    }
+    .log{
+      padding:10px 12px;
+      max-height: 160px;
+      overflow:auto;
+      border-top:1px solid var(--line);
+      background: rgba(0,0,0,.16);
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.35;
+    }
+    .tag{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:4px 8px;
+      border:1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(0,0,0,.18);
+      font-size:12px;
+      color:var(--muted);
+    }
+    .dot{ width:8px; height:8px; border-radius:999px; background: var(--good); display:inline-block; }
+    @media (max-width: 980px){
+      .wrap{ grid-template-columns: 1fr; }
+      canvas{ height: 64vh; min-height: 520px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card left">
+      <div class="title">
+        <div class="logo"><span>JC</span></div>
+        <div>
+          <div style="font-weight:900">Mini Brawl (tipo Brawl Stars)</div>
+          <div class="small">3 personajes jugables con “imágenes” (SVG). Bots simples, arena, cooldowns, estados (congelado/paralizado/cegado).</div>
+        </div>
+      </div>
+
+      <div class="picker" id="picker"></div>
+
+      <div class="kpi">
+        <div class="pill">
+          <div class="label">Vida</div>
+          <div class="value" id="hpText">-</div>
+          <div class="barWrap"><div class="bar" id="hpBar"></div></div>
+        </div>
+        <div class="pill">
+          <div class="label">Racha</div>
+          <div class="value" id="streakText">0</div>
+          <div class="small">Muertes seguidas sin caer.</div>
+        </div>
+      </div>
+
+      <div class="pill">
+        <div class="label">Habilidades (teclas)</div>
+        <div class="small" style="margin-top:6px">
+          <div class="row"><span><span class="kbd">W A S D</span> mover</span><span class="tag"><span class="dot"></span> vivo</span></div>
+          <div class="row"><span><span class="kbd">Mouse</span> apuntar</span><span class="small">disparo hacia cursor</span></div>
+          <div class="row"><span><span class="kbd">Click</span> Técnica</span><span class="small" id="cdBasic">CD: -</span></div>
+          <div class="row"><span><span class="kbd">Espacio</span> Supertécnica</span><span class="small" id="cdSuper">CD: -</span></div>
+          <div class="row"><span><span class="kbd">E</span> Técnica especial</span><span class="small" id="cdSpecial">CD: -</span></div>
+          <div class="row"><span><span class="kbd">Q</span> Habilidad especial</span><span class="small" id="cdGadget">CD: -</span></div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="btn secondary" id="btnRestart">Reiniciar</div>
+        <div class="btn danger" id="btnBots">+ / - Bots</div>
+      </div>
+
+      <div class="controls small">
+        <div><b>Nota rápida:</b> Esto es un prototipo 2D. Si quieres “más Brawl” (paredes rompibles, skins, modos), dímelo y lo subimos de nivel.</div>
+      </div>
+    </div>
+
+    <div class="card right">
+      <div class="topHud">
+        <div class="card hudCard">
+          <div class="hudTitle" id="hudHero">-</div>
+          <div class="hudSub" id="hudStatus">Estados: -</div>
+        </div>
+        <div class="card hudCard">
+          <div class="hudTitle">Marcador</div>
+          <div class="hudSub" id="hudScore">Tú 0 • Bots 0</div>
+        </div>
+        <div class="card hudCard">
+          <div class="hudTitle">Arena</div>
+          <div class="hudSub">Evita el centro si te gusta vivir 😄</div>
+        </div>
+      </div>
+      <canvas id="game" width="1100" height="700"></canvas>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ---------- Helpers ----------
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+  const len = (x,y)=>Math.hypot(x,y);
+  const norm = (x,y)=>{
+    const l = Math.hypot(x,y) || 1;
+    return {x:x/l,y:y/l};
+  };
+  const rand = (a,b)=>a+Math.random()*(b-a);
+  const now = ()=>performance.now()/1000;
+
+  // ---------- SVG "images" (no externas) ----------
+  function svgDataURI(svg){
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg.trim());
+  }
+
+  const IMAGES = {
+    chispa: svgDataURI(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80">
+        <defs>
+          <radialGradient id="g" cx="30%" cy="30%">
+            <stop offset="0" stop-color="#ffe27a"/>
+            <stop offset="0.65" stop-color="#ffd400"/>
+            <stop offset="1" stop-color="#f0a500"/>
+          </radialGradient>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2.5" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <circle cx="40" cy="40" r="30" fill="url(#g)" stroke="#ff7a00" stroke-width="6"/>
+        <!-- ojos en forma de rayo -->
+        <path d="M22 35 L33 30 L30 38 L40 34 L30 48 Z" fill="#ff7a00" filter="url(#glow)"/>
+        <path d="M58 35 L47 30 L50 38 L40 34 L50 48 Z" fill="#ff7a00" filter="url(#glow)"/>
+        <!-- sonrisa maliciosa -->
+        <path d="M26 52 C33 60, 47 60, 54 52" fill="none" stroke="#ff7a00" stroke-width="5" stroke-linecap="round"/>
+      </svg>
+    `),
+    glacial: svgDataURI(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80">
+        <defs>
+          <radialGradient id="b" cx="30%" cy="30%">
+            <stop offset="0" stop-color="#c9f2ff"/>
+            <stop offset="0.65" stop-color="#66cfff"/>
+            <stop offset="1" stop-color="#2e7dff"/>
+          </radialGradient>
+          <linearGradient id="c" x1="0" x2="1">
+            <stop offset="0" stop-color="#eaf6ff"/>
+            <stop offset="1" stop-color="#b7e5ff"/>
+          </linearGradient>
+        </defs>
+        <circle cx="40" cy="42" r="30" fill="url(#b)" stroke="#1f5cff" stroke-width="6"/>
+        <!-- corona cristal -->
+        <path d="M18 28 L26 18 L34 28 L40 14 L46 28 L54 18 L62 28"
+              fill="none" stroke="url(#c)" stroke-width="6" stroke-linejoin="round"/>
+        <!-- rombos -->
+        <path d="M30 24 L34 20 L38 24 L34 28 Z" fill="#ffffff" opacity="0.9"/>
+        <path d="M44 24 L48 20 L52 24 L48 28 Z" fill="#ffffff" opacity="0.9"/>
+      </svg>
+    `),
+    iris: svgDataURI(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80">
+        <defs>
+          <radialGradient id="w" cx="30%" cy="30%">
+            <stop offset="0" stop-color="#ffffff"/>
+            <stop offset="1" stop-color="#e8eefc"/>
+          </radialGradient>
+          <filter id="p" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2.2" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <circle cx="40" cy="40" r="30" fill="url(#w)" stroke="#ffffff" stroke-width="4"/>
+        <!-- cruz arcoiris -->
+        <rect x="36" y="14" width="8" height="52" rx="4" fill="#ff2d2d"/>
+        <rect x="14" y="36" width="52" height="8" rx="4" fill="#2dd8ff"/>
+        <rect x="36" y="14" width="8" height="52" rx="4" fill="#ff9f2d" opacity=".75"/>
+        <rect x="14" y="36" width="52" height="8" rx="4" fill="#7c3aed" opacity=".75"/>
+        <!-- corazón central -->
+        <path d="M40 54
+                 C34 49, 26 44, 30 36
+                 C33 30, 40 33, 40 38
+                 C40 33, 47 30, 50 36
+                 C54 44, 46 49, 40 54 Z"
+              fill="#ff5da2" filter="url(#p)"/>
+        <!-- partículas -->
+        <circle cx="18" cy="50" r="2" fill="#37d67a"/>
+        <circle cx="62" cy="28" r="2" fill="#ffd166"/>
+        <circle cx="22" cy="22" r="2" fill="#4ea6ff"/>
+        <circle cx="60" cy="56" r="2" fill="#8b5cf6"/>
+      </svg>
+    `),
+  };
+
+  // ---------- Heroes (3 jugables) ----------
+  const HEROES = {
+    chispa: {
+      id:"chispa",
+      name:"Chispa ⚡",
+      element:"Rayo",
+      img: IMAGES.chispa,
+      maxHP: 140,
+      baseSpeed: 190,
+      // cooldowns
+      cdBasic: 0.28,
+      cdSuper: 10,
+      cdSpecial: 14,
+      cdGadget: 8,
+      description: "Puñetazos rápidos + estela paralizante + látigo que roba velocidad.",
+    },
+    glacial: {
+      id:"glacial",
+      name:"Reina Glacial ❄️",
+      element:"Hielo",
+      img: IMAGES.glacial,
+      maxHP: 160,
+      baseSpeed: 170,
+      cdBasic: 0.55,
+      cdSuper: 11,
+      cdSpecial: 12,   // (inventado: “Muro de hielo”)
+      cdGadget: 9,     // (inventado: “Escarcha total”)
+      description: "Bola helada que ralentiza + super de 16 cuchillos.",
+    },
+    iris: {
+      id:"iris",
+      name:"Iris 🌈",
+      element:"Arcoíris",
+      img: IMAGES.iris,
+      maxHP: 150,
+      baseSpeed: 175,
+      cdBasic: 0.60,
+      cdSuper: 12,
+      cdSpecial: 15,
+      cdGadget: 7,
+      description: "Nube con estela + arcoíris en cruz + escudo rebote + color power.",
+    },
+  };
+
+  // ---------- Game state ----------
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+
+  const UI = {
+    picker: document.getElementById("picker"),
+    hpText: document.getElementById("hpText"),
+    hpBar: document.getElementById("hpBar"),
+    hudHero: document.getElementById("hudHero"),
+    hudStatus: document.getElementById("hudStatus"),
+    hudScore: document.getElementById("hudScore"),
+    log: document.getElementById("log"),
+    cdBasic: document.getElementById("cdBasic"),
+    cdSuper: document.getElementById("cdSuper"),
+    cdSpecial: document.getElementById("cdSpecial"),
+    cdGadget: document.getElementById("cdGadget"),
+    streakText: document.getElementById("streakText"),
+    btnRestart: document.getElementById("btnRestart"),
+    btnBots: document.getElementById("btnBots"),
+  };
+
+  const world = {
+    w: canvas.width,
+    h: canvas.height,
+    pad: 24,
+    // “zonas” (un poco de riesgo en el centro)
+    hazard: {x: canvas.width/2, y: canvas.height/2, r: 86},
+  };
+
+  const input = {
+    keys: new Set(),
+    mouse: {x: world.w/2, y: world.h/2, down:false},
+  };
+
+  const state = {
+    heroId: "chispa",
+    player: null,
+    bots: [],
+    bullets: [],
+    effects: [],
+    obstacles: [],
+    scorePlayer: 0,
+    scoreBots: 0,
+    streak: 0,
+    botCount: 4,
+    lastTick: now(),
+  };
+
+  function log(msg){
+    const t = new Date().toLocaleTimeString();
+    UI.log.innerHTML = `<div>[${t}] ${msg}</div>` + UI.log.innerHTML;
+  }
+
+  // ---------- Entities ----------
+  function makeFighter(isPlayer, heroId, x, y){
+    const H = HEROES[heroId];
+    return {
+      isPlayer,
+      heroId,
+      name: isPlayer ? "Tú" : "Bot",
+      x, y,
+      vx:0, vy:0,
+      r: 18,
+      hp: H.maxHP,
+      maxHP: H.maxHP,
+      baseSpeed: H.baseSpeed,
+      // speed modifiers (steal etc.)
+      speedBonus: 0,
+      // cooldown timers
+      tBasic: -999,
+      tSuper: -999,
+      tSpecial: -999,
+      tGadget: -999,
+      // statuses
+      slowUntil: 0,
+      paralyzeUntil: 0,
+      blindUntil: 0,
+      // Iris specific
+      irisColorIndex: 0,          // 0..5 then loop (rojo,naranja,amarillo,verde,azul,morado)
+      irisColorReadyAt: 0,
+      // Chispa steal
+      stolenFrom: new Map(),      // enemyId => {amount, permanent:true}
+      // visuals
+      facing: 0,
+      respawnAt: 0,
+      alive: true,
+      id: Math.random().toString(16).slice(2),
+      // transient buffs
+      buff: {
+        speedMulUntil: 0,
+        speedMul: 1,
+        shieldRebounceUntil: 0,    // reflects projectiles
+        // Chispa trail
+        trailUntil: 0,
+        trailPoints: [],
+      }
+    };
+  }
+
+  function speedOf(f){
+    let s = f.baseSpeed + f.speedBonus;
+    const t = now();
+    if(t < f.slowUntil) s *= 0.55;
+    if(t < f.paralyzeUntil) s *= 0.0;
+    if(t < f.buff.speedMulUntil) s *= f.buff.speedMul;
+    return clamp(s, 40, 340);
+  }
+
+  function alive(f){ return f.alive && now() >= f.respawnAt; }
+
+  function damage(target, amount, source){
+    if(!alive(target)) return;
+    target.hp -= amount;
+    if(target.hp <= 0){
+      kill(target, source);
+    }
+  }
+
+  function kill(target, source){
+    target.hp = 0;
+    target.alive = false;
+    target.respawnAt = now() + 2.2;
+
+    // Chispa: if Chispa dies -> enemies recover stolen speed; Chispa resets
+    if(target.isPlayer && target.heroId === "chispa"){
+      // give back everything stolen
+      for(const bot of state.bots){
+        bot.speedBonus = bot.baseSpeed - HEROES[bot.heroId].baseSpeed; // keep any base mismatch safe
+        // We tracked steal as negative on enemies; restore by setting to 0 relative
+        // Simpler: when steal happens we apply -amount to enemy.speedBonus.
+        // On Chispa death, remove those negative bonuses from enemies.
+        // We'll store them on player.stolenFrom
+      }
+    }
+
+    // Resolve steals accurately:
+    // If Chispa dies, every enemy recovers stolen speed and Chispa returns to base speed.
+    if(source && source.heroId === "chispa"){
+      // scoring
+      if(source.isPlayer) state.scorePlayer++;
+      else state.scoreBots++;
+
+      if(target.isPlayer){
+        state.streak = 0;
+        log(`Te han eliminado.`);
+      }else{
+        state.streak++;
+        log(`Eliminado un bot. Racha: ${state.streak}`);
+      }
+    }else{
+      // generic scoring
+      if(source){
+        if(source.isPlayer) state.scorePlayer++;
+        else state.scoreBots++;
+      }
+      if(target.isPlayer){
+        state.streak = 0;
+        log(`Te han eliminado.`);
+      }else{
+        state.streak++;
+        log(`Eliminado un bot. Racha: ${state.streak}`);
+      }
+    }
+  }
+
+  function respawn(f){
+    f.alive = true;
+    f.hp = f.maxHP;
+    f.x = rand(world.pad+40, world.w-world.pad-40);
+    f.y = rand(world.pad+40, world.h-world.pad-40);
+    f.vx = f.vy = 0;
+    f.slowUntil = 0;
+    f.paralyzeUntil = 0;
+    f.blindUntil = 0;
+
+    // Chispa steal rules:
+    // - If enemy dies and revives -> enemy recovers stolen speed, but Chispa keeps stolen.
+    // - If Chispa dies and revives -> enemies recover stolen, Chispa resets.
+    if(f.isPlayer && f.heroId === "chispa"){
+      // on Chispa respawn: reset to base and give back all stolen
+      const p = f;
+      const entries = [...p.stolenFrom.entries()];
+      for(const [enemyId, info] of entries){
+        const enemy = state.bots.find(b=>b.id===enemyId);
+        if(enemy){
+          enemy.speedBonus += info.amount; // we had subtracted on steal => add back
+        }
+      }
+      p.stolenFrom.clear();
+      p.speedBonus = 0;
+      log("Chispa ha revivido: se resetea el robo de velocidad.");
+    }
+
+    // if a bot respawns, it recovers its stolen speed (if any) BUT Chispa keeps bonus.
+    if(!f.isPlayer){
+      // find player if Chispa
+      const p = state.player;
+      if(p && p.heroId === "chispa"){
+        const info = p.stolenFrom.get(f.id);
+        if(info){
+          // enemy recovers
+          f.speedBonus += info.amount; // undo the negative
+          p.stolenFrom.delete(f.id);
+          // Chispa keeps his speedBonus (already added at steal time)
+          log("Bot revivió y recuperó su velocidad robada (Chispa se la queda).");
+        }
+      }
+    }
+  }
+
+  // ---------- Abilities ----------
+  function canCast(f, kind){
+    const t = now();
+    const H = HEROES[f.heroId];
+    if(!alive(f)) return false;
+    if(t < f.paralyzeUntil) return false;
+
+    if(kind==="basic") return (t - f.tBasic) >= H.cdBasic;
+    if(kind==="super") return (t - f.tSuper) >= H.cdSuper;
+    if(kind==="special") return (t - f.tSpecial) >= H.cdSpecial;
+    if(kind==="gadget") return (t - f.tGadget) >= H.cdGadget;
+    return false;
+  }
+
+  function shootBullet(owner, x, y, vx, vy, spec){
+    state.bullets.push({
+      id: Math.random().toString(16).slice(2),
+      ownerId: owner.id,
+      ownerIsPlayer: owner.isPlayer,
+      ownerHeroId: owner.heroId,
+      x,y,vx,vy,
+      r: spec.r ?? 6,
+      dmg: spec.dmg ?? 14,
+      ttl: spec.ttl ?? 1.7,
+      born: now(),
+      color: spec.color ?? "#9fb1d1",
+      pierce: spec.pierce ?? 0,
+      slow: spec.slow ?? 0,
+      paralyze: spec.paralyze ?? 0,
+      blind: spec.blind ?? 0,
+      onHit: spec.onHit ?? null,
+      kind: spec.kind ?? "bullet",
+      reflectable: spec.reflectable ?? true,
+    });
+  }
+
+  function nearestEnemy(from){
+    const enemies = from.isPlayer ? state.bots : [state.player];
+    let best=null, bestD=1e9;
+    for(const e of enemies){
+      if(!alive(e)) continue;
+      const d = len(e.x-from.x, e.y-from.y);
+      if(d < bestD){ bestD=d; best=e; }
+    }
+    return best;
+  }
+
+  // Chispa technique: 2 super fast punches (short range)
+  function chispaBasic(f){
+    const t = now();
+    f.tBasic = t;
+
+    // 2 hits quickly
+    for(let i=0;i<2;i++){
+      setTimeout(()=> {
+        if(!alive(f)) return;
+        const e = nearestEnemy(f);
+        if(!e) return;
+        const d = len(e.x-f.x, e.y-f.y);
+        if(d <= 58){
+          damage(e, 12, f);
+          // tiny knockback electric
+          const n = norm(e.x-f.x, e.y-f.y);
+          e.vx += n.x * 80;
+          e.vy += n.y * 80;
+          state.effects.push({type:"zap", x:e.x, y:e.y, until: now()+0.12});
+        }
+      }, i*90);
+    }
+  }
+
+  // Chispa super: speed x3 + lightning trail that paralyzes 3s on touch
+  function chispaSuper(f){
+    const t = now();
+    f.tSuper = t;
+    f.buff.speedMul = 3.0;
+    f.buff.speedMulUntil = t + 2.6;
+    f.buff.trailUntil = t + 2.6;
+    f.buff.trailPoints = [];
+    log("Chispa: Supertécnica activada (x3 velocidad + estela paralizante).");
+  }
+
+  // Chispa special: whip grabs nearest for 3s and steals 2% speed per second "forever" (rules on death)
+  function chispaSpecial(f){
+    const t = now();
+    f.tSpecial = t;
+    const e = nearestEnemy(f);
+    if(!e) return;
+    const d = len(e.x-f.x, e.y-f.y);
+    if(d > 210) return;
+
+    // Grab (paralyze enemy)
+    e.paralyzeUntil = Math.max(e.paralyzeUntil, t + 3.0);
+
+    // Steal speed: 2% per second for 3 seconds => total 6% of enemy baseSpeed
+    const stealAmount = HEROES[e.heroId].baseSpeed * 0.06;
+
+    // Apply immediately: enemy slower, Chispa faster
+    e.speedBonus -= stealAmount;
+    f.speedBonus += stealAmount;
+
+    // Track per enemy
+    const prev = f.stolenFrom.get(e.id);
+    f.stolenFrom.set(e.id, {amount: (prev?.amount ?? 0) + stealAmount});
+
+    state.effects.push({type:"whip", x1:f.x, y1:f.y, x2:e.x, y2:e.y, until: t+0.35});
+    log("Chispa: Látigo atrapó y robó velocidad.");
+  }
+
+  // Chispa gadget: after the 2 punches, add a 2-fists electric hit that pushes back
+  function chispaGadget(f){
+    const t = now();
+    f.tGadget = t;
+
+    // schedule extra electric hit
+    setTimeout(()=> {
+      if(!alive(f)) return;
+      const e = nearestEnemy(f);
+      if(!e) return;
+      const d = len(e.x-f.x, e.y-f.y);
+      if(d <= 70){
+        damage(e, 18, f);
+        const n = norm(e.x-f.x, e.y-f.y);
+        e.vx += n.x * 220;
+        e.vy += n.y * 220;
+        state.effects.push({type:"shockwave", x:f.x, y:f.y, until: now()+0.18});
+      }
+    }, 220);
+
+    log("Chispa: Habilidad especial lista (golpe eléctrico extra).");
+  }
+
+  // Reina Glacial basic: ice ball that damages + slows
+  function glacialBasic(f){
+    const t = now();
+    f.tBasic = t;
+
+    const aim = getAimDir(f);
+    const spd = 420;
+    shootBullet(f, f.x, f.y, aim.x*spd, aim.y*spd, {
+      r: 7, dmg: 16, ttl: 1.6,
+      color: "#66cfff",
+      slow: 2.4,
+      kind: "iceball"
+    });
+  }
+
+  // Reina Glacial super: 16 ice knives spread
+  function glacialSuper(f){
+    const t = now();
+    f.tSuper = t;
+
+    const base = getAimDir(f);
+    const baseAng = Math.atan2(base.y, base.x);
+    const count = 16;
+    const spread = 1.15; // radians
+    for(let i=0;i<count;i++){
+      const a = baseAng - spread/2 + (spread*(i/(count-1)));
+      const spd = 520;
+      shootBullet(f, f.x, f.y, Math.cos(a)*spd, Math.sin(a)*spd, {
+        r: 5, dmg: 10, ttl: 1.25,
+        color:"#eaf6ff",
+        slow: 1.1,
+        pierce: 0,
+        kind:"knife"
+      });
+    }
+    log("Reina Glacial: 16 cuchillos helados.");
+  }
+
+  // Reina Glacial special (inventado): Ice Wall (creates 1 obstacle for 5s)
+  function glacialSpecial(f){
+    const t = now();
+    f.tSpecial = t;
+
+    const aim = getAimDir(f);
+    const px = clamp(f.x + aim.x*120, world.pad+40, world.w-world.pad-40);
+    const py = clamp(f.y + aim.y*120, world.pad+40, world.h-world.pad-40);
+    const w = 110, h = 16;
+    const ang = Math.atan2(aim.y, aim.x);
+
+    state.obstacles.push({
+      type:"icewall",
+      x:px, y:py,
+      w, h, ang,
+      until: t + 5.0
+    });
+    log("Reina Glacial: muro de hielo (5s).");
+  }
+
+  // Reina Glacial gadget (inventado): Frost Nova (slow + small damage in radius)
+  function glacialGadget(f){
+    const t = now();
+    f.tGadget = t;
+    const r = 120;
+    for(const e of state.bots){
+      // only enemies
+    }
+    const enemies = f.isPlayer ? state.bots : [state.player];
+    for(const e of enemies){
+      if(!alive(e)) continue;
+      const d = len(e.x-f.x, e.y-f.y);
+      if(d <= r){
+        damage(e, 10, f);
+        e.slowUntil = Math.max(e.slowUntil, t + 2.8);
+      }
+    }
+    state.effects.push({type:"nova", x:f.x, y:f.y, r, until: t+0.25});
+    log("Reina Glacial: escarcha total (nova).");
+  }
+
+  // Iris basic: colorful cloud projectile leaving rainbow trail; optional fog effect
+  function irisBasic(f){
+    const t = now();
+    f.tBasic = t;
+
+    const aim = getAimDir(f);
+    const spd = 360;
+    shootBullet(f, f.x, f.y, aim.x*spd, aim.y*spd, {
+      r: 8, dmg: 12, ttl: 1.75,
+      color:"#ff5da2",
+      kind:"cloud",
+      onHit: (owner, target, hitX, hitY) => {
+        // place rainbow trail puddle for 1.6s
+        state.effects.push({
+          type:"rainbowTrail",
+          x:hitX, y:hitY,
+          r: 44,
+          until: now()+1.6,
+          fog: true,
+          // fog time scales by distance: closer => more fog (0.15..3.3)
+          fogUntil: now() + clamp(3.3 - (len(hitX-owner.x, hitY-owner.y)/90), 0.15, 3.3)
+        });
+      }
+    });
+  }
+
+  // Iris super: cross beams that pierce, plus 1s reflect shield
+  function irisSuper(f){
+    const t = now();
+    f.tSuper = t;
+
+    f.buff.shieldRebounceUntil = t + 1.0;
+    // Create beams for 0.25s
+    const beams = [
+      {dx:1, dy:0},
+      {dx:-1,dy:0},
+      {dx:0, dy:1},
+      {dx:0, dy:-1},
+    ];
+
+    // If "Fuerza del corazón" style: add diagonals? We'll add 4 extra if gadget active recently is not a thing.
+    // We'll keep it as your spec: cross + also arriba/abajo/derecha/izq (that's already the cross).
+    // Add a bit more power: slightly thicker.
+    state.effects.push({type:"irisBeams", x:f.x, y:f.y, until: t+0.25});
+
+    const enemies = f.isPlayer ? state.bots : [state.player];
+    for(const e of enemies){
+      if(!alive(e)) continue;
+      // hit if aligned (approx)
+      const dx = e.x - f.x;
+      const dy = e.y - f.y;
+      const aligned = (Math.abs(dx) < 18) || (Math.abs(dy) < 18);
+      if(aligned){
+        damage(e, 28, f);
+      }
+    }
+    log("Iris: arcoíris en cruz + escudo rebote (1s).");
+  }
+
+  // Iris special: Heart Protector -> 3s reflect shield, 15s cd
+  function irisSpecial(f){
+    const t = now();
+    f.tSpecial = t;
+    f.buff.shieldRebounceUntil = t + 3.0;
+    state.effects.push({type:"heartShield", x:f.x, y:f.y, until:t+3.0});
+    log("Iris: corazón protector (escudo rebote 3s).");
+  }
+
+  // Iris gadget: Color Power -> next attack has extra effect depending on color, 7s cd
+  function irisGadget(f){
+    const t = now();
+    f.tGadget = t;
+    f.irisColorReadyAt = t + 0.0001; // armed immediately
+    const colors = ["Rojo🔥","Naranja🌋","Amarillo✨","Verde🟢","Azul❄️","Morado🟣"];
+    log(`Iris: poder del color armado (${colors[f.irisColorIndex]}).`);
+  }
+
+  function applyIrisColorEffect(owner, target){
+    // Runs when Iris hits with BASIC while color is armed (within a window)
+    const t = now();
+    if(owner.heroId !== "iris") return;
+    if(t < owner.irisColorReadyAt || owner.irisColorReadyAt === 0) return;
+
+    const idx = owner.irisColorIndex;
+    // consume
+    owner.irisColorReadyAt = 0;
+    owner.irisColorIndex = (owner.irisColorIndex + 1) % 6;
+
+    if(idx === 0){
+      // rojo: burn (dot)
+      const until = t + 3.0;
+      state.effects.push({type:"burn", targetId: target.id, until, tickAt: t});
+      log("Iris: Rojo -> fuego (daño en el tiempo).");
+    }else if(idx === 1){
+      // naranja: lava puddle
+      state.effects.push({type:"lava", x: target.x, y: target.y, r: 55, until: t+3.2});
+      log("Iris: Naranja -> charco de lava.");
+    }else if(idx === 2){
+      // amarillo: blind
+      target.blindUntil = Math.max(target.blindUntil, t + 1.6);
+      log("Iris: Amarillo -> destello (ceguera).");
+    }else if(idx === 3){
+      // verde: heal owner a bit
+      owner.hp = clamp(owner.hp + 18, 0, owner.maxHP);
+      log("Iris: Verde -> curación.");
+    }else if(idx === 4){
+      // azul: slow
+      target.slowUntil = Math.max(target.slowUntil, t + 2.4);
+      log("Iris: Azul -> ralentiza.");
+    }else{
+      // morado: paralyze short
+      target.paralyzeUntil = Math.max(target.paralyzeUntil, t + 0.9);
+      log("Iris: Morado -> mini-parálisis.");
+    }
+  }
+
+  function castBasic(f){
+    if(!canCast(f,"basic")) return;
+    if(f.heroId === "chispa") return chispaBasic(f);
+    if(f.heroId === "glacial") return glacialBasic(f);
+    if(f.heroId === "iris") return irisBasic(f);
+  }
+  function castSuper(f){
+    if(!canCast(f,"super")) return;
+    if(f.heroId === "chispa") return chispaSuper(f);
+    if(f.heroId === "glacial") return glacialSuper(f);
+    if(f.heroId === "iris") return irisSuper(f);
+  }
+  function castSpecial(f){
+    if(!canCast(f,"special")) return;
+    if(f.heroId === "chispa") return chispaSpecial(f);
+    if(f.heroId === "glacial") return glacialSpecial(f);
+    if(f.heroId === "iris") return irisSpecial(f);
+  }
+  function castGadget(f){
+    if(!canCast(f,"gadget")) return;
+    if(f.heroId === "chispa") return chispaGadget(f);
+    if(f.heroId === "glacial") return glacialGadget(f);
+    if(f.heroId === "iris") return irisGadget(f);
+  }
+
+  // ---------- Aim direction ----------
+  function getAimDir(f){
+    // if blinded, aim worsens for bots too
+    let mx = input.mouse.x, my = input.mouse.y;
+    if(!f.isPlayer){
+      // bot aims at player
+      const p = state.player;
+      mx = p.x; my = p.y;
+    }
+    let dx = mx - f.x, dy = my - f.y;
+    if(now() < f.blindUntil){
+      dx += rand(-120,120);
+      dy += rand(-120,120);
+    }
+    const n = norm(dx,dy);
+    f.facing = Math.atan2(n.y,n.x);
+    return n;
+  }
+
+  // ---------- Obstacles collision (simple) ----------
+  function pointInRotRect(px,py, o){
+    // transform point into rect local space
+    const ca = Math.cos(-o.ang), sa = Math.sin(-o.ang);
+    const dx = px - o.x, dy = py - o.y;
+    const lx = dx*ca - dy*sa;
+    const ly = dx*sa + dy*ca;
+    return Math.abs(lx) <= o.w/2 && Math.abs(ly) <= o.h/2;
+  }
+
+  function circleHitsRotRect(cx,cy,r, o){
+    // sample a few points (cheap & good enough for prototype)
+    const samples = 10;
+    for(let i=0;i<samples;i++){
+      const a = (Math.PI*2)*(i/samples);
+      const px = cx + Math.cos(a)*r;
+      const py = cy + Math.sin(a)*r;
+      if(pointInRotRect(px,py,o)) return true;
+    }
+    return pointInRotRect(cx,cy,o);
+  }
+
+  // ---------- Setup UI (hero picker) ----------
+  function renderPicker(){
+    UI.picker.innerHTML = "";
+    for(const id of Object.keys(HEROES)){
+      const H = HEROES[id];
+      const row = document.createElement("div");
+      row.className = "heroRow";
+      row.innerHTML = `
+        <div class="heroIcon"><img alt="${H.name}" src="${H.img}"></div>
+        <div class="heroMeta">
+          <div class="name">${H.name}</div>
+          <div class="desc">${H.description}</div>
+        </div>
+      `;
+      row.style.cursor = "pointer";
+      row.onclick = () => {
+        state.heroId = id;
+        initMatch();
+      };
+      UI.picker.appendChild(row);
+    }
+  }
+
+  // ---------- Match init ----------
+  function initObstacles(){
+    state.obstacles = [
+      {type:"rock", x: 220, y: 180, w: 140, h: 26, ang: 0.25, until: 1e9},
+      {type:"rock", x: 860, y: 520, w: 150, h: 26, ang: -0.35, until: 1e9},
+      {type:"rock", x: 560, y: 200, w: 120, h: 26, ang: 0.0, until: 1e9},
+    ];
+  }
+
+  function initMatch(){
+    state.bullets = [];
+    state.effects = [];
+    state.scorePlayer = 0;
+    state.scoreBots = 0;
+    state.streak = 0;
+
+    initObstacles();
+
+    const H = HEROES[state.heroId];
+    state.player = makeFighter(true, state.heroId, world.w*0.25, world.h*0.55);
+
+    // bots random heroes among 3
+    const ids = Object.keys(HEROES);
+    state.bots = [];
+    for(let i=0;i<state.botCount;i++){
+      const hid = ids[(i+1)%ids.length];
+      state.bots.push(makeFighter(false, hid, rand(world.w*0.45, world.w*0.92), rand(world.h*0.12, world.h*0.88)));
+    }
+
+    UI.hudHero.textContent = `${H.name} • ${H.element}`;
+    log(`Nueva partida con ${H.name}.`);
+  }
+
+  // ---------- Input ----------
+  window.addEventListener("keydown", (e)=>{
+    input.keys.add(e.key.toLowerCase());
+    if(e.key === " "){ e.preventDefault(); castSuper(state.player); }
+    if(e.key.toLowerCase()==="e") castSpecial(state.player);
+    if(e.key.toLowerCase()==="q") castGadget(state.player);
+  });
+  window.addEventListener("keyup", (e)=> input.keys.delete(e.key.toLowerCase()));
+  canvas.addEventListener("mousemove", (e)=>{
+    const rect = canvas.getBoundingClientRect();
+    const sx = canvas.width / rect.width;
+    const sy = canvas.height / rect.height;
+    input.mouse.x = (e.clientX - rect.left) * sx;
+    input.mouse.y = (e.clientY - rect.top) * sy;
+  });
+  canvas.addEventListener("mousedown", ()=> { input.mouse.down = true; castBasic(state.player); });
+  window.addEventListener("mouseup", ()=> input.mouse.down = false);
+
+  UI.btnRestart.onclick = ()=> initMatch();
+  UI.btnBots.onclick = ()=> {
+    // toggle simple: 2 -> 4 -> 6 -> 2
+    state.botCount = (state.botCount===2) ? 4 : (state.botCount===4 ? 6 : 2);
+    initMatch();
+    log(`Bots ajustados a ${state.botCount}.`);
+  };
+
+  // ---------- Bots AI ----------
+  function botThink(bot, dt){
+    if(!alive(bot)) return;
+    const p = state.player;
+    if(!alive(p)) return;
+
+    // move: keep distance based on hero
+    const desired = (bot.heroId==="chispa") ? 80 : (bot.heroId==="glacial" ? 210 : 190);
+    const dx = p.x - bot.x, dy = p.y - bot.y;
+    const d = Math.hypot(dx,dy) || 1;
+    let dir = {x: dx/d, y: dy/d};
+
+    // if too close and not chispa, back off
+    if(d < desired-20 && bot.heroId!=="chispa"){
+      dir.x *= -1; dir.y *= -1;
+    }
+    // strafe
+    const strafe = (Math.sin(now()*2 + bot.x*0.01) * 0.6);
+    const sdir = norm(-dir.y, dir.x);
+    dir.x = clamp(dir.x + sdir.x*strafe, -1, 1);
+    dir.y = clamp(dir.y + sdir.y*strafe, -1, 1);
+    dir = norm(dir.x, dir.y);
+
+    // avoid center hazard
+    const hz = world.hazard;
+    const hd = len(bot.x-hz.x, bot.y-hz.y);
+    if(hd < hz.r + 40){
+      const away = norm(bot.x-hz.x, bot.y-hz.y);
+      dir.x = away.x; dir.y = away.y;
+    }
+
+    const sp = speedOf(bot);
+    bot.vx += dir.x * sp * 3.2 * dt;
+    bot.vy += dir.y * sp * 3.2 * dt;
+
+    // cast logic
+    if(d < 90 && bot.heroId==="chispa"){
+      if(canCast(bot,"basic")) castBasic(bot);
+      if(canCast(bot,"gadget") && Math.random()<0.06) castGadget(bot);
+      if(canCast(bot,"special") && Math.random()<0.08) castSpecial(bot);
+      if(canCast(bot,"super") && Math.random()<0.04) castSuper(bot);
+    } else {
+      // ranged
+      if(canCast(bot,"basic") && Math.random()<0.55) castBasic(bot);
+      if(canCast(bot,"super") && Math.random()<0.06) castSuper(bot);
+      if(canCast(bot,"special") && bot.heroId==="glacial" && Math.random()<0.05) castSpecial(bot);
+      if(canCast(bot,"gadget") && (bot.heroId!=="chispa") && Math.random()<0.04) castGadget(bot);
+    }
+  }
+
+  // ---------- Update / Physics ----------
+  function updateFighter(f, dt){
+    if(!f.alive && now() >= f.respawnAt){
+      respawn(f);
+    }
+    if(!alive(f)) return;
+
+    // friction
+    f.vx *= Math.pow(0.0006, dt);
+    f.vy *= Math.pow(0.0006, dt);
+
+    // apply velocity
+    f.x += f.vx * dt;
+    f.y += f.vy * dt;
+
+    // bounds
+    f.x = clamp(f.x, world.pad+f.r, world.w-world.pad-f.r);
+    f.y = clamp(f.y, world.pad+f.r, world.h-world.pad-f.r);
+
+    // obstacle push out
+    const t = now();
+    for(const o of state.obstacles){
+      if(t > o.until) continue;
+      if(circleHitsRotRect(f.x,f.y,f.r, o)){
+        // push away from obstacle center
+        const away = norm(f.x - o.x, f.y - o.y);
+        f.x += away.x * 3.2;
+        f.y += away.y * 3.2;
+        f.vx += away.x * 120 * dt;
+        f.vy += away.y * 120 * dt;
+      }
+    }
+
+    // hazard (center)
+    const hz = world.hazard;
+    const d = len(f.x-hz.x, f.y-hz.y);
+    if(d < hz.r){
+      // small tick damage
+      damage(f, 6*dt, null);
+      state.effects.push({type:"spark", x:f.x, y:f.y, until: now()+0.05});
+    }
+
+    // Chispa trail points
+    if(f.heroId==="chispa" && now() < f.buff.trailUntil){
+      f.buff.trailPoints.push({x:f.x, y:f.y, t: now()});
+      // keep last ~1.2s
+      f.buff.trailPoints = f.buff.trailPoints.filter(p=> now()-p.t < 1.2);
+
+      // paralyze enemies touching trail
+      const enemies = f.isPlayer ? state.bots : [state.player];
+      for(const e of enemies){
+        if(!alive(e)) continue;
+        for(const p of f.buff.trailPoints){
+          const dd = len(e.x-p.x, e.y-p.y);
+          if(dd < e.r + 10){
+            e.paralyzeUntil = Math.max(e.paralyzeUntil, now() + 3.0);
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  function updateBullets(dt){
+    const t = now();
+    // remove dead bullets
+    state.bullets = state.bullets.filter(b => (t - b.born) < b.ttl);
+
+    for(const b of state.bullets){
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+
+      // bounds bounce off walls slightly (feel)
+      if(b.x < world.pad || b.x > world.w-world.pad) b.vx *= -0.9;
+      if(b.y < world.pad || b.y > world.h-world.pad) b.vy *= -0.9;
+
+      // obstacle collision: bounce/stop
+      for(const o of state.obstacles){
+        if(t > o.until) continue;
+        if(circleHitsRotRect(b.x,b.y,b.r, o)){
+          // simple reflect
+          b.vx *= -0.85;
+          b.vy *= -0.85;
+          b.x += b.vx * dt*2;
+          b.y += b.vy * dt*2;
+        }
+      }
+
+      // hit check
+      const owner = (b.ownerIsPlayer) ? state.player : state.bots.find(x=>x.id===b.ownerId);
+      const targets = b.ownerIsPlayer ? state.bots : [state.player];
+
+      for(const trg of targets){
+        if(!alive(trg)) continue;
+        if(len(trg.x-b.x, trg.y-b.y) <= (trg.r + b.r)){
+          // shield rebounce (Iris)
+          if(t < trg.buff.shieldRebounceUntil && b.reflectable){
+            // reflect: swap owner flags
+            b.ownerIsPlayer = trg.isPlayer;
+            b.ownerId = trg.id;
+            b.ownerHeroId = trg.heroId;
+            b.vx *= -1;
+            b.vy *= -1;
+            state.effects.push({type:"reflect", x:trg.x, y:trg.y, until: t+0.12});
+            break;
+          }
+
+          damage(trg, b.dmg, owner);
+
+          if(b.slow) trg.slowUntil = Math.max(trg.slowUntil, t + b.slow);
+          if(b.paralyze) trg.paralyzeUntil = Math.max(trg.paralyzeUntil, t + b.paralyze);
+          if(b.blind) trg.blindUntil = Math.max(trg.blindUntil, t + b.blind);
+
+          if(b.onHit && owner) b.onHit(owner, trg, b.x, b.y);
+
+          // Iris color power triggers on Iris basic hits
+          if(owner && owner.heroId === "iris" && b.kind === "cloud"){
+            applyIrisColorEffect(owner, trg);
+          }
+
+          state.effects.push({type:"hit", x:b.x, y:b.y, until: t+0.10});
+
+          if(b.pierce > 0){
+            b.pierce--;
+          }else{
+            // expire quickly
+            b.born = -9999;
+          }
+          break;
+        }
+      }
+    }
+    // purge bullets flagged
+    state.bullets = state.bullets.filter(b => b.born > -1000);
+  }
+
+  function updateEffects(dt){
+    const t = now();
+    state.effects = state.effects.filter(e => t < e.until);
+
+    // periodic DOT
+    for(const e of state.effects){
+      if(e.type==="burn"){
+        if(t >= e.tickAt){
+          e.tickAt = t + 0.35;
+          const target = [state.player, ...state.bots].find(x=>x.id===e.targetId);
+          if(target && alive(target)){
+            damage(target, 5, state.player.heroId==="iris" ? state.player : null);
+          }
+        }
+      }
+      if(e.type==="lava"){
+        const enemies = [state.player, ...state.bots];
+        for(const f of enemies){
+          if(!alive(f)) continue;
+          const d = len(f.x-e.x, f.y-e.y);
+          if(d <= e.r){
+            damage(f, 9*dt, null);
+          }
+        }
+      }
+      if(e.type==="rainbowTrail" && e.fog){
+        // fog: enemies inside get blinded slightly
+        const enemies = state.bots;
+        for(const b of enemies){
+          if(!alive(b)) continue;
+          const d = len(b.x-e.x, b.y-e.y);
+          if(d <= e.r){
+            b.blindUntil = Math.max(b.blindUntil, e.fogUntil);
+          }
+        }
+      }
+    }
+  }
+
+  // ---------- Player movement ----------
+  function playerMove(dt){
+    const p = state.player;
+    if(!alive(p)) return;
+
+    let ax=0, ay=0;
+    if(input.keys.has("w")) ay -= 1;
+    if(input.keys.has("s")) ay += 1;
+    if(input.keys.has("a")) ax -= 1;
+    if(input.keys.has("d")) ax += 1;
+
+    if(ax || ay){
+      const n = norm(ax,ay);
+      const sp = speedOf(p);
+      p.vx += n.x * sp * 3.6 * dt;
+      p.vy += n.y * sp * 3.6 * dt;
+    }
+
+    // auto-fire if mouse held
+    if(input.mouse.down){
+      castBasic(p);
+    }
+
+    // face mouse
+    getAimDir(p);
+  }
+
+  // ---------- Render ----------
+  function drawRotRect(o, color){
+    ctx.save();
+    ctx.translate(o.x, o.y);
+    ctx.rotate(o.ang);
+    ctx.fillStyle = color;
+    ctx.strokeStyle = "rgba(255,255,255,.10)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(-o.w/2, -o.h/2, o.w, o.h, 8);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,world.w,world.h);
+
+    // floor grid
+    ctx.save();
+    ctx.globalAlpha = 0.22;
+    ctx.strokeStyle = "#1f2a40";
+    ctx.lineWidth = 1;
+    for(let x=world.pad; x<world.w-world.pad; x+=40){
+      ctx.beginPath(); ctx.moveTo(x, world.pad); ctx.lineTo(x, world.h-world.pad); ctx.stroke();
+    }
+    for(let y=world.pad; y<world.h-world.pad; y+=40){
+      ctx.beginPath(); ctx.moveTo(world.pad, y); ctx.lineTo(world.w-world.pad, y); ctx.stroke();
+    }
+    ctx.restore();
+
+    // hazard
+    const hz = world.hazard;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(hz.x,hz.y,hz.r,0,Math.PI*2);
+    ctx.fillStyle = "rgba(255,93,93,.08)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,93,93,.25)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+
+    // obstacles
+    const t = now();
+    for(const o of state.obstacles){
+      if(t > o.until) continue;
+      const col = (o.type==="icewall") ? "rgba(102,207,255,.25)" : "rgba(159,177,209,.20)";
+      drawRotRect(o, col);
+    }
+
+    // effects (behind)
+    for(const e of state.effects){
+      if(e.type==="nova"){
+        ctx.save();
+        ctx.globalAlpha = 0.7;
+        ctx.beginPath();
+        ctx.arc(e.x,e.y,e.r,0,Math.PI*2);
+        ctx.strokeStyle = "rgba(102,207,255,.75)";
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.restore();
+      }
+      if(e.type==="lava"){
+        ctx.save();
+        ctx.globalAlpha = 0.35;
+        ctx.beginPath();
+        ctx.arc(e.x,e.y,e.r,0,Math.PI*2);
+        ctx.fillStyle = "rgba(255,159,45,.35)";
+        ctx.fill();
+        ctx.restore();
+      }
+      if(e.type==="rainbowTrail"){
+        ctx.save();
+        ctx.globalAlpha = 0.30;
+        ctx.beginPath();
+        ctx.arc(e.x,e.y,e.r,0,Math.PI*2);
+        ctx.fillStyle = "rgba(124,58,237,.25)";
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // bullets
+    for(const b of state.bullets){
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+      ctx.fillStyle = b.color;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // fighters
+    drawFighter(state.player);
+    for(const b of state.bots) drawFighter(b);
+
+    // foreground effects
+    for(const e of state.effects){
+      if(now() > e.until) continue;
+      if(e.type==="hit"){
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        ctx.beginPath();
+        ctx.arc(e.x,e.y,10,0,Math.PI*2);
+        ctx.strokeStyle = "rgba(255,255,255,.8)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.restore();
+      }
+      if(e.type==="zap"){
+        ctx.save();
+        ctx.globalAlpha = 0.85;
+        ctx.beginPath();
+        ctx.moveTo(e.x-10, e.y-10);
+        ctx.lineTo(e.x+2, e.y-2);
+        ctx.lineTo(e.x-2, e.y+10);
+        ctx.lineTo(e.x+10, e.y+2);
+        ctx.strokeStyle = "rgba(255,209,102,.85)";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.restore();
+      }
+      if(e.type==="shockwave"){
+        ctx.save();
+        ctx.globalAlpha = 0.8;
+        ctx.beginPath();
+        ctx.arc(e.x,e.y,34,0,Math.PI*2);
+        ctx.strokeStyle = "rgba(255,212,0,.7)";
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.restore();
+      }
+      if(e.type==="whip"){
+        ctx.save();
+        ctx.globalAlpha = 0.85;
+        ctx.strokeStyle = "rgba(255,212,0,.8)";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(e.x1,e.y1);
+        ctx.lineTo(e.x2,e.y2);
+        ctx.stroke();
+        ctx.restore();
+      }
+      if(e.type==="reflect"){
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        ctx.beginPath();
+        ctx.arc(e.x,e.y,26,0,Math.PI*2);
+        ctx.strokeStyle = "rgba(255,255,255,.7)";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.restore();
+      }
+      if(e.type==="irisBeams"){
+        ctx.save();
+        ctx.globalAlpha = 0.8;
+        ctx.strokeStyle = "rgba(255,93,162,.65)";
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(0, e.y); ctx.lineTo(world.w, e.y);
+        ctx.moveTo(e.x, 0); ctx.lineTo(e.x, world.h);
+        ctx.stroke();
+        ctx.restore();
+      }
+      if(e.type==="heartShield"){
+        ctx.save();
+        ctx.globalAlpha = 0.55;
+        ctx.beginPath();
+        ctx.arc(e.x,e.y,42,0,Math.PI*2);
+        ctx.strokeStyle = "rgba(255,93,162,.75)";
+        ctx.lineWidth = 5;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // border
+    ctx.save();
+    ctx.strokeStyle = "rgba(159,177,209,.25)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(world.pad, world.pad, world.w-world.pad*2, world.h-world.pad*2);
+    ctx.restore();
+  }
+
+  function drawFighter(f){
+    if(!alive(f)) return;
+
+    const H = HEROES[f.heroId];
+    // body
+    ctx.save();
+    // shadow
+    ctx.globalAlpha = 0.25;
+    ctx.beginPath();
+    ctx.ellipse(f.x, f.y+18, 16, 7, 0, 0, Math.PI*2);
+    ctx.fillStyle = "#000";
+    ctx.fill();
+    ctx.restore();
+
+    // trail (Chispa)
+    if(f.heroId==="chispa" && now() < f.buff.trailUntil){
+      ctx.save();
+      ctx.globalAlpha = 0.22;
+      ctx.strokeStyle = "rgba(255,212,0,.7)";
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      const pts = f.buff.trailPoints;
+      for(let i=0;i<pts.length;i++){
+        const p = pts[i];
+        if(i===0) ctx.moveTo(p.x,p.y);
+        else ctx.lineTo(p.x,p.y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // circle
+    let fill = "rgba(159,177,209,.18)";
+    let stroke = "rgba(159,177,209,.35)";
+    if(f.heroId==="chispa"){ fill = "rgba(255,212,0,.18)"; stroke = "rgba(255,122,0,.65)"; }
+    if(f.heroId==="glacial"){ fill = "rgba(102,207,255,.18)"; stroke = "rgba(31,92,255,.55)"; }
+    if(f.heroId==="iris"){ fill = "rgba(255,255,255,.16)"; stroke = "rgba(255,255,255,.55)"; }
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // facing marker
+    ctx.beginPath();
+    ctx.moveTo(f.x, f.y);
+    ctx.lineTo(f.x + Math.cos(f.facing)*f.r, f.y + Math.sin(f.facing)*f.r);
+    ctx.strokeStyle = "rgba(255,255,255,.5)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // status rings
+    const t = now();
+    let ring = 0;
+    if(t < f.paralyzeUntil){ ring++; drawRing(f, ring, "rgba(255,212,0,.65)"); }
+    if(t < f.slowUntil){ ring++; drawRing(f, ring, "rgba(102,207,255,.65)"); }
+    if(t < f.blindUntil){ ring++; drawRing(f, ring, "rgba(255,209,102,.55)"); }
+    if(t < f.buff.shieldRebounceUntil){ ring++; drawRing(f, ring, "rgba(255,93,162,.65)"); }
+
+    // hp bar
+    const w = 44, h = 6;
+    const px = f.x - w/2, py = f.y - f.r - 14;
+    ctx.fillStyle = "rgba(0,0,0,.35)";
+    ctx.fillRect(px, py, w, h);
+    const ratio = clamp(f.hp / f.maxHP, 0, 1);
+    ctx.fillStyle = (f.isPlayer) ? "rgba(55,214,122,.9)" : "rgba(78,166,255,.9)";
+    ctx.fillRect(px, py, w*ratio, h);
+    ctx.strokeStyle = "rgba(255,255,255,.14)";
+    ctx.strokeRect(px, py, w, h);
+
+    // name
+    ctx.fillStyle = "rgba(231,238,252,.85)";
+    ctx.font = "12px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText(f.isPlayer ? H.name : ("Bot " + H.name.split(" ")[0]), f.x, f.y + f.r + 22);
+
+    ctx.restore();
+  }
+
+  function drawRing(f, n, color){
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(f.x,f.y,f.r + 5 + (n-1)*5,0,Math.PI*2);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ---------- HUD ----------
+  function updateHUD(){
+    const p = state.player;
+    const H = HEROES[p.heroId];
+    UI.hudHero.textContent = `${H.name} • ${H.element}`;
+    const st = [];
+    const t = now();
+    if(t < p.paralyzeUntil) st.push("Paralizado");
+    if(t < p.slowUntil) st.push("Ralentizado");
+    if(t < p.blindUntil) st.push("Cegado");
+    if(t < p.buff.shieldRebounceUntil) st.push("Escudo rebote");
+    if(t < p.buff.trailUntil) st.push("Estela");
+    UI.hudStatus.textContent = "Estados: " + (st.length ? st.join(" • ") : "—");
+
+    UI.hpText.textContent = `${Math.ceil(p.hp)} / ${p.maxHP}`;
+    UI.hpBar.style.width = `${clamp((p.hp/p.maxHP)*100, 0, 100)}%`;
+
+    UI.hudScore.textContent = `Tú ${state.scorePlayer} • Bots ${state.scoreBots}`;
+    UI.streakText.textContent = String(state.streak);
+
+    // cooldown text
+    const tt = now();
+    const cd = (kind)=>{
+      const c = HEROES[p.heroId][`cd${kind}`];
+      const last = p[`t${kind}`];
+      const left = clamp((last + c) - tt, 0, 999);
+      return left;
+    };
+    const b = cd("Basic"), s = cd("Super"), sp = cd("Special"), g = cd("Gadget");
+    UI.cdBasic.textContent = `CD: ${b.toFixed(1)}s`;
+    UI.cdSuper.textContent = `CD: ${s.toFixed(1)}s`;
+    UI.cdSpecial.textContent = `CD: ${sp.toFixed(1)}s`;
+    UI.cdGadget.textContent = `CD: ${g.toFixed(1)}s`;
+  }
+
+  // ---------- Game Loop ----------
+  function tick(){
+    const t = now();
+    const dt = clamp(t - state.lastTick, 0, 0.033);
+    state.lastTick = t;
+
+    playerMove(dt);
+
+    // bots
+    for(const b of state.bots) botThink(b, dt);
+
+    // update fighters
+    updateFighter(state.player, dt);
+    for(const b of state.bots) updateFighter(b, dt);
+
+    // bullets & effects
+    updateBullets(dt);
+    updateEffects(dt);
+
+    // cleanup expired obstacles
+    state.obstacles = state.obstacles.filter(o => now() < o.until + 0.01);
+
+    updateHUD();
+    draw();
+
+    requestAnimationFrame(tick);
+  }
+
+  // ---------- Start ----------
+  renderPicker();
+  initMatch();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,2131 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>ISLA TITÁN (HTML 3D) — Supervivencia Infinita</title>
+  <style>
+    html, body { margin:0; padding:0; height:100%; overflow:hidden; background:#000; font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    #hud {
+      position:fixed; inset:0; pointer-events:none; color:#fff;
+      text-shadow:0 2px 10px rgba(0,0,0,.8);
+    }
+    #topbar {
+      position:absolute; left:12px; top:10px; display:flex; gap:12px; flex-wrap:wrap;
+      align-items:center; pointer-events:none;
+    }
+    .pill{
+      pointer-events:none;
+      background:rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:12px;
+      backdrop-filter: blur(6px);
+    }
+    #center {
+      position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+      text-align:center; pointer-events:none;
+    }
+    #crosshair {
+      width:10px; height:10px; border:1px solid rgba(255,255,255,.8);
+      border-radius:2px; opacity:.9;
+      box-shadow:0 0 14px rgba(255,255,255,.2);
+      margin:0 auto 10px auto;
+    }
+    #prompt {
+      max-width:min(680px, 92vw);
+      margin:0 auto;
+      font-size:14px;
+      line-height:1.35;
+      background:rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:14px;
+      padding:10px 12px;
+      display:none;
+      backdrop-filter: blur(6px);
+    }
+    #bigmsg {
+      position:absolute; left:50%; top:20%;
+      transform:translateX(-50%);
+      text-align:center;
+      font-size:18px;
+      letter-spacing:.3px;
+      background:rgba(0,0,0,.45);
+      border:1px solid rgba(255,255,255,.15);
+      border-radius:18px;
+      padding:14px 18px;
+      display:none;
+      width:min(720px, 92vw);
+      backdrop-filter: blur(8px);
+    }
+    #titlecard {
+      position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+      background:radial-gradient(ellipse at center, rgba(30,40,60,.45), rgba(0,0,0,.95));
+      color:#fff;
+      z-index:10;
+    }
+    #panel {
+      width:min(860px, 92vw);
+      background:rgba(0,0,0,.55);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:24px;
+      padding:18px 18px 16px;
+      box-shadow:0 25px 80px rgba(0,0,0,.6);
+      backdrop-filter: blur(10px);
+    }
+    #panel h1{ margin:0 0 6px; font-size:22px; letter-spacing:.6px; }
+    #panel p{ margin:6px 0; opacity:.9; font-size:14px; line-height:1.4; }
+    #panel .grid {
+      margin-top:10px;
+      display:grid; grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    #panel .box{
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      padding:10px 12px;
+    }
+    #panel .btnrow{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+    button{
+      pointer-events:auto;
+      cursor:pointer;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.10);
+      color:#fff;
+      padding:10px 12px;
+      font-weight:600;
+    }
+    button:hover{ background:rgba(255,255,255,.16); }
+    .dim { opacity:.75; }
+    #log {
+      position:absolute; right:12px; top:10px; width:min(420px, 46vw);
+      max-height:44vh; overflow:hidden;
+      pointer-events:none;
+    }
+    #log .line{
+      margin:0 0 6px;
+      background:rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:14px;
+      padding:8px 10px;
+      font-size:12px;
+      opacity:.95;
+      backdrop-filter: blur(6px);
+    }
+    #footerhint{
+      position:absolute; left:50%; bottom:12px; transform:translateX(-50%);
+      font-size:12px; opacity:.85;
+      background:rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:999px;
+      padding:6px 10px;
+      pointer-events:none;
+      backdrop-filter: blur(6px);
+    }
+    a{ color:#fff; }
+  </style>
+</head>
+<body>
+  <div id="titlecard">
+    <div id="panel">
+      <h1>ISLA TITÁN — Supervivencia 3D Infinita</h1>
+      <p class="dim">Empiezas en mitad del mar tras una semana en un minibarco. Sobrevive un día… y llegarás a una isla donde algo gigante arrasó una civilización.</p>
+      <div class="grid">
+        <div class="box">
+          <b>Controles</b>
+          <p>WASD: mover · Ratón: mirar · Espacio: saltar · Shift: correr</p>
+          <p>E: interactuar · F: linterna · Click: atacar · R: curarte (si tienes venda)</p>
+        </div>
+        <div class="box">
+          <b>Objetivo</b>
+          <p>🧭 Sobrevive el <b>Día 1 en el mar</b>. Luego explora la isla, encuentra pistas y detén a los titanes.</p>
+          <p>♾️ El mundo se expande de forma procedural: siempre hay nuevas zonas y eventos.</p>
+        </div>
+      </div>
+      <div class="btnrow">
+        <button id="btnStart">Jugar</button>
+        <button id="btnStory">Leer intro</button>
+        <button id="btnTips">Tips</button>
+      </div>
+      <p id="story" style="display:none;margin-top:10px;">
+        “Llevo siete días en este maldito mar. Sin comida. Sin rumbo. La radio murió el tercer día.
+        Y entonces… aparecieron esas cosas. Hoy ya no sé si busco tierra… o si la tierra me está buscando a mí.”
+      </p>
+      <p id="tips" style="display:none;margin-top:10px;">
+        💡 Consejo: En el mar, recolecta agua cuando llueva y pesca para sobrevivir. En la isla, usa el bosque para ocultarte.
+        Si oyes pasos pesados: NO discutas con la física… corre.
+      </p>
+    </div>
+  </div>
+
+  <div id="hud">
+    <div id="topbar">
+      <div class="pill" id="stagePill">FASE: Mar</div>
+      <div class="pill" id="timePill">Hora: 06:00</div>
+      <div class="pill" id="dayPill">Día: 1</div>
+      <div class="pill" id="goalPill">Objetivo: Sobrevive 1 día en el mar</div>
+      <div class="pill" id="fpsPill">FPS: —</div>
+    </div>
+
+    <div id="log"></div>
+
+    <div id="center">
+      <div id="crosshair"></div>
+      <div id="prompt"></div>
+    </div>
+
+    <div id="bigmsg"></div>
+
+    <div id="footerhint">Click para capturar el ratón. ESC para soltar. E para interactuar.</div>
+  </div>
+
+  <script type="module">
+    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+
+    /******************************************************************
+     * ISLA TITÁN — Un solo archivo HTML jugable.
+     * - Mar (1 día): sed/hambre/energía, pesca, lluvia, tiburón, olas
+     * - Isla: playa -> bosque -> pistas (hacha/árbol/leñador) -> titán
+     * - Mundo procedural por "chunks" infinito.
+     * - Combate simple y sigilo (distancia + visión del titán).
+     ******************************************************************/
+
+    // ---------- Utilidades ----------
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const rand = (a=0, b=1) => a + Math.random() * (b - a);
+    const randInt = (a, b) => Math.floor(rand(a, b+1));
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    const smoothstep = (t) => t*t*(3-2*t);
+
+    // PRNG determinista (para mundo procedural consistente con seed)
+    function mulberry32(seed){
+      let t = seed >>> 0;
+      return function(){
+        t += 0x6D2B79F5;
+        let x = Math.imul(t ^ (t >>> 15), 1 | t);
+        x ^= x + Math.imul(x ^ (x >>> 7), 61 | x);
+        return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function hash2(x, z){
+      // hash simple de coordenadas
+      let h = (x*374761393 + z*668265263) ^ (x*1274126177);
+      h = (h ^ (h >> 13)) * 1274126177;
+      return (h ^ (h >> 16)) >>> 0;
+    }
+
+    // Ruido básico tipo value noise (barato y suficiente)
+    function valueNoise2D(x, z, seed){
+      const xi = Math.floor(x), zi = Math.floor(z);
+      const xf = x - xi, zf = z - zi;
+
+      const h00 = (hash2(xi + seed, zi + seed) % 10000) / 10000;
+      const h10 = (hash2(xi + 1 + seed, zi + seed) % 10000) / 10000;
+      const h01 = (hash2(xi + seed, zi + 1 + seed) % 10000) / 10000;
+      const h11 = (hash2(xi + 1 + seed, zi + 1 + seed) % 10000) / 10000;
+
+      const u = smoothstep(xf);
+      const v = smoothstep(zf);
+
+      const a = lerp(h00, h10, u);
+      const b = lerp(h01, h11, u);
+      return lerp(a, b, v);
+    }
+
+    function fbm2D(x, z, seed, oct=4){
+      let amp=1, freq=1, sum=0, norm=0;
+      for(let i=0;i<oct;i++){
+        sum += amp * valueNoise2D(x*freq, z*freq, seed + i*1013);
+        norm += amp;
+        amp *= 0.5;
+        freq *= 2.0;
+      }
+      return sum / norm;
+    }
+
+    // ---------- UI ----------
+    const elStage = document.getElementById("stagePill");
+    const elTime  = document.getElementById("timePill");
+    const elDay   = document.getElementById("dayPill");
+    const elGoal  = document.getElementById("goalPill");
+    const elFPS   = document.getElementById("fpsPill");
+    const elPrompt= document.getElementById("prompt");
+    const elBig   = document.getElementById("bigmsg");
+    const elLog   = document.getElementById("log");
+    const titlecard = document.getElementById("titlecard");
+    const btnStart = document.getElementById("btnStart");
+    const btnStory = document.getElementById("btnStory");
+    const btnTips  = document.getElementById("btnTips");
+    const story = document.getElementById("story");
+    const tips = document.getElementById("tips");
+
+    btnStory.onclick = () => story.style.display = (story.style.display==="none"?"block":"none");
+    btnTips.onclick  = () => tips.style.display  = (tips.style.display==="none"?"block":"none");
+
+    function logLine(text){
+      const div = document.createElement("div");
+      div.className = "line";
+      div.textContent = text;
+      elLog.prepend(div);
+      while(elLog.children.length > 6) elLog.removeChild(elLog.lastChild);
+    }
+
+    function showPrompt(text){
+      elPrompt.textContent = text;
+      elPrompt.style.display = "block";
+    }
+    function hidePrompt(){ elPrompt.style.display="none"; }
+
+    function bigMessage(text, seconds=4){
+      elBig.textContent = text;
+      elBig.style.display = "block";
+      clearTimeout(bigMessage._t);
+      bigMessage._t = setTimeout(()=> elBig.style.display="none", seconds*1000);
+    }
+
+    // ---------- Three setup ----------
+    const renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x05070a, 0.0012);
+
+    const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 2500);
+
+    // Luz principal (sol)
+    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+    sun.position.set(120, 200, 80);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.camera.near = 10;
+    sun.shadow.camera.far = 650;
+    sun.shadow.camera.left = -250;
+    sun.shadow.camera.right = 250;
+    sun.shadow.camera.top = 250;
+    sun.shadow.camera.bottom = -250;
+    scene.add(sun);
+
+    const hemi = new THREE.HemisphereLight(0xbad8ff, 0x203020, 0.85);
+    scene.add(hemi);
+
+    // Linterna (toggle F)
+    const flashlight = new THREE.SpotLight(0xffffff, 0.0, 80, Math.PI/6, 0.45, 1.2);
+    flashlight.castShadow = true;
+    flashlight.shadow.mapSize.set(1024, 1024);
+    scene.add(flashlight);
+    scene.add(flashlight.target);
+
+    // Sky dome simple (gradiente)
+    const skyGeo = new THREE.SphereGeometry(1400, 32, 16);
+    const skyMat = new THREE.MeshBasicMaterial({ color: 0x09111e, side: THREE.BackSide });
+    const sky = new THREE.Mesh(skyGeo, skyMat);
+    scene.add(sky);
+
+    // ---------- Audio (simple, sin archivos externos) ----------
+    // Pequeño "beep" procedural para feedback usando WebAudio
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let actx = null;
+    function beep(freq=440, dur=0.06, type="sine", gain=0.03){
+      if(!actx) return;
+      const o = actx.createOscillator();
+      const g = actx.createGain();
+      o.type = type;
+      o.frequency.value = freq;
+      g.gain.value = gain;
+      o.connect(g).connect(actx.destination);
+      o.start();
+      o.stop(actx.currentTime + dur);
+    }
+
+    // ---------- Controles: Pointer Lock + WASD ----------
+    const keys = new Set();
+    let pointerLocked = false;
+
+    document.addEventListener("keydown", (e)=>{
+      if(e.code === "Escape") return;
+      keys.add(e.code);
+      if(e.code === "KeyF"){ toggleFlashlight(); }
+      if(e.code === "KeyE"){ tryInteract(); }
+      if(e.code === "KeyR"){ tryHeal(); }
+    });
+    document.addEventListener("keyup", (e)=> keys.delete(e.code));
+
+    renderer.domElement.addEventListener("click", ()=>{
+      if(!pointerLocked) renderer.domElement.requestPointerLock();
+      else if(game.started) attack();
+    });
+
+    document.addEventListener("pointerlockchange", ()=>{
+      pointerLocked = (document.pointerLockElement === renderer.domElement);
+      if(pointerLocked){
+        hidePrompt();
+      } else {
+        showPrompt("Click para continuar (capturar ratón).");
+      }
+    });
+
+    let yaw=0, pitch=0;
+    document.addEventListener("mousemove", (e)=>{
+      if(!pointerLocked) return;
+      const mx = e.movementX || 0;
+      const my = e.movementY || 0;
+      yaw -= mx * 0.0022;
+      pitch -= my * 0.0022;
+      pitch = clamp(pitch, -1.35, 1.35);
+    });
+
+    // ---------- Juego: estado ----------
+    const game = {
+      started: false,
+      seed: Math.floor(Math.random()*1e9) >>> 0,
+      phase: "sea", // sea -> beach -> forest -> ruins (infinite)
+      objective: "Sobrevive 1 día en el mar",
+      day: 1,
+      time: 6*60, // minutos del día (06:00)
+      timeScale: 24, // 1s real = 24s juego (ajustado)
+      waves: 0,
+      storm: false,
+      stormTimer: 0,
+      sharks: [],
+      turtles: [],
+      titans: [],
+      survivors: [],
+      loot: [],
+      interactables: [],
+      discovered: {
+        axeScene:false,
+        trail:false,
+        ruins:false,
+        titanSeen:false,
+        notes: 0,
+      },
+      world: {
+        chunkSize: 80,
+        viewRadius: 5, // chunks
+        chunks: new Map(), // key -> chunk data
+      }
+    };
+
+    const player = {
+      pos: new THREE.Vector3(0, 4.2, 0),
+      vel: new THREE.Vector3(0, 0, 0),
+      onGround: false,
+      hp: 100,
+      stamina: 100,
+      hunger: 70,
+      thirst: 70,
+      warmth: 100,
+      oxygen: 100,
+      bandage: 0,
+      scraps: 0,
+      fish: 0,
+      water: 0,
+      wood: 0,
+      metal: 0,
+      notes: 0,
+      weapon: "knife", // knife / spear / axe / rifle (simplificado)
+      damage: 16,
+      reach: 2.1,
+      speedWalk: 6.0,
+      speedRun: 9.5,
+      eyeHeight: 1.65,
+      flashlightOn: false,
+      lastAttack: 0,
+      attackCd: 0.35,
+      stealth: 0, // sube en hierba/arbustos
+    };
+
+    // ---------- Objetos base ----------
+    const root = new THREE.Group();
+    scene.add(root);
+
+    const seaGroup = new THREE.Group();
+    const islandGroup = new THREE.Group();
+    root.add(seaGroup);
+    root.add(islandGroup);
+
+    // Base materials
+    const matOcean = new THREE.MeshStandardMaterial({ color: 0x0a2a3a, roughness:0.35, metalness:0.05 });
+    const matBoat  = new THREE.MeshStandardMaterial({ color: 0x6b4a2c, roughness:0.9, metalness:0.02 });
+    const matSand  = new THREE.MeshStandardMaterial({ color: 0xc8b27c, roughness:0.98, metalness:0.01 });
+    const matGrass = new THREE.MeshStandardMaterial({ color: 0x2f5d2a, roughness:0.95, metalness:0.01 });
+    const matRock  = new THREE.MeshStandardMaterial({ color: 0x4a4f55, roughness:0.9, metalness:0.02 });
+    const matTrunk = new THREE.MeshStandardMaterial({ color: 0x6a4b2e, roughness:0.9, metalness:0.01 });
+    const matLeaf  = new THREE.MeshStandardMaterial({ color: 0x245c2b, roughness:0.95, metalness:0.01 });
+    const matMetal = new THREE.MeshStandardMaterial({ color: 0x8f939a, roughness:0.5, metalness:0.75 });
+
+    // ---------- Mar: plano de agua ----------
+    const oceanGeo = new THREE.PlaneGeometry(1400, 1400, 120, 120);
+    oceanGeo.rotateX(-Math.PI/2);
+    const ocean = new THREE.Mesh(oceanGeo, matOcean);
+    ocean.receiveShadow = true;
+    seaGroup.add(ocean);
+
+    // ---------- Barco ----------
+    const boat = new THREE.Group();
+    seaGroup.add(boat);
+
+    const hull = new THREE.Mesh(new THREE.BoxGeometry(6, 1.2, 2.4), matBoat);
+    hull.castShadow = true; hull.receiveShadow = true;
+    hull.position.y = 2.8;
+    boat.add(hull);
+
+    const bow = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.9, 2.1), matBoat);
+    bow.position.set(3.2, 2.95, 0);
+    bow.rotation.y = 0.18;
+    bow.castShadow = true; bow.receiveShadow = true;
+    boat.add(bow);
+
+    const stern = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.9, 2.1), matBoat);
+    stern.position.set(-3.1, 2.95, 0);
+    stern.rotation.y = -0.15;
+    stern.castShadow = true; stern.receiveShadow = true;
+    boat.add(stern);
+
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 3.6, 10), matBoat);
+    mast.position.set(0.2, 4.8, 0);
+    mast.castShadow = true;
+    boat.add(mast);
+
+    const sail = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.2, 1, 1), new THREE.MeshStandardMaterial({
+      color:0xe6e0cf, roughness:0.95, metalness:0.0, side:THREE.DoubleSide
+    }));
+    sail.position.set(1.4, 5.0, 0);
+    sail.rotation.y = Math.PI/2;
+    sail.castShadow = true;
+    boat.add(sail);
+
+    // pequeñas cajas (inventario visual)
+    const crate = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.6, 0.9), matBoat);
+    crate.position.set(-1.2, 3.2, 0.7);
+    crate.castShadow = true; crate.receiveShadow = true;
+    boat.add(crate);
+
+    const ropeCoil = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.12, 10, 22), matBoat);
+    ropeCoil.position.set(-0.6, 3.22, -0.75);
+    ropeCoil.rotation.x = Math.PI/2;
+    ropeCoil.castShadow = true;
+    boat.add(ropeCoil);
+
+    // ---------- Mundo Isla: terreno procedural por chunks ----------
+    const chunkMeshes = new Map(); // key -> THREE.Group (para eliminar)
+    const tempVec = new THREE.Vector3();
+
+    // Altura del terreno (isla)
+    function terrainHeight(x, z){
+      // "isla" centrada cerca de (0,0) al llegar; luego infinito por chunks.
+      const s = game.seed;
+      const n = fbm2D(x*0.02, z*0.02, s, 5); // 0..1
+      const m = fbm2D(x*0.006, z*0.006, s+9999, 4);
+      // máscara de isla base (cerca del origen): playa alrededor, montaña al centro
+      const d = Math.sqrt(x*x + z*z);
+      const islandMask = clamp(1.0 - (d / 520), 0, 1);
+      const mountain = Math.pow(clamp(1.0 - (d/300), 0, 1), 1.8);
+
+      // altura
+      let h = 0;
+      h += (n - 0.5) * 22;
+      h += (m - 0.5) * 46 * mountain;
+      h *= (0.25 + 0.75*islandMask);
+
+      // nivel del mar ~0; queremos playa suave (0..3)
+      const beach = clamp((islandMask - 0.15) / 0.25, 0, 1);
+      h = lerp(-2.5, h, beach);
+
+      // colina central
+      h += mountain * 28;
+
+      return h;
+    }
+
+    function biomeAt(x, z){
+      // decide biome por altura + ruido
+      const h = terrainHeight(x, z);
+      const moisture = fbm2D(x*0.01, z*0.01, game.seed+4242, 3);
+      if(h < 1.2) return "sand";
+      if(h < 6 && moisture < 0.45) return "scrub";
+      if(h < 18) return "forest";
+      return "rock";
+    }
+
+    function chunkKey(cx, cz){ return `${cx},${cz}`; }
+
+    function ensureChunksAround(px, pz){
+      const cs = game.world.chunkSize;
+      const rc = game.world.viewRadius;
+
+      const pcx = Math.floor(px / cs);
+      const pcz = Math.floor(pz / cs);
+
+      // crear alrededor
+      for(let dz=-rc; dz<=rc; dz++){
+        for(let dx=-rc; dx<=rc; dx++){
+          const cx = pcx + dx;
+          const cz = pcz + dz;
+          const key = chunkKey(cx, cz);
+          if(!game.world.chunks.has(key)){
+            const data = generateChunk(cx, cz);
+            game.world.chunks.set(key, data);
+            const grp = buildChunkMesh(data);
+            chunkMeshes.set(key, grp);
+            islandGroup.add(grp);
+          }
+        }
+      }
+
+      // limpiar lejos (ligero)
+      for(const key of game.world.chunks.keys()){
+        const [cx, cz] = key.split(",").map(Number);
+        const dist = Math.max(Math.abs(cx - pcx), Math.abs(cz - pcz));
+        if(dist > rc + 2){
+          game.world.chunks.delete(key);
+          const grp = chunkMeshes.get(key);
+          if(grp){
+            islandGroup.remove(grp);
+            disposeGroup(grp);
+            chunkMeshes.delete(key);
+          }
+        }
+      }
+    }
+
+    function disposeGroup(grp){
+      grp.traverse(o=>{
+        if(o.isMesh){
+          o.geometry?.dispose?.();
+          if(o.material){
+            if(Array.isArray(o.material)) o.material.forEach(m=>m.dispose?.());
+            else o.material.dispose?.();
+          }
+        }
+      });
+    }
+
+    function generateChunk(cx, cz){
+      const cs = game.world.chunkSize;
+      const seed = game.seed;
+      const rng = mulberry32(hash2(cx+seed, cz+seed));
+
+      const x0 = cx*cs;
+      const z0 = cz*cs;
+
+      // grid para terreno del chunk
+      const res = 24; // resolución
+      const heights = new Float32Array((res+1)*(res+1));
+      for(let z=0; z<=res; z++){
+        for(let x=0; x<=res; x++){
+          const wx = x0 + (x/res)*cs;
+          const wz = z0 + (z/res)*cs;
+          heights[z*(res+1)+x] = terrainHeight(wx, wz);
+        }
+      }
+
+      // props: palmeras, árboles, rocas, ruinas, loot, huellas
+      const props = [];
+
+      // densidad según bioma
+      const centerX = x0 + cs*0.5;
+      const centerZ = z0 + cs*0.5;
+      const biome = biomeAt(centerX, centerZ);
+
+      // Cerca de costa: tortugas + palmeras
+      let treeCount = 0;
+      let rockCount = 0;
+      let ruinChance = 0;
+
+      if(biome === "sand"){
+        treeCount = Math.floor(rng()*6);
+        rockCount = Math.floor(rng()*3);
+        ruinChance = 0.06;
+      } else if(biome === "scrub"){
+        treeCount = 6 + Math.floor(rng()*10);
+        rockCount = 3 + Math.floor(rng()*6);
+        ruinChance = 0.08;
+      } else if(biome === "forest"){
+        treeCount = 14 + Math.floor(rng()*22);
+        rockCount = 3 + Math.floor(rng()*8);
+        ruinChance = 0.10;
+      } else {
+        treeCount = Math.floor(rng()*4);
+        rockCount = 10 + Math.floor(rng()*18);
+        ruinChance = 0.14;
+      }
+
+      // Árboles
+      for(let i=0;i<treeCount;i++){
+        const wx = x0 + rng()*cs;
+        const wz = z0 + rng()*cs;
+        const h = terrainHeight(wx, wz);
+        const b = biomeAt(wx, wz);
+        if(b === "rock") continue;
+        if(h < 1.0) continue;
+        const scale = (b==="forest") ? (0.9 + rng()*1.4) : (0.6 + rng()*1.0);
+        props.push({ type:"tree", x:wx, y:h, z:wz, s:scale, r:rng()*Math.PI*2, palm:(b==="sand") });
+      }
+
+      // Rocas
+      for(let i=0;i<rockCount;i++){
+        const wx = x0 + rng()*cs;
+        const wz = z0 + rng()*cs;
+        const h = terrainHeight(wx, wz);
+        if(h < -0.5) continue;
+        const scale = 0.6 + rng()*2.4;
+        props.push({ type:"rock", x:wx, y:h, z:wz, s:scale, r:rng()*Math.PI*2 });
+      }
+
+      // Ruinas (bloques y columnas rotas)
+      if(rng() < ruinChance){
+        const wx = x0 + rng()*cs;
+        const wz = z0 + rng()*cs;
+        const h = terrainHeight(wx, wz);
+        if(h > 2.0){
+          const count = 4 + Math.floor(rng()*10);
+          props.push({ type:"ruin", x:wx, y:h, z:wz, count });
+          // loot cerca
+          if(rng() < 0.65) props.push({ type:"loot", kind: pick(["scraps","metal","bandage","note"]), x:wx+rand(-6,6), y:h+0.3, z:wz+rand(-6,6) });
+        }
+      }
+
+      // Huellas/árboles rotos (camino de algo gigante) — lo hacemos en franja diagonal
+      if(rng() < 0.15){
+        // genera un "sendero" de destrucción si el chunk está relativamente dentro de la isla (evitar mar)
+        const midH = terrainHeight(centerX, centerZ);
+        if(midH > 3){
+          const steps = 3 + Math.floor(rng()*5);
+          const dir = rng()*Math.PI*2;
+          for(let i=0;i<steps;i++){
+            const t = (i/(steps-1));
+            const wx = centerX + Math.cos(dir)* (t*cs*0.5) + rand(-6,6);
+            const wz = centerZ + Math.sin(dir)* (t*cs*0.5) + rand(-6,6);
+            const h = terrainHeight(wx, wz);
+            props.push({ type:"trail", x:wx, y:h, z:wz, s: 1.0 + rng()*1.2, r:dir + rng()*0.5 });
+          }
+        }
+      }
+
+      return { cx, cz, x0, z0, cs, res, heights, props, biome };
+    }
+
+    function buildChunkMesh(chunk){
+      const { x0, z0, cs, res, heights } = chunk;
+      const grp = new THREE.Group();
+      grp.userData.chunkKey = chunkKey(chunk.cx, chunk.cz);
+
+      // Terreno: Plane subdividido con alturas
+      const geo = new THREE.PlaneGeometry(cs, cs, res, res);
+      geo.rotateX(-Math.PI/2);
+
+      const pos = geo.attributes.position;
+      for(let i=0;i<pos.count;i++){
+        const vx = pos.getX(i);
+        const vz = pos.getZ(i);
+        const wx = x0 + (vx + cs/2);
+        const wz = z0 + (vz + cs/2);
+
+        // sample height (bilinear) desde heights del chunk
+        const fx = (wx - x0) / cs * res;
+        const fz = (wz - z0) / cs * res;
+        const xi = Math.floor(fx), zi = Math.floor(fz);
+        const tx = fx - xi, tz = fz - zi;
+
+        const idx = (zz, xx) => (zz*(res+1)+xx);
+        const h00 = heights[idx(zi, xi)];
+        const h10 = heights[idx(zi, xi+1)];
+        const h01 = heights[idx(zi+1, xi)];
+        const h11 = heights[idx(zi+1, xi+1)];
+        const hh = lerp(lerp(h00,h10,tx), lerp(h01,h11,tx), tz);
+
+        pos.setY(i, hh);
+      }
+      geo.computeVertexNormals();
+
+      // material por bioma base (simple: sand/grass/rock)
+      const centerX = x0 + cs*0.5, centerZ = z0 + cs*0.5;
+      const b = biomeAt(centerX, centerZ);
+      let mat = matGrass;
+      if(b==="sand") mat = matSand;
+      else if(b==="rock") mat = matRock;
+      else if(b==="scrub") mat = new THREE.MeshStandardMaterial({ color:0x3f6b2c, roughness:0.96, metalness:0.01 });
+
+      const terrain = new THREE.Mesh(geo, mat);
+      terrain.receiveShadow = true;
+      terrain.position.set(x0 + cs/2, 0, z0 + cs/2);
+      grp.add(terrain);
+
+      // Props
+      for(const p of chunk.props){
+        if(p.type === "tree") grp.add(makeTree(p));
+        else if(p.type === "rock") grp.add(makeRock(p));
+        else if(p.type === "ruin") grp.add(makeRuin(p));
+        else if(p.type === "loot") grp.add(makeLoot(p));
+        else if(p.type === "trail") grp.add(makeTrailMark(p));
+      }
+
+      return grp;
+    }
+
+    function makeTree(p){
+      const g = new THREE.Group();
+      g.position.set(p.x, p.y, p.z);
+      g.rotation.y = p.r;
+
+      if(p.palm){
+        // palmera
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22*p.s, 0.35*p.s, 6.2*p.s, 8), matTrunk);
+        trunk.position.y = 3.1*p.s;
+        trunk.castShadow = true; trunk.receiveShadow = true;
+        g.add(trunk);
+
+        const crown = new THREE.Group();
+        crown.position.y = 6.2*p.s;
+        for(let i=0;i<7;i++){
+          const leaf = new THREE.Mesh(new THREE.PlaneGeometry(2.6*p.s, 0.7*p.s), matLeaf.clone());
+          leaf.material.color.setHex(0x2a7a3a);
+          leaf.rotation.y = (i/7)*Math.PI*2;
+          leaf.rotation.x = -0.35;
+          leaf.position.z = 1.2*p.s;
+          leaf.castShadow = true;
+          crown.add(leaf);
+        }
+        g.add(crown);
+      } else {
+        // árbol normal
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25*p.s, 0.35*p.s, 5.4*p.s, 8), matTrunk);
+        trunk.position.y = 2.7*p.s;
+        trunk.castShadow = true; trunk.receiveShadow = true;
+        g.add(trunk);
+
+        const foliage = new THREE.Mesh(new THREE.SphereGeometry(2.0*p.s, 10, 10), matLeaf.clone());
+        foliage.material.color.setHex(0x1f5b28);
+        foliage.position.y = 5.0*p.s;
+        foliage.castShadow = true; foliage.receiveShadow = false;
+        g.add(foliage);
+      }
+
+      // colisión simple (radio)
+      g.userData.collider = { type:"sphere", r: 1.2*p.s, y: p.y + 2.6*p.s };
+      g.userData.stealthCover = true; // subir stealth en bosque
+      return g;
+    }
+
+    function makeRock(p){
+      const g = new THREE.Mesh(new THREE.DodecahedronGeometry(1.0*p.s, 0), matRock);
+      g.position.set(p.x, p.y + 0.8*p.s, p.z);
+      g.rotation.set(rand(0,Math.PI), rand(0,Math.PI), rand(0,Math.PI));
+      g.castShadow = true; g.receiveShadow = true;
+      g.userData.collider = { type:"sphere", r: 1.1*p.s, y: p.y + 0.8*p.s };
+      return g;
+    }
+
+    function makeRuin(p){
+      const group = new THREE.Group();
+      group.position.set(p.x, p.y, p.z);
+
+      // base
+      const base = new THREE.Mesh(new THREE.BoxGeometry(10, 1.2, 10), matRock);
+      base.position.y = 0.6;
+      base.castShadow = true; base.receiveShadow = true;
+      group.add(base);
+
+      for(let i=0;i<p.count;i++){
+        const h = 2 + Math.random()*6;
+        const col = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.8, h, 9), matRock);
+        col.position.set(rand(-4,4), h/2, rand(-4,4));
+        col.rotation.z = rand(-0.2,0.2);
+        col.rotation.x = rand(-0.2,0.2);
+        col.castShadow = true; col.receiveShadow = true;
+        group.add(col);
+      }
+
+      // escombros
+      const debrisCount = 6 + Math.floor(Math.random()*8);
+      for(let i=0;i<debrisCount;i++){
+        const b = new THREE.Mesh(new THREE.BoxGeometry(rand(0.6,1.8), rand(0.3,1.0), rand(0.6,2.2)), matRock);
+        b.position.set(rand(-5,5), rand(0.3,1.4), rand(-5,5));
+        b.rotation.set(rand(0,Math.PI), rand(0,Math.PI), rand(0,Math.PI));
+        b.castShadow = true; b.receiveShadow = true;
+        group.add(b);
+      }
+
+      group.userData.isRuin = true;
+      return group;
+    }
+
+    function makeTrailMark(p){
+      // marcas de destrucción: troncos rotos + tierra removida
+      const group = new THREE.Group();
+      group.position.set(p.x, p.y, p.z);
+      group.rotation.y = p.r;
+
+      const soil = new THREE.Mesh(new THREE.CylinderGeometry(2.6*p.s, 3.2*p.s, 0.5, 16), new THREE.MeshStandardMaterial({
+        color:0x2b241b, roughness:0.98, metalness:0.01
+      }));
+      soil.position.y = 0.2;
+      soil.receiveShadow = true;
+      group.add(soil);
+
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.35*p.s, 0.45*p.s, 6.0*p.s, 10), matTrunk);
+      trunk.position.y = 1.3;
+      trunk.rotation.z = 1.1;
+      trunk.castShadow = true; trunk.receiveShadow = true;
+      group.add(trunk);
+
+      const splinter = new THREE.Mesh(new THREE.ConeGeometry(0.45*p.s, 1.2*p.s, 8), matTrunk);
+      splinter.position.set(1.8, 0.9, 0.6);
+      splinter.rotation.z = -0.7;
+      splinter.castShadow = true;
+      group.add(splinter);
+
+      group.userData.trail = true;
+      return group;
+    }
+
+    function makeLoot(p){
+      const kinds = {
+        scraps: { color:0xb2b8c2, label:"Chatarra" },
+        metal:  { color:0x9aa0a6, label:"Metal" },
+        bandage:{ color:0xf4f0e6, label:"Venda" },
+        note:   { color:0xf0e3b1, label:"Nota" }
+      };
+      const k = kinds[p.kind] || kinds.scraps;
+
+      const box = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.4, 0.55), new THREE.MeshStandardMaterial({
+        color:k.color, roughness:0.7, metalness:(p.kind==="metal"||p.kind==="scraps")?0.6:0.1
+      }));
+      box.position.set(p.x, p.y + 0.25, p.z);
+      box.castShadow = true; box.receiveShadow = true;
+      box.userData.loot = p.kind;
+      box.userData.label = k.label;
+      box.userData.interactable = true;
+      game.interactables.push(box);
+      return box;
+    }
+
+    // ---------- Escena fija de "bosque-hacha-leñador" ----------
+    // La colocamos en una zona concreta para que SIEMPRE exista:
+    const AXE_SCENE_POS = new THREE.Vector3(120, 0, 90); // se ajusta al terreno cuando se construye
+    let axeSceneBuilt = false;
+
+    function buildAxeScene(){
+      if(axeSceneBuilt) return;
+      axeSceneBuilt = true;
+
+      const wx = AXE_SCENE_POS.x;
+      const wz = AXE_SCENE_POS.z;
+      const h = terrainHeight(wx, wz);
+      AXE_SCENE_POS.y = h;
+
+      const g = new THREE.Group();
+      g.position.set(wx, h, wz);
+
+      // tronco cortado
+      const log = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.2, 4.6, 14), matTrunk);
+      log.position.set(0, 1.1, 0);
+      log.rotation.z = Math.PI/2;
+      log.castShadow = true; log.receiveShadow = true;
+      g.add(log);
+
+      // parte pegada al suelo
+      const stump = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.25, 1.1, 14), matTrunk);
+      stump.position.set(-2.6, 0.55, 0);
+      stump.castShadow = true; stump.receiveShadow = true;
+      g.add(stump);
+
+      // hacha clavada
+      const axe = new THREE.Group();
+      const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 1.4, 10), matTrunk);
+      handle.position.y = 0.7;
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.18, 0.22), matMetal);
+      head.position.set(0.18, 1.08, 0);
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.28, 0.06), matMetal);
+      blade.position.set(0.42, 1.08, 0);
+      axe.add(handle, head, blade);
+      axe.position.set(-2.2, 0.2, 0.0);
+      axe.rotation.z = 0.25;
+      axe.rotation.y = 0.4;
+      axe.traverse(m=>{ if(m.isMesh){ m.castShadow=true; }});
+      axe.userData.interactable = true;
+      axe.userData.pickAxe = true;
+      axe.userData.label = "Hacha clavada";
+      g.add(axe);
+      game.interactables.push(axe);
+
+      // "leñador" (cuerpo simple, sin gore explícito)
+      const body = new THREE.Group();
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.0, 0.35), new THREE.MeshStandardMaterial({ color:0x2e3340, roughness:0.8 }));
+      torso.position.y = 0.5;
+      const legs = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.7, 0.3), new THREE.MeshStandardMaterial({ color:0x3a2a1c, roughness:0.9 }));
+      legs.position.y = 0.15;
+      const arms = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.18, 0.25), new THREE.MeshStandardMaterial({ color:0x2e3340, roughness:0.8 }));
+      arms.position.y = 0.75;
+      body.add(torso, legs, arms);
+      body.position.set(1.2, 0.0, -0.8);
+      body.rotation.z = 1.1;
+      body.rotation.y = -0.2;
+      body.traverse(m=>{ if(m.isMesh){ m.castShadow=true; m.receiveShadow=true; }});
+      g.add(body);
+
+      // mancha oscura en suelo (ambiente)
+      const stain = new THREE.Mesh(new THREE.CircleGeometry(1.2, 18), new THREE.MeshStandardMaterial({
+        color:0x1a1210, roughness:1.0, metalness:0.0, transparent:true, opacity:0.7, side:THREE.DoubleSide
+      }));
+      stain.rotation.x = -Math.PI/2;
+      stain.position.set(1.0, 0.02, -0.8);
+      g.add(stain);
+
+      // nota cerca
+      const note = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.05, 0.25), new THREE.MeshStandardMaterial({ color:0xf0e3b1, roughness:0.9 }));
+      note.position.set(0.1, 0.12, 1.0);
+      note.castShadow = true;
+      note.userData.interactable = true;
+      note.userData.loot = "note";
+      note.userData.label = "Nota arrugada";
+      g.add(note);
+      game.interactables.push(note);
+
+      g.userData.axeScene = true;
+      islandGroup.add(g);
+    }
+
+    // ---------- Tortugas (playa) ----------
+    function spawnTurtlesNearBeach(){
+      // genera unas tortugas en zona baja cerca del origen
+      for(let i=0;i<10;i++){
+        const x = rand(-55, 55);
+        const z = rand(-55, 55);
+        const h = terrainHeight(x, z);
+        if(h > 2.0) continue;
+        const t = makeTurtle();
+        t.position.set(x, h+0.15, z);
+        islandGroup.add(t);
+        game.turtles.push(t);
+      }
+    }
+
+    function makeTurtle(){
+      const g = new THREE.Group();
+      const shell = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 10), new THREE.MeshStandardMaterial({
+        color:0x2e4b36, roughness:0.95, metalness:0.01
+      }));
+      shell.scale.set(1.2, 0.7, 1.0);
+      shell.castShadow = true; shell.receiveShadow = true;
+      g.add(shell);
+
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 10), new THREE.MeshStandardMaterial({
+        color:0x4c6b4b, roughness:0.95
+      }));
+      head.position.set(0.65, 0.05, 0);
+      head.castShadow = true;
+      g.add(head);
+
+      // patas
+      const legMat = new THREE.MeshStandardMaterial({ color:0x4c6b4b, roughness:0.95 });
+      for(const sgn of [-1,1]){
+        const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.08, 0.18), legMat);
+        leg1.position.set(0.2, -0.2, 0.35*sgn);
+        const leg2 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.08, 0.18), legMat);
+        leg2.position.set(-0.2, -0.2, 0.35*sgn);
+        g.add(leg1, leg2);
+      }
+
+      g.userData.turtle = true;
+      g.userData.dir = rand(0, Math.PI*2);
+      g.userData.speed = rand(0.15, 0.35);
+      g.userData.wander = 0;
+      return g;
+    }
+
+    // ---------- Titan ----------
+    function spawnTitanNear(pos){
+      const titan = new THREE.Group();
+
+      // cuerpo simple grande (sin gore)
+      const skin = new THREE.MeshStandardMaterial({ color:0xbfa28f, roughness:0.9, metalness:0.0 });
+      const torso = new THREE.Mesh(new THREE.CapsuleGeometry(2.2, 5.5, 8, 14), skin);
+      torso.castShadow = true; torso.receiveShadow = true;
+      torso.position.y = 6.8;
+      titan.add(torso);
+
+      const head = new THREE.Mesh(new THREE.SphereGeometry(1.35, 14, 14), skin);
+      head.position.y = 11.0;
+      head.castShadow = true;
+      titan.add(head);
+
+      const armL = new THREE.Mesh(new THREE.CapsuleGeometry(0.65, 4.2, 6, 10), skin);
+      armL.position.set(-2.7, 7.8, 0);
+      armL.rotation.z = 0.35;
+      armL.castShadow = true;
+      const armR = armL.clone();
+      armR.position.x = 2.7;
+      armR.rotation.z = -0.35;
+      titan.add(armL, armR);
+
+      const legL = new THREE.Mesh(new THREE.CapsuleGeometry(0.85, 5.4, 6, 12), skin);
+      legL.position.set(-1.0, 3.1, 0);
+      legL.castShadow = true;
+      const legR = legL.clone();
+      legR.position.x = 1.0;
+      titan.add(legL, legR);
+
+      // ojos (pequeños)
+      const eyeMat = new THREE.MeshStandardMaterial({ color:0x1b0f0c, roughness:0.4, metalness:0.0 });
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 10), eyeMat);
+      const eye2 = eye.clone();
+      eye.position.set(-0.35, 11.2, 1.15);
+      eye2.position.set(0.35, 11.2, 1.15);
+      titan.add(eye, eye2);
+
+      titan.scale.setScalar(1.9 + rand(0, 0.8)); // tamaño variable
+      titan.position.copy(pos);
+
+      titan.userData = {
+        titan: true,
+        hp: 260,
+        speed: 2.1 + rand(0, 1.2),
+        state: "patrol", // patrol, chase, search
+        target: null,
+        aggro: 0,
+        wanderT: 0,
+        dir: rand(0, Math.PI*2),
+        lastStep: 0,
+        stompCd: 0,
+        vision: 52,
+        hearing: 40,
+      };
+
+      islandGroup.add(titan);
+      game.titans.push(titan);
+      return titan;
+    }
+
+    // ---------- Interacciones ----------
+    function distToPlayer(obj){
+      return obj.position.distanceTo(player.pos);
+    }
+
+    function tryInteract(){
+      if(!game.started) return;
+
+      // encuentra interactuable más cercano dentro de rango
+      let best = null;
+      let bestD = 2.1;
+      for(const it of game.interactables){
+        if(!it || !it.parent) continue;
+        const d = distToPlayer(it);
+        if(d < bestD){
+          bestD = d;
+          best = it;
+        }
+      }
+
+      // En mar: pescar / recolectar lluvia / scrap del barco
+      if(game.phase === "sea"){
+        // pesca con cuerda
+        if(bestD < 2.3){
+          // si hay algo, se gestiona abajo; pero en mar no hay interactables reales
+        }
+        // acciones contextuales
+        if(player.fish < 3 && Math.random() < 0.85){
+          player.fish += 1;
+          player.hunger = clamp(player.hunger + 18, 0, 100);
+          player.stamina = clamp(player.stamina + 6, 0, 100);
+          logLine("🎣 Pesca improvisada: +1 pescado. Hambre +18.");
+          beep(520, 0.05, "triangle", 0.03);
+        } else {
+          player.scraps += 1;
+          logLine("🧰 Encuentras un trozo útil en el barco: +1 chatarra.");
+          beep(420, 0.05, "square", 0.02);
+        }
+        return;
+      }
+
+      if(!best){
+        // acción alternativa: recoger madera si estás cerca de árbol caído (trail)
+        // (simplificado)
+        if(Math.random() < 0.20){
+          player.wood += 1;
+          logLine("🪵 Recoges madera suelta: +1 madera.");
+          beep(360, 0.05, "sine", 0.02);
+        } else {
+          logLine("No hay nada claro que recoger aquí.");
+        }
+        return;
+      }
+
+      // Loot general
+      if(best.userData.pickAxe){
+        player.weapon = "axe";
+        player.damage = 22;
+        player.reach = 2.4;
+        player.wood += 1;
+        logLine("🪓 Te quedas el hacha. Daño +. Ahora puedes talar más rápido.");
+        bigMessage("Has recuperado el hacha del tronco. Algo grande pasó por aquí.", 4);
+        game.discovered.axeScene = true;
+        beep(740, 0.07, "triangle", 0.04);
+        // desactivar el hacha como objeto (lo quitamos)
+        best.parent.remove(best);
+        // también eliminar de interactables
+        game.interactables = game.interactables.filter(x=>x !== best);
+        return;
+      }
+
+      if(best.userData.loot){
+        const kind = best.userData.loot;
+        if(kind === "scraps") player.scraps += 1;
+        if(kind === "metal")  player.metal += 1;
+        if(kind === "bandage") player.bandage += 1;
+        if(kind === "note"){
+          player.notes += 1;
+          game.discovered.notes++;
+          showNoteText(game.discovered.notes);
+        }
+        logLine(`📦 Recoges: ${best.userData.label || kind}.`);
+        beep(600, 0.05, "triangle", 0.03);
+        best.parent.remove(best);
+        game.interactables = game.interactables.filter(x=>x !== best);
+        return;
+      }
+    }
+
+    function showNoteText(n){
+      const texts = [
+        "Nota 1: “No son hombres. No son bestias. Son… algo hecho para borrar.”",
+        "Nota 2: “La montaña central vibra por la noche. Como si respirara.”",
+        "Nota 3: “Si los ves mirando al mar… corre. Siempre viene otro.”",
+        "Nota 4: “El origen no está en la isla. Está en el agua bajo ella.”"
+      ];
+      const txt = texts[(n-1) % texts.length];
+      bigMessage(txt, 6);
+    }
+
+    function tryHeal(){
+      if(player.bandage <= 0){
+        logLine("🩹 No tienes vendas.");
+        return;
+      }
+      if(player.hp >= 100){
+        logLine("✅ Ya estás al 100%.");
+        return;
+      }
+      player.bandage -= 1;
+      player.hp = clamp(player.hp + 35, 0, 100);
+      logLine("🩹 Te curas: +35 HP.");
+      beep(520, 0.06, "sine", 0.03);
+    }
+
+    // ---------- Combate simple ----------
+    function attack(){
+      const now = performance.now()/1000;
+      if(now - player.lastAttack < player.attackCd) return;
+      player.lastAttack = now;
+
+      // golpe frontal: raycast corto desde cámara
+      const dir = new THREE.Vector3();
+      camera.getWorldDirection(dir);
+      const origin = player.pos.clone().add(new THREE.Vector3(0, player.eyeHeight-0.2, 0));
+      const hitPos = origin.clone().add(dir.multiplyScalar(player.reach));
+
+      // buscar titán cercano al hitPos
+      let hit = null;
+      let best = 999;
+      for(const t of game.titans){
+        if(!t.parent) continue;
+        const d = t.position.distanceTo(hitPos);
+        if(d < 4.2 && d < best){
+          best = d;
+          hit = t;
+        }
+      }
+
+      // sonido + feedback
+      beep(220 + Math.random()*80, 0.04, "square", 0.03);
+
+      if(hit){
+        const dmg = player.damage + randInt(-3, 4);
+        hit.userData.hp -= dmg;
+        logLine(`🗡️ Golpeas al titán: -${dmg} HP (le queda ${Math.max(0, Math.floor(hit.userData.hp))}).`);
+        // aggro
+        hit.userData.aggro = clamp(hit.userData.aggro + 0.55, 0, 1);
+        hit.userData.state = "chase";
+        hit.userData.target = player;
+        game.discovered.titanSeen = true;
+
+        if(hit.userData.hp <= 0){
+          logLine("💥 Titán abatido. (Sí, puedes… pero siempre habrá más).");
+          bigMessage("Has abatido un titán. La isla tiembla. El mundo se expande…", 5);
+          // drop loot
+          spawnLootAt(hit.position, pick(["metal","scraps","bandage","note"]));
+          islandGroup.remove(hit);
+          game.titans = game.titans.filter(x=>x !== hit);
+          // spawn nuevo titán lejos (infinito)
+          scheduleTitanSpawn(1.8);
+        }
+      } else {
+        logLine("Golpe al aire.");
+      }
+    }
+
+    function spawnLootAt(pos, kind){
+      const loot = makeLoot({ type:"loot", kind, x:pos.x+rand(-2,2), y:pos.y+0.2, z:pos.z+rand(-2,2) });
+      islandGroup.add(loot);
+    }
+
+    // ---------- Flashlight ----------
+    function toggleFlashlight(){
+      player.flashlightOn = !player.flashlightOn;
+      flashlight.intensity = player.flashlightOn ? 2.2 : 0.0;
+      logLine(player.flashlightOn ? "🔦 Linterna encendida." : "🔦 Linterna apagada.");
+      beep(player.flashlightOn ? 820 : 260, 0.05, "sine", 0.02);
+    }
+
+    // ---------- Progresión / crafting simple ----------
+    function maybeUnlockWeapon(){
+      // si tienes metal + scraps suficientes, mejoras "lanza"
+      if(player.weapon === "knife" && player.wood >= 3 && player.scraps >= 2){
+        player.weapon = "spear";
+        player.damage = 19;
+        player.reach = 3.2;
+        player.wood -= 2;
+        player.scraps -= 2;
+        bigMessage("Fabricas una lanza improvisada. Alcance +.", 4);
+        logLine("🛠️ Fabricación: lanza creada (automático).");
+      }
+      // si tienes hacha + metal, mejoras daño
+      if(player.weapon === "axe" && player.metal >= 3){
+        player.damage = 26;
+        player.metal -= 3;
+        bigMessage("Refuerzas el filo del hacha. Daño +.", 4);
+        logLine("🛠️ Mejora: hacha reforzada.");
+      }
+      // vendas
+      if(player.bandage <= 0 && player.scraps >= 4){
+        player.bandage += 1;
+        player.scraps -= 4;
+        logLine("🧵 Improvisas una venda: +1.");
+      }
+    }
+
+    // ---------- Mar: tormenta y lluvia ----------
+    let rainParticles = null;
+    function setStorm(on){
+      game.storm = on;
+      if(on){
+        game.stormTimer = rand(18, 35);
+        scene.fog.density = 0.0022;
+        sky.material.color.setHex(0x060a10);
+        hemi.intensity = 0.55;
+        sun.intensity = 0.65;
+        createRain();
+        logLine("⛈️ Se acerca una tormenta. Aprovecha para recolectar agua.");
+        bigMessage("Tormenta: puedes ganar agua, pero las olas son peligrosas.", 4);
+      } else {
+        scene.fog.density = 0.0012;
+        sky.material.color.setHex(0x09111e);
+        hemi.intensity = 0.85;
+        sun.intensity = 1.2;
+        removeRain();
+        logLine("🌤️ La tormenta se disipa.");
+      }
+    }
+
+    function createRain(){
+      if(rainParticles) return;
+      const count = 1200;
+      const geo = new THREE.BufferGeometry();
+      const pos = new Float32Array(count*3);
+      for(let i=0;i<count;i++){
+        pos[i*3+0] = rand(-40, 40);
+        pos[i*3+1] = rand(6, 60);
+        pos[i*3+2] = rand(-40, 40);
+      }
+      geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+      const mat = new THREE.PointsMaterial({ color:0xbad8ff, size:0.06, transparent:true, opacity:0.6 });
+      rainParticles = new THREE.Points(geo, mat);
+      seaGroup.add(rainParticles);
+    }
+
+    function removeRain(){
+      if(!rainParticles) return;
+      seaGroup.remove(rainParticles);
+      rainParticles.geometry.dispose();
+      rainParticles.material.dispose();
+      rainParticles = null;
+    }
+
+    function updateRain(dt){
+      if(!rainParticles) return;
+      const pos = rainParticles.geometry.attributes.position;
+      for(let i=0;i<pos.count;i++){
+        let y = pos.getY(i);
+        y -= dt * 26;
+        if(y < 4) y = rand(10, 60);
+        pos.setY(i, y);
+      }
+      pos.needsUpdate = true;
+
+      // recolectar agua con probabilidad si estás en barco y tormenta
+      if(game.phase==="sea" && game.storm){
+        if(Math.random() < 0.10){
+          player.water += 1;
+          player.thirst = clamp(player.thirst + 10, 0, 100);
+          logLine("💧 Recolectas agua de lluvia: +1 agua. Sed +10.");
+        }
+      }
+    }
+
+    // ---------- Tiburón (simple) ----------
+    function spawnShark(){
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.25, 1.2, 6, 10), new THREE.MeshStandardMaterial({
+        color:0x3d4a55, roughness:0.7, metalness:0.1
+      }));
+      body.rotation.z = Math.PI/2;
+      body.castShadow = true;
+      g.add(body);
+
+      const fin = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.6, 10), new THREE.MeshStandardMaterial({
+        color:0x2a3138, roughness:0.8
+      }));
+      fin.position.set(0, 0.35, 0);
+      fin.rotation.z = Math.PI;
+      fin.castShadow = true;
+      g.add(fin);
+
+      g.userData = {
+        shark:true,
+        ang: rand(0, Math.PI*2),
+        rad: rand(10, 18),
+        speed: rand(0.4, 0.7),
+        biteCd: rand(3, 6),
+      };
+      seaGroup.add(g);
+      game.sharks.push(g);
+    }
+
+    function updateSharks(dt){
+      for(const s of game.sharks){
+        const u = s.userData;
+        u.ang += dt*u.speed * (game.storm ? 1.4 : 1.0);
+        const x = boat.position.x + Math.cos(u.ang)*u.rad;
+        const z = boat.position.z + Math.sin(u.ang)*u.rad;
+        s.position.set(x, 1.2 + Math.sin(u.ang*2)*0.1, z);
+        s.rotation.y = -u.ang + Math.PI/2;
+
+        u.biteCd -= dt;
+        if(u.biteCd <= 0){
+          u.biteCd = rand(4, 8);
+          if(game.phase==="sea" && player.pos.distanceTo(boat.position) < 4.0){
+            // daño si "caes" al agua (simulado si y baja)
+            if(player.pos.y < 2.6){
+              player.hp -= 12;
+              logLine("🦈 ¡Mordisco! No te caigas al agua.");
+              bigMessage("¡Tiburón! Mantente en el barco.", 3);
+            } else {
+              logLine("🦈 Ves un tiburón cerca del barco.");
+            }
+          }
+        }
+      }
+    }
+
+    // ---------- Fases: transición mar -> isla ----------
+    function startGame(){
+      game.started = true;
+      titlecard.style.display = "none";
+      if(!actx) actx = new AudioCtx();
+      renderer.domElement.requestPointerLock();
+
+      // estado inicial mar
+      game.phase = "sea";
+      game.objective = "Sobrevive 1 día en el mar";
+      elGoal.textContent = "Objetivo: " + game.objective;
+      elStage.textContent = "FASE: Mar";
+      bigMessage("Día 1: Sobrevive hasta el amanecer siguiente.", 4);
+
+      // cámara en barco
+      player.pos.set(0, 3.6, 0);
+      boat.position.set(0, 0, 0);
+
+      // tiburones
+      for(let i=0;i<3;i++) spawnShark();
+
+      // tormenta random
+      game.stormTimer = rand(12, 20);
+
+      logLine("Empiezas en mitad del mar. E para acciones rápidas (pescar / buscar chatarra).");
+    }
+
+    btnStart.onclick = startGame;
+
+    function arriveIsland(){
+      game.phase = "beach";
+      game.objective = "Explora: playa → bosque → pistas";
+      elStage.textContent = "FASE: Playa";
+      elGoal.textContent = "Objetivo: " + game.objective;
+
+      // ocultar mar, activar isla
+      seaGroup.visible = false;
+      islandGroup.visible = true;
+
+      // posiciona jugador en la costa cerca del origen
+      player.pos.set(-20, 8, -10);
+      player.vel.set(0,0,0);
+
+      // generar chunks cerca
+      ensureChunksAround(player.pos.x, player.pos.z);
+
+      // escena fija + tortugas + mensaje
+      buildAxeScene();
+      spawnTurtlesNearBeach();
+
+      // primer titán se spawnea después de un rato lejos del jugador
+      scheduleTitanSpawn(9);
+
+      // ajustar fog
+      scene.fog.density = 0.0010;
+      bigMessage("Llegas a una playa. Arena, palmeras… y un silencio raro.", 5);
+      logLine("🏝️ Has llegado a tierra. Explora.");
+    }
+
+    function scheduleTitanSpawn(delaySec=6){
+      setTimeout(()=>{
+        if(game.phase==="sea") return;
+        // spawnear lejos del jugador
+        const dist = rand(120, 220);
+        const ang = rand(0, Math.PI*2);
+        const x = player.pos.x + Math.cos(ang)*dist;
+        const z = player.pos.z + Math.sin(ang)*dist;
+        const y = terrainHeight(x, z);
+        if(y < 1) return scheduleTitanSpawn(3); // evita mar
+        spawnTitanNear(new THREE.Vector3(x, y, z));
+        logLine("⚠️ Algo enorme se mueve a lo lejos…");
+      }, delaySec*1000);
+    }
+
+    // ---------- Movimiento jugador + colisiones simples ----------
+    const gravity = -22;
+    const jumpVel = 8.5;
+
+    function groundHeightAt(x, z){
+      // mar: barco como "suelo", isla: terreno procedural
+      if(game.phase === "sea"){
+        // dentro del barco, altura constante aproximada (cubierta)
+        const dx = x - boat.position.x;
+        const dz = z - boat.position.z;
+        if(Math.abs(dx) < 3.0 && Math.abs(dz) < 1.2) return 3.1; // cubierta
+        return 1.8; // agua (peligroso)
+      }
+      return terrainHeight(x, z) + 0.1;
+    }
+
+    function applyColliders(){
+      // colisión con árboles/rocas en entorno cercano (isla)
+      if(game.phase === "sea") return;
+
+      // recolecta stealth si estás en bosque/arbustos
+      player.stealth = 0;
+
+      // recorrer objetos cercanos en chunks visibles
+      // (barato: recorrer chunkMeshes y buscar colliders)
+      const px = player.pos.x, pz = player.pos.z;
+
+      for(const [key, grp] of chunkMeshes){
+        // culling rápido por bounding (aprox por chunk center)
+        const [cx, cz] = key.split(",").map(Number);
+        const cs = game.world.chunkSize;
+        const cxw = cx*cs + cs/2;
+        const czw = cz*cs + cs/2;
+        if(Math.abs(cxw - px) > cs*1.2 || Math.abs(czw - pz) > cs*1.2) continue;
+
+        grp.children.forEach(child=>{
+          const col = child.userData?.collider;
+          if(!col) return;
+          // esfera simple
+          const dx = child.position.x - px;
+          const dz = child.position.z - pz;
+          const r = col.r || 1.2;
+          const dist2 = dx*dx + dz*dz;
+          if(dist2 < (r+0.35)*(r+0.35)){
+            const dist = Math.sqrt(dist2) || 0.0001;
+            const push = (r+0.35) - dist;
+            player.pos.x -= (dx/dist) * push;
+            player.pos.z -= (dz/dist) * push;
+            // si es cobertura
+            if(child.userData.stealthCover) player.stealth = 1;
+          }
+        });
+      }
+    }
+
+    // ---------- IA Tortugas ----------
+    function updateTurtles(dt){
+      if(game.phase === "sea") return;
+      for(const t of game.turtles){
+        const u = t.userData;
+        u.wander -= dt;
+        if(u.wander <= 0){
+          u.wander = rand(1.2, 3.2);
+          u.dir += rand(-0.9, 0.9);
+        }
+        // movimiento suave en playa
+        const sp = u.speed * (0.6 + 0.4*Math.sin(performance.now()*0.001));
+        t.position.x += Math.cos(u.dir) * sp * dt;
+        t.position.z += Math.sin(u.dir) * sp * dt;
+
+        const h = terrainHeight(t.position.x, t.position.z);
+        // si sube a bosque, vuelve hacia costa
+        if(h > 3.0){
+          u.dir += Math.PI;
+        }
+        t.position.y = h + 0.12;
+        t.rotation.y = -u.dir + Math.PI/2;
+      }
+    }
+
+    // ---------- IA Titanes ----------
+    function updateTitans(dt){
+      if(game.phase==="sea") return;
+
+      for(const t of game.titans){
+        const u = t.userData;
+        if(!u) continue;
+
+        const dist = t.position.distanceTo(player.pos);
+        const dirToPlayer = player.pos.clone().sub(t.position);
+
+        // percepción: visión/sonido
+        const playerNoise = (keys.has("ShiftLeft") || keys.has("ShiftRight")) ? 1.0 : 0.55;
+        const stealthFactor = player.stealth ? 0.55 : 1.0;
+        const hearRange = u.hearing * playerNoise * (game.phase==="forest"?1.1:1.0);
+        const seeRange = u.vision * stealthFactor;
+
+        // aggro si cerca
+        if(dist < hearRange || dist < seeRange){
+          u.aggro = clamp(u.aggro + dt*0.25, 0, 1);
+          if(u.aggro > 0.35){
+            u.state = "chase";
+            u.target = player;
+            if(!game.discovered.titanSeen){
+              game.discovered.titanSeen = true;
+              bigMessage("Ves una figura gigante entre los árboles. No es un árbol.", 5);
+              logLine("👁️ Titán detectado.");
+            }
+          }
+        } else {
+          u.aggro = clamp(u.aggro - dt*0.15, 0, 1);
+          if(u.aggro < 0.12 && u.state !== "patrol"){
+            u.state = "search";
+            u.wanderT = rand(3, 6);
+          }
+        }
+
+        // estados
+        if(u.state === "patrol"){
+          u.wanderT -= dt;
+          if(u.wanderT <= 0){
+            u.wanderT = rand(2.5, 6.5);
+            u.dir += rand(-0.8, 0.8);
+          }
+          const sp = u.speed * 0.45;
+          t.position.x += Math.cos(u.dir) * sp * dt;
+          t.position.z += Math.sin(u.dir) * sp * dt;
+
+        } else if(u.state === "search"){
+          u.wanderT -= dt;
+          if(u.wanderT <= 0){
+            u.state = "patrol";
+            u.wanderT = rand(2.5, 6.5);
+          }
+          // buscar alrededor
+          u.dir += dt*0.6;
+          const sp = u.speed * 0.25;
+          t.position.x += Math.cos(u.dir) * sp * dt;
+          t.position.z += Math.sin(u.dir) * sp * dt;
+
+        } else if(u.state === "chase"){
+          // perseguir
+          const sp = u.speed * (0.85 + u.aggro*0.45);
+          dirToPlayer.y = 0;
+          dirToPlayer.normalize();
+          t.position.addScaledVector(dirToPlayer, sp*dt);
+
+          // ataques por proximidad
+          u.stompCd -= dt;
+          if(dist < 7.0 && u.stompCd <= 0){
+            u.stompCd = rand(1.5, 3.0);
+            const dmg = 14 + randInt(-2, 4);
+            player.hp -= dmg;
+            player.stamina = clamp(player.stamina - 10, 0, 100);
+            bigMessage(`¡Impacto! -${dmg} HP`, 1.6);
+            logLine("💥 El titán te golpea. ¡Corre y cúrate!");
+            // vibración visual: micro sacudida
+            camShake = 0.25;
+            beep(110, 0.08, "sawtooth", 0.03);
+          }
+        }
+
+        // pegar a terreno
+        const y = terrainHeight(t.position.x, t.position.z);
+        t.position.y = y;
+
+        // mirar hacia su dir / jugador
+        if(u.state === "chase"){
+          const a = Math.atan2(player.pos.x - t.position.x, player.pos.z - t.position.z);
+          t.rotation.y = a;
+        } else {
+          t.rotation.y = -u.dir + Math.PI/2;
+        }
+
+        // paso pesado (log ocasional)
+        u.lastStep += dt * (u.state==="chase"?1.6:1.0);
+        if(u.lastStep > 2.2){
+          u.lastStep = 0;
+          if(dist < 65) {
+            logLine("🥾 *THUMP* (pasos pesados a lo lejos)");
+          }
+        }
+      }
+    }
+
+    // ---------- Progresión historia: playa -> bosque -> ruinas ----------
+    function updateStoryTriggers(){
+      if(game.phase==="sea") return;
+
+      // Si se aleja de la playa (altura y distancia) -> bosque
+      const h = terrainHeight(player.pos.x, player.pos.z);
+      const d0 = Math.sqrt(player.pos.x*player.pos.x + player.pos.z*player.pos.z);
+
+      if(game.phase === "beach" && (h > 4.5 || d0 > 110)){
+        game.phase = "forest";
+        elStage.textContent = "FASE: Bosque";
+        elGoal.textContent = "Objetivo: Encuentra pistas (hacha/leñador) y ruinas";
+        bigMessage("Entras al bosque. Algo está mal. Muy mal.", 4);
+        logLine("🌳 Estás en el bosque. Ojo con el sonido.");
+      }
+
+      // escena del hacha detectada
+      const dAxe = player.pos.distanceTo(AXE_SCENE_POS);
+      if(!game.discovered.axeScene && dAxe < 24){
+        bigMessage("Ves un árbol cortado… y algo tirado en el suelo.", 4);
+        logLine("🔎 Pista cercana: hacha/nota.");
+      }
+
+      // ruinas: si pasas por alguna ruin, marca
+      if(!game.discovered.ruins){
+        for(const [key, grp] of chunkMeshes){
+          if(!grp) continue;
+          // busca nodos ruina
+          for(const ch of grp.children){
+            if(ch.userData?.isRuin){
+              const d = ch.position.distanceTo(player.pos);
+              if(d < 22){
+                game.discovered.ruins = true;
+                bigMessage("Ruinas. Restos de una civilización destruida.", 5);
+                logLine("🏛️ Descubrimiento: ruinas.");
+                break;
+              }
+            }
+          }
+          if(game.discovered.ruins) break;
+        }
+      }
+
+      // trail: si pasa cerca de marcas
+      if(!game.discovered.trail){
+        for(const [key, grp] of chunkMeshes){
+          if(!grp) continue;
+          grp.children.forEach(ch=>{
+            if(ch.userData?.trail){
+              if(ch.position.distanceTo(player.pos) < 18){
+                game.discovered.trail = true;
+                bigMessage("Un camino de árboles rotos… como si algo gigante hubiera pasado.", 5);
+                logLine("🧱 Descubrimiento: rastro de destrucción.");
+              }
+            }
+          });
+          if(game.discovered.trail) break;
+        }
+      }
+
+      // condición "principal" para elevar tensión
+      if(game.discovered.axeScene && game.discovered.trail && game.discovered.ruins){
+        // ya tienes el “núcleo” de la historia; sube spawns
+        if(game.titans.length < 2 && Math.random() < 0.01){
+          scheduleTitanSpawn(2.5);
+        }
+      }
+    }
+
+    // ---------- HUD stats en topbar ----------
+    function fmtTime(mins){
+      mins = ((mins % (24*60)) + (24*60)) % (24*60);
+      const h = Math.floor(mins/60);
+      const m = Math.floor(mins%60);
+      return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+    }
+
+    // ---------- Cámara y render ----------
+    let last = performance.now();
+    let fpsAcc=0, fpsN=0, fpsT=0;
+
+    // micro sacudida de cámara
+    let camShake = 0;
+
+    function update(dt){
+      // tiempo juego
+      game.time += dt * game.timeScale;
+      if(game.time >= 24*60){
+        game.time -= 24*60;
+        game.day += 1;
+        elDay.textContent = "Día: " + game.day;
+
+        // mar: si sobrevives al día 1 -> llegas a isla
+        if(game.phase === "sea" && game.day >= 2){
+          arriveIsland();
+        } else {
+          // evento aleatorio cada día en isla
+          if(Math.random() < 0.25){
+            bigMessage("La isla cambia. Nuevas zonas emergen…", 4);
+            logLine("♾️ El mundo se reconfigura (procedural).");
+          }
+        }
+      }
+
+      elTime.textContent = "Hora: " + fmtTime(game.time);
+      elDay.textContent = "Día: " + game.day;
+
+      // ciclo día/noche
+      const t = game.time / (24*60); // 0..1
+      const sunAng = (t * Math.PI*2) - Math.PI/2; // amanecer
+      const elev = Math.sin(sunAng);
+      const sunY = 120 + elev*110;
+      sun.position.set(120*Math.cos(sunAng), sunY, 120*Math.sin(sunAng));
+      sun.intensity = clamp(0.2 + Math.max(0, elev)*1.4, 0.15, 1.5);
+      hemi.intensity = clamp(0.35 + Math.max(0, elev)*0.75, 0.25, 0.95);
+      sky.material.color.setHex(elev > 0 ? 0x0a1628 : 0x05070a);
+      scene.fog.density = (elev > 0) ? 0.0010 : 0.0016;
+
+      // tormenta mar
+      if(game.phase === "sea"){
+        game.stormTimer -= dt;
+        if(game.stormTimer <= 0){
+          if(!game.storm && Math.random() < 0.8){
+            setStorm(true);
+          } else {
+            setStorm(false);
+            game.stormTimer = rand(18, 35);
+          }
+        }
+        if(game.storm){
+          game.stormTimer -= dt*0.25; // extiende un poco
+          // olas más fuertes
+          game.waves += dt * 1.2;
+        } else {
+          game.waves += dt * 0.8;
+        }
+        // animar oceano
+        animateOcean(game.waves, dt);
+        updateRain(dt);
+        updateSharks(dt);
+
+        // supervivencia mar
+        applyNeeds(dt, true);
+      } else {
+        // isla
+        ensureChunksAround(player.pos.x, player.pos.z);
+        buildAxeScene();
+        updateTurtles(dt);
+        updateTitans(dt);
+        applyNeeds(dt, false);
+        maybeUnlockWeapon();
+        updateStoryTriggers();
+      }
+
+      // movimiento jugador
+      updatePlayer(dt);
+
+      // HUD: stats (en un pill extra dinámico)
+      const statsText = `HP ${Math.floor(player.hp)} · Sta ${Math.floor(player.stamina)} · Hambre ${Math.floor(player.hunger)} · Sed ${Math.floor(player.thirst)} · Vendas ${player.bandage} · Chatarra ${player.scraps} · Madera ${player.wood} · Metal ${player.metal} · Notas ${player.notes} · Arma ${player.weapon}`;
+      setPill("statsPill", statsText);
+
+      // prompt cercano a interactuables
+      updatePrompt();
+
+      // cámara
+      updateCamera(dt);
+
+      // FPS
+      fpsAcc += 1/dt; fpsN++; fpsT += dt;
+      if(fpsT > 0.5){
+        elFPS.textContent = "FPS: " + Math.round(fpsAcc/fpsN);
+        fpsAcc = 0; fpsN = 0; fpsT = 0;
+      }
+    }
+
+    function setPill(id, text){
+      let el = document.getElementById(id);
+      if(!el){
+        el = document.createElement("div");
+        el.className = "pill";
+        el.id = id;
+        document.getElementById("topbar").appendChild(el);
+      }
+      el.textContent = text;
+    }
+
+    function applyNeeds(dt, inSea){
+      // consumo
+      const moveFactor = (keys.has("KeyW")||keys.has("KeyA")||keys.has("KeyS")||keys.has("KeyD")) ? 1 : 0.5;
+      const run = (keys.has("ShiftLeft")||keys.has("ShiftRight")) ? 1.6 : 1.0;
+
+      player.hunger -= dt * 0.55 * moveFactor * run;
+      player.thirst -= dt * (inSea? 0.85 : 0.65) * moveFactor * run;
+      player.stamina += dt * 8.0 * (player.onGround ? 1 : 0.5);
+      player.stamina -= dt * 10.0 * (run>1.0 ? 1 : 0) * moveFactor;
+
+      player.hunger = clamp(player.hunger, 0, 100);
+      player.thirst = clamp(player.thirst, 0, 100);
+      player.stamina = clamp(player.stamina, 0, 100);
+
+      // penalties
+      if(player.hunger < 15) player.hp -= dt * 1.0;
+      if(player.thirst < 15) player.hp -= dt * 1.4;
+
+      // si estás en el agua del mar (y bajo), penaliza
+      if(inSea && player.pos.y < 2.6){
+        player.hp -= dt * 3.2;
+        player.stamina -= dt * 10;
+      }
+
+      player.hp = clamp(player.hp, 0, 100);
+      if(player.hp <= 0){
+        respawn();
+      }
+    }
+
+    function respawn(){
+      player.hp = 100;
+      player.stamina = 80;
+      player.hunger = 55;
+      player.thirst = 55;
+      player.vel.set(0,0,0);
+      camShake = 0;
+
+      if(game.phase === "sea"){
+        player.pos.set(0, 3.6, 0);
+        bigMessage("Has caído… pero te despiertas en el barco. (No te confíes)", 4);
+        logLine("☠️ Derrota en el mar. Te recuperas en el barco.");
+      } else {
+        // respawn en "playa" segura
+        player.pos.set(-20, 8, -10);
+        bigMessage("Has caído… y despiertas en la costa. La isla no te deja ir.", 4);
+        logLine("☠️ Derrota en la isla. Respawn en costa.");
+      }
+    }
+
+    function updatePlayer(dt){
+      const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+      const right = new THREE.Vector3(forward.z, 0, -forward.x);
+
+      let wish = new THREE.Vector3();
+      if(keys.has("KeyW")) wish.add(forward);
+      if(keys.has("KeyS")) wish.sub(forward);
+      if(keys.has("KeyD")) wish.add(right);
+      if(keys.has("KeyA")) wish.sub(right);
+
+      const moving = wish.lengthSq() > 0;
+      if(moving) wish.normalize();
+
+      const running = (keys.has("ShiftLeft")||keys.has("ShiftRight")) && player.stamina > 5;
+      const speed = running ? player.speedRun : player.speedWalk;
+
+      // fricción
+      const friction = player.onGround ? 10.0 : 2.0;
+      player.vel.x = lerp(player.vel.x, wish.x * speed, clamp(dt*friction, 0, 1));
+      player.vel.z = lerp(player.vel.z, wish.z * speed, clamp(dt*friction, 0, 1));
+
+      // salto
+      if(player.onGround && keys.has("Space")){
+        player.vel.y = jumpVel;
+        player.onGround = false;
+        beep(320, 0.04, "sine", 0.02);
+      }
+
+      // gravedad
+      player.vel.y += gravity * dt;
+
+      // integrar
+      player.pos.addScaledVector(player.vel, dt);
+
+      // suelo
+      const ground = groundHeightAt(player.pos.x, player.pos.z);
+      if(player.pos.y <= ground + player.eyeHeight){
+        player.pos.y = ground + player.eyeHeight;
+        player.vel.y = 0;
+        player.onGround = true;
+      } else {
+        player.onGround = false;
+      }
+
+      // si corres, gastas más stamina
+      if(running && moving){
+        player.stamina -= dt * 12;
+      }
+
+      // colisiones
+      applyColliders();
+    }
+
+    function updateCamera(dt){
+      // colocar cámara
+      camera.position.set(player.pos.x, player.pos.y, player.pos.z);
+      camera.rotation.order = "YXZ";
+      camera.rotation.y = yaw;
+      camera.rotation.x = pitch;
+
+      // sacudida
+      if(camShake > 0){
+        const s = camShake;
+        camera.position.x += rand(-s, s)*0.08;
+        camera.position.y += rand(-s, s)*0.06;
+        camera.position.z += rand(-s, s)*0.08;
+        camShake = Math.max(0, camShake - dt*0.8);
+      }
+
+      // flashlight follow
+      flashlight.position.copy(camera.position);
+      const dir = new THREE.Vector3();
+      camera.getWorldDirection(dir);
+      flashlight.target.position.copy(camera.position.clone().add(dir.multiplyScalar(10)));
+    }
+
+    function updatePrompt(){
+      if(!pointerLocked){ showPrompt("Click para continuar (capturar ratón)."); return; }
+
+      // mar prompt
+      if(game.phase === "sea"){
+        showPrompt("E: pescar / buscar chatarra · Mantente en el barco · Sobrevive hasta el día 2");
+        return;
+      }
+
+      // isla: nearest interactable
+      let best = null;
+      let bestD = 2.3;
+      for(const it of game.interactables){
+        if(!it || !it.parent) continue;
+        const d = distToPlayer(it);
+        if(d < bestD){
+          bestD = d; best = it;
+        }
+      }
+      if(best){
+        showPrompt(`E: Interactuar — ${best.userData.label || "Objeto"}`);
+      } else {
+        // hint contextual
+        if(game.phase === "beach") showPrompt("Explora hacia el interior. (Bosque).");
+        else showPrompt("Explora: busca ruinas, notas, y evita el sonido.");
+      }
+    }
+
+    function animateOcean(t, dt){
+      const pos = ocean.geometry.attributes.position;
+      for(let i=0;i<pos.count;i++){
+        const x = pos.getX(i);
+        const z = pos.getZ(i);
+        const w = Math.sin(0.08*x + t*1.8) * 0.45 + Math.cos(0.07*z + t*1.3) * 0.38;
+        const w2 = Math.sin(0.04*(x+z) + t*1.1) * 0.25;
+        const stormBoost = game.storm ? 1.8 : 1.0;
+        pos.setY(i, (w + w2) * stormBoost);
+      }
+      pos.needsUpdate = true;
+      ocean.geometry.computeVertexNormals();
+
+      // barco balanceo
+      boat.rotation.z = Math.sin(t*1.6) * (game.storm ? 0.10 : 0.06);
+      boat.rotation.x = Math.cos(t*1.2) * (game.storm ? 0.08 : 0.05);
+      boat.position.y = 0.2 + Math.sin(t*1.0) * (game.storm ? 0.35 : 0.22);
+
+      // jugador si está en barco: seguir barco ligeramente (sin marear)
+      if(game.phase === "sea"){
+        // mantiene cerca del barco si está encima
+        const dx = player.pos.x - boat.position.x;
+        const dz = player.pos.z - boat.position.z;
+        if(Math.abs(dx) < 3.3 && Math.abs(dz) < 1.6){
+          // ok
+        } else {
+          // empuja hacia el barco para evitar perderse por clipping
+          player.pos.x = lerp(player.pos.x, boat.position.x, dt*0.8);
+          player.pos.z = lerp(player.pos.z, boat.position.z, dt*0.8);
+        }
+      }
+    }
+
+    // ---------- Render loop ----------
+    function loop(){
+      const now = performance.now();
+      const dt = clamp((now - last)/1000, 0.001, 0.04);
+      last = now;
+
+      if(game.started){
+        update(dt);
+      } else {
+        // pequeño movimiento de cámara en titlecard
+        camera.position.set(Math.sin(now*0.0003)*4, 6.2, 12);
+        camera.lookAt(0, 4, 0);
+      }
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(loop);
+    }
+
+    // ---------- Resize ----------
+    addEventListener("resize", ()=>{
+      camera.aspect = innerWidth/innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+
+    // ---------- Preparación inicial ----------
+    islandGroup.visible = false;
+
+    // colocar cámara inicial mirando el barco en titlecard
+    camera.position.set(0, 6.2, 12);
+    camera.lookAt(0, 4, 0);
+
+    // mensaje inicial
+    showPrompt("Pulsa Jugar. Luego click para capturar el ratón.");
+
+    // iniciar loop
+    loop();
+
+    // ---------- (Opcional) Help dev: comandos en consola ----------
+    window.ISLA_TITAN = {
+      game, player,
+      teleport(x,z){
+        if(game.phase==="sea"){ logLine("No puedes teletransportarte en el mar."); return; }
+        const y = terrainHeight(x,z) + player.eyeHeight;
+        player.pos.set(x, y, z);
+        logLine(`TP a (${x.toFixed(1)}, ${z.toFixed(1)})`);
+      },
+      spawnTitan(){
+        if(game.phase==="sea") return;
+        scheduleTitanSpawn(0.5);
+      },
+      seed(v){
+        game.seed = (v>>>0);
+        logLine("Seed cambiada: " + game.seed);
+      }
+    };
+  </script>
+</body>
+</html>

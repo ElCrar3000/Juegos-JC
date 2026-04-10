@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Desert Block War</title>
+<style>
+body { margin:0; overflow:hidden; background:#000; }
+#ui {
+ position:absolute;
+ top:10px;
+ left:10px;
+ color:white;
+ font-family:Arial;
+ z-index:10;
+}
+</style>
+</head>
+<body>
+<div id="ui">
+Vida: <span id="vida">100</span> |
+Arma: <span id="arma">Pistola</span> |
+Bombas: <span id="bombas">5</span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+<script>
+
+let scene = new THREE.Scene();
+let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+let renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+camera.position.y = 2;
+camera.position.z = 5;
+
+let vida = 100;
+let bombas = 5;
+let armaActual = "Pistola";
+
+const sueloGeo = new THREE.BoxGeometry(50,1,50);
+const sueloMat = new THREE.MeshBasicMaterial({color:0x886633});
+const suelo = new THREE.Mesh(sueloGeo, sueloMat);
+suelo.position.y = -1;
+scene.add(suelo);
+
+// Cubos destructibles
+let cubos = [];
+for(let i=0;i<30;i++){
+ let geo = new THREE.BoxGeometry(2,2,2);
+ let mat = new THREE.MeshBasicMaterial({color:0x00ff00});
+ let cube = new THREE.Mesh(geo,mat);
+ cube.position.x = Math.random()*40-20;
+ cube.position.z = Math.random()*40-20;
+ cube.position.y = 0;
+ scene.add(cube);
+ cubos.push(cube);
+}
+
+// Zombis
+let zombis = [];
+for(let i=0;i<10;i++){
+ let geo = new THREE.BoxGeometry(1.5,3,1.5);
+ let mat = new THREE.MeshBasicMaterial({color:0x00aa00});
+ let z = new THREE.Mesh(geo,mat);
+ z.position.x = Math.random()*30-15;
+ z.position.z = Math.random()*30-15;
+ z.position.y = 0;
+ scene.add(z);
+ zombis.push(z);
+}
+
+// Camello
+let camelGeo = new THREE.BoxGeometry(3,2,1.5);
+let camelMat = new THREE.MeshBasicMaterial({color:0xaa7744});
+let camello = new THREE.Mesh(camelGeo,camelMat);
+camello.position.set(0,0,10);
+scene.add(camello);
+
+let balas = [];
+
+document.addEventListener("keydown", e=>{
+ if(e.key=="1"){
+   armaActual="Pistola";
+ }
+ if(e.key=="2"){
+   armaActual="Rifle";
+ }
+ if(e.key=="b"){
+   lanzarBomba();
+ }
+});
+
+document.addEventListener("click", ()=>{
+ disparar();
+});
+
+function disparar(){
+ let geo = new THREE.SphereGeometry(0.2,8,8);
+ let mat = new THREE.MeshBasicMaterial({color:0xffff00});
+ let bala = new THREE.Mesh(geo,mat);
+ bala.position.copy(camera.position);
+ bala.userData.vel = new THREE.Vector3(0,0,-0.5);
+ scene.add(bala);
+ balas.push(bala);
+}
+
+function lanzarBomba(){
+ if(bombas<=0) return;
+ bombas--;
+ document.getElementById("bombas").innerText=bombas;
+ cubos.forEach(c=>{
+   if(c.position.distanceTo(camera.position)<10){
+     scene.remove(c);
+   }
+ });
+}
+
+function animar(){
+ requestAnimationFrame(animar);
+
+ balas.forEach((b,i)=>{
+   b.position.add(b.userData.vel);
+
+   zombis.forEach((z,zi)=>{
+     if(b.position.distanceTo(z.position)<1.5){
+       scene.remove(z);
+       zombis.splice(zi,1);
+     }
+   });
+ });
+
+ zombis.forEach(z=>{
+   let dir = new THREE.Vector3().subVectors(camera.position,z.position).normalize();
+   z.position.add(dir.multiplyScalar(0.02));
+
+   if(z.position.distanceTo(camera.position)<1.5){
+     vida-=0.1;
+     document.getElementById("vida").innerText=Math.floor(vida);
+   }
+ });
+
+ renderer.render(scene,camera);
+}
+
+animar();
+
+</script>
+</body>
+</html>
