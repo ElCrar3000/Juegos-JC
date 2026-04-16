@@ -3,63 +3,59 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Juegos JC | Juegos indie de José Carlos</title>
-  <meta name="description" content="Catálogo de juegos de José Carlos: demos, juegos principales, ideas y proyectos en evolución." />
+  <title>Juegos JC</title>
+  <meta name="description" content="Portal oficial de Juegos JC. Juega, descubre nuevos proyectos y contacta para colaboraciones." />
   <style>
     :root {
-      --bg: #0b1020;
-      --bg-soft: #121933;
-      --card: rgba(18, 25, 51, 0.88);
-      --card-2: rgba(24, 33, 66, 0.95);
-      --text: #edf2ff;
-      --muted: #afbad6;
-      --line: rgba(255,255,255,0.10);
-      --brand: #63a4ff;
-      --brand-2: #8d6bff;
-      --good: #24d17e;
-      --warn: #ffca55;
-      --idea: #ff8f66;
-      --basic: #97a6c2;
-      --shadow: 0 14px 40px rgba(0,0,0,0.35);
-      --radius: 22px;
-      --max: 1200px;
+      --bg: #0f172a;
+      --bg-soft: #111827;
+      --card: #1e293b;
+      --card-hover: #273449;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --border: rgba(255,255,255,0.08);
+      --shadow: 0 10px 30px rgba(0,0,0,0.25);
+      --radius: 18px;
     }
 
     * { box-sizing: border-box; }
+
     html { scroll-behavior: smooth; }
+
     body {
       margin: 0;
       font-family: Inter, Arial, Helvetica, sans-serif;
-      color: var(--text);
       background:
-        radial-gradient(circle at top left, rgba(99,164,255,0.18), transparent 26%),
-        radial-gradient(circle at top right, rgba(141,107,255,0.18), transparent 22%),
-        linear-gradient(180deg, #08101f 0%, #0b1020 45%, #0f1730 100%);
-      min-height: 100vh;
+        radial-gradient(circle at top, rgba(56,189,248,0.12), transparent 35%),
+        linear-gradient(180deg, #020617 0%, #0f172a 45%, #111827 100%);
+      color: var(--text);
     }
 
     a { color: inherit; text-decoration: none; }
-    img { max-width: 100%; display: block; }
 
     .container {
-      width: min(var(--max), calc(100% - 32px));
+      width: min(1180px, calc(100% - 32px));
       margin: 0 auto;
     }
 
-    .topbar {
+    .header {
       position: sticky;
       top: 0;
       z-index: 20;
-      backdrop-filter: blur(14px);
-      background: rgba(9, 14, 29, 0.78);
-      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(10px);
+      background: rgba(2, 6, 23, 0.75);
+      border-bottom: 1px solid var(--border);
     }
 
-    .topbar-inner {
+    .nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 18px;
+      gap: 16px;
       padding: 14px 0;
     }
 
@@ -71,109 +67,90 @@
     }
 
     .brand img {
-      width: 54px;
-      height: 54px;
+      width: 52px;
+      height: 52px;
       object-fit: contain;
       border-radius: 14px;
       background: rgba(255,255,255,0.04);
       padding: 6px;
-      border: 1px solid var(--line);
-      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
     }
 
     .brand-text {
-      min-width: 0;
-    }
-
-    .brand-title {
-      margin: 0;
-      font-size: 1.05rem;
-      font-weight: 800;
-      letter-spacing: .2px;
-    }
-
-    .brand-sub {
-      margin: 2px 0 0;
-      color: var(--muted);
-      font-size: 0.92rem;
-    }
-
-    .nav {
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+      flex-direction: column;
+      line-height: 1.05;
+    }
+
+    .brand-text strong {
+      font-size: 1.05rem;
+      letter-spacing: 0.3px;
+    }
+
+    .brand-text span {
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+
+    .nav-links {
+      display: flex;
       align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
       justify-content: flex-end;
     }
 
-    .nav a {
+    .nav-links a {
       color: var(--muted);
-      font-weight: 600;
+      font-size: 0.95rem;
       padding: 10px 14px;
       border-radius: 999px;
-      transition: 0.18s ease;
+      transition: 0.2s ease;
     }
 
-    .nav a:hover {
+    .nav-links a:hover {
       color: var(--text);
       background: rgba(255,255,255,0.06);
     }
 
     .hero {
-      padding: 54px 0 30px;
-    }
-
-    .hero-box {
-      background: linear-gradient(135deg, rgba(18,25,51,0.9), rgba(12,18,37,0.94));
-      border: 1px solid var(--line);
-      border-radius: 32px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-      position: relative;
-    }
-
-    .hero-box::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 80% 20%, rgba(99,164,255,0.20), transparent 18%),
-                  radial-gradient(circle at 20% 30%, rgba(141,107,255,0.18), transparent 25%);
-      pointer-events: none;
+      padding: 64px 0 32px;
     }
 
     .hero-grid {
-      position: relative;
       display: grid;
-      grid-template-columns: 1.25fr .75fr;
-      gap: 24px;
-      padding: 38px;
-    }
-
-    .eyebrow {
-      display: inline-flex;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 28px;
       align-items: center;
-      gap: 10px;
-      padding: 9px 14px;
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 999px;
-      background: rgba(255,255,255,0.05);
-      color: #d8e2ff;
-      font-size: 0.9rem;
-      font-weight: 700;
     }
 
-    h1 {
-      margin: 18px 0 12px;
-      font-size: clamp(2rem, 4vw, 3.9rem);
-      line-height: 1.02;
-      letter-spacing: -1.3px;
+    .hero-card,
+    .panel,
+    .game-card,
+    .contact-card,
+    .about-card {
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+    }
+
+    .hero-card {
+      padding: 32px;
+    }
+
+    .hero h1 {
+      margin: 0 0 14px;
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      line-height: 0.95;
+      letter-spacing: -1px;
     }
 
     .hero p {
-      margin: 0 0 20px;
+      margin: 0;
       font-size: 1.05rem;
       color: var(--muted);
-      max-width: 720px;
+      max-width: 60ch;
       line-height: 1.6;
     }
 
@@ -189,192 +166,162 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      padding: 14px 18px;
+      padding: 13px 18px;
       border-radius: 14px;
-      font-weight: 800;
-      border: 1px solid transparent;
-      transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+      border: 1px solid var(--border);
       cursor: pointer;
+      transition: 0.2s ease;
+      font-weight: 700;
     }
 
-    .btn:hover { transform: translateY(-1px); }
     .btn-primary {
-      background: linear-gradient(135deg, var(--brand), var(--brand-2));
-      color: white;
-      box-shadow: 0 12px 24px rgba(99, 164, 255, 0.25);
+      background: linear-gradient(135deg, var(--accent), #0ea5e9);
+      color: #07111f;
+      border: none;
     }
 
     .btn-secondary {
       background: rgba(255,255,255,0.04);
       color: var(--text);
-      border-color: var(--line);
     }
+
+    .btn:hover { transform: translateY(-1px); }
 
     .hero-side {
+      padding: 24px;
       display: grid;
+      gap: 16px;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
       gap: 14px;
-      align-content: start;
     }
 
-    .stat-card {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid var(--line);
-      border-radius: 22px;
+    .stat {
       padding: 18px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
     }
 
-    .stat-card small {
+    .stat strong {
       display: block;
-      color: var(--muted);
-      margin-bottom: 8px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .7px;
-    }
-
-    .stat-card strong {
-      display: block;
-      font-size: 1.55rem;
+      font-size: 1.5rem;
       margin-bottom: 6px;
     }
 
-    .section {
-      padding: 20px 0 8px;
-    }
-
-    .section-head {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: end;
-      justify-content: space-between;
-      gap: 14px;
-      margin-bottom: 18px;
-    }
-
-    .section-head h2 {
-      margin: 0;
-      font-size: 1.65rem;
-      letter-spacing: -0.5px;
-    }
-
-    .section-head p {
-      margin: 6px 0 0;
+    .stat span {
       color: var(--muted);
+      font-size: 0.92rem;
     }
 
-    .toolbox {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 24px;
-      padding: 18px;
-      box-shadow: var(--shadow);
+    .section {
+      padding: 18px 0 26px;
     }
 
-    .search-wrap {
-      display: grid;
-      grid-template-columns: 1.1fr 1fr;
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       gap: 16px;
       margin-bottom: 16px;
     }
 
-    .search-box, .status-box {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 12px 14px;
+    .section-header h2 {
+      margin: 0;
+      font-size: clamp(1.4rem, 2vw, 2rem);
     }
 
-    .search-box label, .status-box label {
-      display: block;
-      font-size: 0.83rem;
-      font-weight: 800;
+    .section-header p {
+      margin: 6px 0 0;
       color: var(--muted);
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: .7px;
     }
 
-    .search-box input, .status-box select {
+    .controls {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .panel {
+      padding: 16px;
+    }
+
+    .search-box input {
       width: 100%;
-      border: 0;
-      outline: 0;
-      background: transparent;
+      padding: 15px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
       color: var(--text);
+      outline: none;
       font-size: 1rem;
     }
 
-    .chips {
+    .search-box input::placeholder { color: #7c8aa0; }
+
+    .filters {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
+      align-items: center;
     }
 
     .chip {
-      border: 1px solid var(--line);
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
       background: rgba(255,255,255,0.04);
       color: var(--text);
-      border-radius: 999px;
-      padding: 10px 14px;
-      font-weight: 700;
       cursor: pointer;
-      transition: 0.18s ease;
-    }
-
-    .chip:hover, .chip.active {
-      background: linear-gradient(135deg, rgba(99,164,255,0.22), rgba(141,107,255,0.22));
-      border-color: rgba(255,255,255,0.18);
-    }
-
-    .summary {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px 18px;
-      align-items: center;
-      margin-top: 16px;
-      color: var(--muted);
+      transition: 0.2s ease;
       font-weight: 600;
     }
 
-    .grid {
+    .chip:hover,
+    .chip.active {
+      background: rgba(56,189,248,0.18);
+      border-color: rgba(56,189,248,0.45);
+    }
+
+    .games-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 18px;
-      margin-top: 24px;
-      padding-bottom: 24px;
     }
 
     .game-card {
-      background: linear-gradient(180deg, var(--card-2), rgba(15, 22, 42, 0.98));
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
       overflow: hidden;
-      box-shadow: var(--shadow);
+      transition: 0.2s ease;
       display: flex;
       flex-direction: column;
-      min-height: 100%;
-      transition: transform .18s ease, border-color .18s ease;
     }
 
     .game-card:hover {
       transform: translateY(-4px);
-      border-color: rgba(255,255,255,0.18);
+      background: var(--card-hover);
     }
 
-    .thumb {
-      height: 190px;
-      background: linear-gradient(135deg, rgba(99,164,255,0.18), rgba(141,107,255,0.18));
+    .game-cover {
+      min-height: 120px;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 18px;
-      color: #dce6ff;
-      font-size: 1.2rem;
-      font-weight: 900;
+      padding: 22px;
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background:
+        linear-gradient(135deg, rgba(56,189,248,0.18), rgba(34,197,94,0.15)),
+        rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--border);
       text-align: center;
-      border-bottom: 1px solid var(--line);
     }
 
-    .card-body {
+    .game-body {
       padding: 18px;
       display: flex;
       flex-direction: column;
@@ -382,555 +329,460 @@
       flex: 1;
     }
 
-    .meta {
+    .game-body h3 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .game-file {
+      font-size: 0.9rem;
+      color: var(--muted);
+      word-break: break-word;
+    }
+
+    .badges {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
+      gap: 8px;
     }
 
     .badge {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 8px 11px;
+      padding: 7px 10px;
       border-radius: 999px;
-      font-size: 0.78rem;
-      font-weight: 900;
-      letter-spacing: .4px;
-      text-transform: uppercase;
+      font-size: 0.82rem;
+      font-weight: 700;
       border: 1px solid transparent;
     }
 
-    .status-estrella { background: rgba(36, 209, 126, 0.12); color: #88efb5; border-color: rgba(36,209,126,0.22); }
-    .status-beta { background: rgba(255, 202, 85, 0.12); color: #ffd975; border-color: rgba(255,202,85,0.22); }
-    .status-idea { background: rgba(255, 143, 102, 0.12); color: #ffb091; border-color: rgba(255,143,102,0.22); }
-    .status-basico { background: rgba(151, 166, 194, 0.13); color: #d3ddf4; border-color: rgba(151,166,194,0.22); }
+    .badge.version { background: rgba(56,189,248,0.15); color: #7dd3fc; }
+    .badge.beta { background: rgba(245,158,11,0.16); color: #fbbf24; }
+    .badge.idea { background: rgba(239,68,68,0.16); color: #fca5a5; }
+    .badge.stable { background: rgba(34,197,94,0.16); color: #86efac; }
+    .badge.basic { background: rgba(148,163,184,0.16); color: #cbd5e1; }
 
-    .category {
-      background: rgba(255,255,255,0.05);
-      color: var(--muted);
-      border-color: rgba(255,255,255,0.08);
-    }
-
-    .game-card h3 {
-      margin: 0;
-      font-size: 1.3rem;
-      letter-spacing: -0.3px;
-    }
-
-    .game-card p {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.55;
-      flex: 1;
-    }
-
-    .footer-line {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      gap: 10px;
-      align-items: center;
+    .game-actions {
       margin-top: auto;
-    }
-
-    .version {
-      color: #dbe4fb;
-      font-weight: 800;
-      font-size: 0.92rem;
-    }
-
-    .card-actions {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
-      margin-top: 2px;
     }
 
-    .card-btn {
-      padding: 11px 14px;
+    .play-link,
+    .code-link {
+      flex: 1;
+      min-width: 120px;
+      text-align: center;
+      padding: 12px 14px;
       border-radius: 12px;
-      font-weight: 800;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,0.04);
+      font-weight: 700;
+      transition: 0.2s ease;
     }
 
-    .card-btn.primary {
-      background: linear-gradient(135deg, var(--brand), var(--brand-2));
-      border-color: transparent;
+    .play-link {
+      background: linear-gradient(135deg, #38bdf8, #22c55e);
+      color: #08111d;
     }
 
-    .empty {
-      display: none;
-      margin: 22px 0 10px;
-      padding: 20px;
-      border-radius: 18px;
+    .code-link {
       background: rgba(255,255,255,0.05);
-      border: 1px dashed rgba(255,255,255,0.16);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .play-link:hover,
+    .code-link:hover { opacity: 0.92; }
+
+    .empty-state {
+      display: none;
+      padding: 30px;
+      text-align: center;
       color: var(--muted);
-      font-weight: 600;
+      border: 1px dashed var(--border);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.03);
     }
 
-    .about, .contact-box {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 24px;
-      padding: 24px;
-      box-shadow: var(--shadow);
-    }
-
-    .about-grid {
+    .about-grid,
+    .contact-grid {
       display: grid;
-      grid-template-columns: 1fr .9fr;
+      grid-template-columns: 1fr 1fr;
       gap: 18px;
-      padding-bottom: 40px;
+    }
+
+    .about-card,
+    .contact-card {
+      padding: 22px;
+    }
+
+    .about-card h3,
+    .contact-card h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+
+    .about-card p,
+    .contact-card p {
+      color: var(--muted);
+      line-height: 1.65;
+      margin-bottom: 0;
     }
 
     .contact-list {
       display: grid;
-      gap: 12px;
-      margin-top: 12px;
+      gap: 10px;
+      margin-top: 16px;
     }
 
     .contact-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      border-radius: 16px;
+      padding: 14px;
+      border-radius: 14px;
       background: rgba(255,255,255,0.04);
-      border: 1px solid var(--line);
-      color: #dbe4fb;
-      font-weight: 700;
-      overflow-wrap: anywhere;
+      border: 1px solid var(--border);
+      word-break: break-word;
     }
 
-    footer {
-      padding: 0 0 42px;
+    .footer {
+      padding: 28px 0 42px;
       color: var(--muted);
-    }
-
-    .footer-box {
-      border-top: 1px solid var(--line);
-      padding-top: 20px;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      gap: 12px;
+      text-align: center;
+      font-size: 0.92rem;
     }
 
     @media (max-width: 980px) {
       .hero-grid,
+      .controls,
       .about-grid,
-      .search-wrap,
-      .grid {
+      .contact-grid,
+      .games-grid {
         grid-template-columns: 1fr 1fr;
-      }
-      .hero-grid,
-      .about-grid {
-        grid-template-columns: 1fr;
       }
     }
 
-    @media (max-width: 700px) {
-      .topbar-inner,
-      .section-head,
-      .footer-box {
+    @media (max-width: 760px) {
+      .nav {
         flex-direction: column;
         align-items: stretch;
       }
 
-      .nav {
+      .nav-links {
         justify-content: flex-start;
       }
 
-      .hero-grid {
-        padding: 24px;
-      }
-
-      .search-wrap,
-      .grid {
+      .hero-grid,
+      .controls,
+      .about-grid,
+      .contact-grid,
+      .games-grid,
+      .stat-grid {
         grid-template-columns: 1fr;
       }
 
-      .thumb {
-        height: 160px;
+      .hero {
+        padding-top: 36px;
+      }
+
+      .hero-card,
+      .hero-side {
+        padding: 20px;
       }
     }
   </style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="container topbar-inner">
-      <a class="brand" href="#inicio" aria-label="Ir al inicio de Juegos JC">
-        <img src="logo.png" alt="Logo de Juegos JC" />
+  <header class="header">
+    <div class="container nav">
+      <a class="brand" href="#top">
+        <img src="logo.png.png" alt="Logo Juegos JC" onerror="this.style.display='none'" />
         <div class="brand-text">
-          <p class="brand-title">Juegos JC</p>
-          <p class="brand-sub">Juegos indie, demos y evolución real</p>
+          <strong>Juegos JC</strong>
+          <span>Juegos creados por José Carlos</span>
         </div>
       </a>
 
-      <nav class="nav" aria-label="Menú principal">
-        <a href="#catalogo">Catálogo</a>
-        <a href="#destacados">Destacados</a>
+      <nav class="nav-links">
+        <a href="#juegos">Juegos</a>
         <a href="#sobre-mi">Sobre mí</a>
         <a href="#contacto">Contacto</a>
       </nav>
     </div>
   </header>
 
-  <main id="inicio">
+  <main id="top">
     <section class="hero">
-      <div class="container">
-        <div class="hero-box">
-          <div class="hero-grid">
-            <div>
-              <span class="eyebrow">🎮 Proyecto de José Carlos • Catálogo en crecimiento</span>
-              <h1>Juegos que se pueden probar, mejorar y llevar mucho más lejos.</h1>
-              <p>
-                Bienvenido a <strong>Juegos JC</strong>. Aquí están mis juegos, demos, ideas jugables y proyectos que siguen evolucionando versión a versión. Acción, aventura, progresión, pruebas locas y ganas de hacer juegos cada vez mejores.
-              </p>
-              <div class="hero-actions">
-                <a class="btn btn-primary" href="#destacados">▶ Ver juegos destacados</a>
-                <a class="btn btn-secondary" href="#catalogo">Buscar en el catálogo</a>
-              </div>
-            </div>
+      <div class="container hero-grid">
+        <div class="hero-card hero">
+          <h1>Juegos JC</h1>
+          <p>
+            Bienvenido a mi portal de juegos. Aquí subo proyectos, versiones beta, ideas locas y juegos que ya se pueden probar.
+            Si uno engancha, misión cumplida. Si engancha muchísimo, mejor todavía.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#juegos">Jugar ahora</a>
+            <a class="btn btn-secondary" href="mailto:juegosjcdejosecarlos@gmail.com">Contactar</a>
+          </div>
+        </div>
 
-            <aside class="hero-side" aria-label="Resumen del proyecto">
-              <div class="stat-card">
-                <small>Objetivo</small>
-                <strong>Crear juegos cada vez más potentes</strong>
-                <span>La web no es un escaparate vacío. Es un laboratorio con pruebas, mejoras y versiones reales.</span>
-              </div>
-              <div class="stat-card">
-                <small>Lo mejor para empezar</small>
-                <strong>Infinity Evolution</strong>
-                <span>Mi juego más sólido ahora mismo, ideal para entrar fuerte y no con ruedines.</span>
-              </div>
-            </aside>
+        <div class="hero-side panel">
+          <div class="stat-grid">
+            <div class="stat">
+              <strong id="totalGames">0</strong>
+              <span>Juegos listados</span>
+            </div>
+            <div class="stat">
+              <strong id="totalPlayable">0</strong>
+              <span>Jugables ahora</span>
+            </div>
+            <div class="stat">
+              <strong>Beta</strong>
+              <span>Versiones en pruebas</span>
+            </div>
+            <div class="stat">
+              <strong>Ideas</strong>
+              <span>Proyectos en evolución</span>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="section" id="catalogo">
+    <section id="juegos" class="section">
       <div class="container">
-        <div class="section-head">
+        <div class="section-header">
           <div>
             <h2>Catálogo de juegos</h2>
-            <p>Busca por nombre, filtra por categoría y ordena el caos como un desarrollador serio.</p>
+            <p>Busca por nombre o filtra por tipo de versión.</p>
           </div>
         </div>
 
-        <div class="toolbox">
-          <div class="search-wrap">
-            <div class="search-box">
-              <label for="searchInput">Buscar juego</label>
-              <input id="searchInput" type="text" placeholder="Ej: Infinity, Zelda, clicker, zombis..." />
-            </div>
-
-            <div class="status-box">
-              <label for="statusFilter">Estado del proyecto</label>
-              <select id="statusFilter">
-                <option value="todos">Todos</option>
-                <option value="estrella">Estrella</option>
-                <option value="beta">Beta</option>
-                <option value="idea">Idea</option>
-                <option value="basico">Básico</option>
-              </select>
-            </div>
+        <div class="controls">
+          <div class="panel search-box">
+            <input type="text" id="searchInput" placeholder="Buscar juego..." />
           </div>
-
-          <div class="chips" id="categoryChips" aria-label="Categorías">
-            <button class="chip active" data-category="todos">Todos</button>
-            <button class="chip" data-category="accion">Acción</button>
-            <button class="chip" data-category="aventura">Aventura</button>
-            <button class="chip" data-category="arcade">Arcade</button>
-            <button class="chip" data-category="shooter">Shooter</button>
-            <button class="chip" data-category="supervivencia">Supervivencia</button>
-            <button class="chip" data-category="estrategia">Estrategia</button>
-            <button class="chip" data-category="clicker">Clicker</button>
-          </div>
-
-          <div class="summary">
-            <span id="resultCount">Mostrando 8 juegos</span>
-            <span>Etiquetas visibles para que la gente entienda qué está terminado y qué está en pruebas.</span>
+          <div class="panel filters" id="filters">
+            <button class="chip active" data-filter="all">Todos</button>
+            <button class="chip" data-filter="stable">Estables</button>
+            <button class="chip" data-filter="beta">Beta</button>
+            <button class="chip" data-filter="idea">Idea</button>
+            <button class="chip" data-filter="basic">Básico</button>
           </div>
         </div>
 
-        <div class="grid" id="gamesGrid">
-          <article class="game-card" data-title="Infinity Evolution" data-category="accion shooter" data-status="estrella" data-tags="oleadas progreso prestigio build shooter accion">
-            <div class="thumb">Infinity Evolution</div>
-            <div class="card-body">
-              <div class="meta">
-                <span class="badge status-estrella">⭐ Estrella</span>
-                <span class="badge category">Acción / Shooter</span>
-              </div>
-              <h3>Infinity Evolution</h3>
-              <p>Shooter de oleadas con mejoras, builds, prestigio y sensación de poder real. El más fuerte del catálogo ahora mismo.</p>
-              <div class="footer-line">
-                <span class="version">Versión: Principal</span>
-              </div>
-              <div class="card-actions">
-                <a class="card-btn primary" href="infinity_evolution_v1.2.3.html">Jugar</a>
-                <a class="card-btn" href="#contacto">Dar feedback</a>
-              </div>
-            </div>
-          </article>
-
-          <article class="game-card" data-title="Zelda Dragona" data-category="aventura" data-status="estrella" data-tags="aventura 3d misiones npcs mazmorra combate">
-            <div class="thumb">Zelda Dragona</div>
-            <div class="card-body">
-              <div class="meta">
-                <span class="badge status-estrella">⭐ Estrella</span>
-                <span class="badge category">Aventura</span>
-              </div>
-              <h3>Zelda Dragona</h3>
-              <p>Aventura 3D con combate, NPCs, misión y mazmorra. Tiene pinta de juego con ambición, no de deberes del instituto.</p>
-              <div class="footer-line">
-                <span class="version">Versión: Jugable</span>
-              </div>
-              <div class="card-actions">
-                <a class="card-btn primary" href="Zelda_Dragona.html">Jugar</a>
-                <a class="card-btn" href="#contacto">Opinar</a>
-              </div>
-            </div>
-          </article>
-
-          <article class="game-card" data-title="La Maldición del Programador v2" data-category="arcade accion" data-status="beta" data-tags="arcade oleadas mejoras bosses accion">
-            <div class="thumb">La Maldición del Programador v2</div>
-            <div class="card-body">
-              <div class="meta">
-                <span class="badge status-beta">🧪 Beta</span>
-                <span class="badge category">Arcade / Acción</span>
-              </div>
-              <h3>La Maldición del Programador v2</h3>
-              <p>Arcade con oleadas, mejoras permanentes y mini-bosses. Ya tiene chicha, pero todavía puede pegar un buen estirón.</p>
-              <div class="footer-line">
-                <span class="version">Versión: v2 beta</span>
-              </div>
-              <div class="card-actions">
-                <a class="card-btn primary" href="maldicion_del_programador2.0.html">Jugar</a>
-                <a class="card-btn" href="#contacto">Reportar ideas</a>
-              </div>
-            </div>
-          </article>
-
-          <article class="game-card" data-title="Mini Brawl / Circle Brawl" data-category="accion arcade" data-status="beta" data-tags="combate heroes habilidades pvp arcade accion">
-            <div class="thumb">Mini Brawl / Circle Brawl</div>
-            <div class="card-body">
-              <div class="meta">
-                <span class="badge status-beta">🧪 Beta</span>
-                <span class="badge category">Acción / Arcade</span>
-              </div>
-              <h3>Mini Brawl / Circle Brawl</h3>
-              <p>Combate rápido con héroes y habilidades distintas. Tiene muy buena base para crecer a lo bestia si lo aprietas bien.</p>
-              <div class="footer-line">
-                <span class="version">Versión: Demo</span>
-              </div>
-              <div class="card-actions">
-                <a class="card-btn primary" href="Circle_Brawl_v0.2.html">Probar demo</a>
-                <a class="card-btn" href="#contacto">Sugerir mejoras</a>
-              </div>
-            </div>
-          </article>
-
-          <article class="game-card" data-title="Isla Titán" data-category="supervivencia aventura" data-status="beta" data-tags="supervivencia isla exploracion eventos aventura 3d">
-            <div class="thumb">Isla Titán</div>
-            <div class="card-body">
-              <div class="meta">
-                <span class="badge status-beta">🧪 Beta</span>
-                <span class="badge category">Supervivencia / Aventura</span>
-              </div>
-              <h3>Isla Titán</h3>
-              <p>Supervivencia 3D con exploración, isla y eventos. Suena a proyecto con hambre, aunque todavía esté cocinándose.</p>
-              <div class="footer-line">
-                <span class="version">Versión: Demo temprana</span>
-              </div>
-              <div class="card-actions">
-                <a class="card-btn primary" href="isla_titan.html">Probar demo</a>
-                <a class="card-btn" href="#contacto">Enviar feedback</a>
-              </div>
-            </div>
-          </article>
-
-          <article class="game-card" data-title="Juego de Trincheras" data-category="estrategia accion" data-status="idea" data-tags="defensa cooperativo oleadas estrategia accion dos jugadores">
-            <div class="thumb">Juego de Trincheras</div>
-            <div class="card-body">
-              <div class="meta">
-                <span class="badge status-idea">💡 Idea</span>
-                <span class="badge category">Estrategia / Acción</span>
-              </div>
-              <h3>Juego de Trincheras</h3>
-              <p>Defensa cooperativa para dos jugadores con oleadas. Tiene muy buena pinta conceptual y margen para volverse bastante adictivo.</p>
-              <div class="footer-line">
-                <span class="version">Versión: Concepto activo</span>
-              </div>
-              <div class="card-actions">
-                <a class="card-btn" href="#contacto">Pedir novedades</a>
-              </div>
-            </div>
-          </article>
-
-          <article class="game-card" data-title="Desert War" data-category="shooter accion" data-status="basico" data-tags="shooter zombies bombas desierto accion 3d">
-            <div class="thumb">Desert War</div>
-            <div class="card-body">
-              <div class="meta">
-                <span class="badge status-basico">⚙️ Básico</span>
-                <span class="badge category">Shooter / Acción</span>
-              </div>
-              <h3>Desert War</h3>
-              <p>Shooter 3D con zombis, bombas y caos en el desierto. Base entretenida, todavía bastante verde, pero útil para enseñar potencial.</p>
-              <div class="footer-line">
-                <span class="version">Versión: Base jugable</span>
-              </div>
-              <div class="card-actions">
-                <a class="card-btn primary" href="guerra del desierto.html">Probar</a>
-              </div>
-            </div>
-          </article>
-
-          <article class="game-card" data-title="Empire Clicker" data-category="clicker estrategia" data-status="basico" data-tags="clicker ingresos negocios prestigio estrategia idle">
-            <div class="thumb">Empire Clicker</div>
-            <div class="card-body">
-              <div class="meta">
-                <span class="badge status-basico">⚙️ Básico</span>
-                <span class="badge category">Clicker / Estrategia</span>
-              </div>
-              <h3>Empire Clicker</h3>
-              <p>Clicker simple con ingresos, negocios y prestigio. Perfecto para tener variedad en la web sin liarte con una superproducción.</p>
-              <div class="footer-line">
-                <span class="version">Versión: Base</span>
-              </div>
-              <div class="card-actions">
-                <a class="card-btn primary" href="imperio.html">Jugar</a>
-              </div>
-            </div>
-          </article>
-        </div>
-
-        <div class="empty" id="emptyState">
-          No hay juegos que coincidan con ese filtro. Cambia la búsqueda o las categorías y listo.
-        </div>
+        <div class="games-grid" id="gamesGrid"></div>
+        <div class="empty-state" id="emptyState">No se han encontrado juegos con ese filtro o búsqueda.</div>
       </div>
     </section>
 
-    <section class="section" id="destacados">
+    <section id="sobre-mi" class="section">
       <div class="container">
-        <div class="section-head">
+        <div class="section-header">
           <div>
-            <h2>Qué debería probar primero alguien que entra nuevo</h2>
-            <p>Esto le evita al visitante el clásico “vale, ¿y ahora por dónde empiezo?”.</p>
+            <h2>Sobre Juegos JC</h2>
+            <p>Una base clara para enseñar tus proyectos sin que parezca un cajón desastre.</p>
           </div>
         </div>
+
         <div class="about-grid">
-          <div class="about">
-            <h3>1. Infinity Evolution</h3>
-            <p>Tu puerta de entrada principal. Si alguien prueba uno solo, debería ser este.</p>
-            <h3>2. Zelda Dragona</h3>
-            <p>Para enseñar ambición y variedad. Muy útil para que vean que no haces siempre lo mismo.</p>
-            <h3>3. Circle Brawl</h3>
-            <p>Ideal para enseñar ideas con potencial comercial, personajes y evolución futura.</p>
-          </div>
-          <div class="contact-box">
-            <h3>Estados de desarrollo</h3>
-            <p><strong>Estrella:</strong> lo mejor y más enseñable.</p>
-            <p><strong>Beta:</strong> ya es jugable, pero sigue mejorando.</p>
-            <p><strong>Idea:</strong> concepto activo con potencial.</p>
-            <p><strong>Básico:</strong> base útil, sencilla o temprana.</p>
-          </div>
+          <article class="about-card">
+            <h3>Qué hay aquí</h3>
+            <p>
+              Juegos terminados, demos, versiones antiguas, pruebas y conceptos. La idea es que cualquier persona entre,
+              vea rápido lo mejor y pueda jugar sin perderse. Eso en una web vale oro.
+            </p>
+          </article>
+
+          <article class="about-card">
+            <h3>Qué puedes hacer después</h3>
+            <p>
+              Más adelante puedes añadir miniaturas, contador de visitas, categorías por género, música, fichas completas de cada juego,
+              e incluso una sección de novedades. Primero orden. Luego ya vienen los cohetes.
+            </p>
+          </article>
         </div>
       </div>
     </section>
 
-    <section class="section" id="sobre-mi">
+    <section id="contacto" class="section">
       <div class="container">
-        <div class="about-grid">
-          <div class="about">
-            <h2>Sobre mí</h2>
-            <p>
-              Soy <strong>José Carlos</strong> y este es mi proyecto de videojuegos. Aquí voy subiendo mis ideas, pruebas, demos y juegos que pueden crecer versión a versión. Algunos son más arcade, otros más aventura, y otros son experimentos que igual acaban siendo muy buenos.
-            </p>
-            <p>
-              La idea de esta web es simple: mostrar progreso real, no humo. Que quien entre vea que aquí se trabaja, se prueba y se mejora.
-            </p>
-          </div>
-
-          <aside class="contact-box" id="contacto">
+        <div class="section-header">
+          <div>
             <h2>Contacto</h2>
-            <p>Para comentarios, propuestas, pruebas o lo que surja:</p>
+            <p>Para colaboraciones, ideas o lo que surja.</p>
+          </div>
+        </div>
+
+        <div class="contact-grid">
+          <article class="contact-card">
+            <h3>Correo</h3>
             <div class="contact-list">
-              <a class="contact-item" href="mailto:juegosjcdejosecarlos@gmail.com">📩 juegosjcdejosecarlos@gmail.com</a>
-              <a class="contact-item" href="#inicio">🚀 Volver arriba</a>
+              <a class="contact-item" href="mailto:juegosjcdejosecarlos@gmail.com">juegosjcdejosecarlos@gmail.com</a>
             </div>
-          </aside>
+          </article>
+
+          <article class="contact-card">
+            <h3>Consejo importante</h3>
+            <p>
+              Tu archivo del logo aparece como <strong>logo.png.png</strong>. Este código lo usa así, porque es como lo tienes ahora.
+              Si lo renombras a <strong>logo.png</strong>, cambia también la línea de la imagen arriba.
+            </p>
+          </article>
         </div>
       </div>
     </section>
   </main>
 
-  <footer>
-    <div class="container footer-box">
-      <span>© 2026 Juegos JC • Hecho por José Carlos</span>
-      <span>Logo: <strong>logo.png</strong> • Contacto activo: juegosjcdejosecarlos@gmail.com</span>
+  <footer class="footer">
+    <div class="container">
+      © 2026 Juegos JC · Hecho para mostrar tus juegos con más orden y más pinta de proyecto serio.
     </div>
   </footer>
 
   <script>
-    const searchInput = document.getElementById('searchInput');
-    const statusFilter = document.getElementById('statusFilter');
-    const chips = document.querySelectorAll('.chip');
-    const cards = document.querySelectorAll('.game-card');
-    const resultCount = document.getElementById('resultCount');
+    const games = [
+      {
+        title: 'Circle Brawl v0.2',
+        file: 'Circle_Brawl_v0.2.html',
+        status: 'beta',
+        version: 'v0.2',
+        subtitle: 'Combate y prueba temprana'
+      },
+      {
+        title: 'Zelda Dragona',
+        file: 'Zelda_Dragona.html',
+        status: 'idea',
+        version: 'idea',
+        subtitle: 'Proyecto / concepto'
+      },
+      {
+        title: 'Banana Stairs',
+        file: 'banana_stairs.html',
+        status: 'basic',
+        version: 'base',
+        subtitle: 'Juego base'
+      },
+      {
+        title: 'Campana Clicker',
+        file: 'campana-clicker.html',
+        status: 'stable',
+        version: '1.0',
+        subtitle: 'Clicker jugable'
+      },
+      {
+        title: 'Desert War',
+        file: 'desertwar.html',
+        status: 'stable',
+        version: '1.0',
+        subtitle: 'Versión jugable'
+      },
+      {
+        title: 'Empire',
+        file: 'empire.html',
+        status: 'stable',
+        version: '1.0',
+        subtitle: 'Versión jugable'
+      },
+      {
+        title: 'Infinity Evolution v1.1',
+        file: 'infinity_evolution_v1.1.html',
+        status: 'stable',
+        version: 'v1.1',
+        subtitle: 'Versión publicada'
+      },
+      {
+        title: 'Infinity Evolution v1.2.3',
+        file: 'infinity_evolution_v1.2.3.html',
+        status: 'beta',
+        version: 'v1.2.3',
+        subtitle: 'Versión más nueva en pruebas'
+      },
+      {
+        title: 'Isla Titan',
+        file: 'isla_titan.html',
+        status: 'idea',
+        version: 'idea',
+        subtitle: 'Concepto / desarrollo'
+      },
+      {
+        title: 'Juego Trincheras',
+        file: 'juego_trincheras.html',
+        status: 'basic',
+        version: 'base',
+        subtitle: 'Prototipo inicial'
+      }
+    ];
+
+    const gamesGrid = document.getElementById('gamesGrid');
     const emptyState = document.getElementById('emptyState');
+    const searchInput = document.getElementById('searchInput');
+    const filterButtons = document.querySelectorAll('.chip');
+    const totalGames = document.getElementById('totalGames');
+    const totalPlayable = document.getElementById('totalPlayable');
 
-    let activeCategory = 'todos';
+    let activeFilter = 'all';
 
-    function normalize(text) {
-      return text
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
+    function badgeLabel(status) {
+      if (status === 'beta') return 'Beta';
+      if (status === 'idea') return 'Idea';
+      if (status === 'basic') return 'Básico';
+      return 'Estable';
     }
 
-    function filterGames() {
-      const term = normalize(searchInput.value.trim());
-      const status = statusFilter.value;
-      let visible = 0;
+    function createCard(game) {
+      return `
+        <article class="game-card" data-status="${game.status}" data-title="${game.title.toLowerCase()}">
+          <div class="game-cover">${game.title}</div>
+          <div class="game-body">
+            <div>
+              <h3>${game.title}</h3>
+              <div class="game-file">${game.file}</div>
+            </div>
+            <div class="badges">
+              <span class="badge ${game.status}">${badgeLabel(game.status)}</span>
+              <span class="badge version">${game.version}</span>
+            </div>
+            <div class="game-file">${game.subtitle}</div>
+            <div class="game-actions">
+              <a class="play-link" href="${game.file}">Jugar</a>
+              <a class="code-link" href="${game.file}" target="_blank" rel="noopener noreferrer">Abrir</a>
+            </div>
+          </div>
+        </article>
+      `;
+    }
 
-      cards.forEach(card => {
-        const title = normalize(card.dataset.title || '');
-        const category = normalize(card.dataset.category || '');
-        const currentStatus = normalize(card.dataset.status || '');
-        const tags = normalize(card.dataset.tags || '');
+    function renderGames() {
+      const term = searchInput.value.trim().toLowerCase();
 
-        const matchesSearch = !term || title.includes(term) || category.includes(term) || tags.includes(term);
-        const matchesStatus = status === 'todos' || currentStatus === status;
-        const matchesCategory = activeCategory === 'todos' || category.includes(activeCategory);
-
-        const show = matchesSearch && matchesStatus && matchesCategory;
-        card.style.display = show ? '' : 'none';
-        if (show) visible++;
+      const filtered = games.filter(game => {
+        const matchesSearch = game.title.toLowerCase().includes(term) || game.file.toLowerCase().includes(term);
+        const matchesFilter = activeFilter === 'all' ? true : game.status === activeFilter;
+        return matchesSearch && matchesFilter;
       });
 
-      resultCount.textContent = `Mostrando ${visible} juego${visible === 1 ? '' : 's'}`;
-      emptyState.style.display = visible === 0 ? 'block' : 'none';
+      gamesGrid.innerHTML = filtered.map(createCard).join('');
+      emptyState.style.display = filtered.length ? 'none' : 'block';
     }
 
-    searchInput.addEventListener('input', filterGames);
-    statusFilter.addEventListener('change', filterGames);
+    function updateStats() {
+      totalGames.textContent = games.length;
+      totalPlayable.textContent = games.length;
+    }
 
-    chips.forEach(chip => {
-      chip.addEventListener('click', () => {
-        chips.forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        activeCategory = normalize(chip.dataset.category || 'todos');
-        filterGames();
+    filterButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        filterButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        activeFilter = button.dataset.filter;
+        renderGames();
       });
     });
 
-    filterGames();
+    searchInput.addEventListener('input', renderGames);
+
+    updateStats();
+    renderGames();
   </script>
 </body>
 </html>
