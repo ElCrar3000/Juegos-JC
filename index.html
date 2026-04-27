@@ -3,1024 +3,656 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Juegos JC | Videojuegos creados por José Carlos</title>
-  <meta name="description" content="Juegos JC es el proyecto de videojuegos de José Carlos. Descubre demos, prototipos y juegos jugables creados desde cero." />
+  <title>Juegos JC | Juegos creados por José Carlos</title>
+
   <style>
     :root {
-      --bg: #0b1020;
-      --bg-2: #10172d;
-      --panel: rgba(255,255,255,0.06);
-      --panel-2: rgba(255,255,255,0.09);
-      --text: #eef2ff;
-      --muted: #b8c0e0;
+      --bg: #070b16;
+      --panel: #101827;
+      --panel2: #162238;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent2: #a855f7;
+      --good: #22c55e;
+      --warn: #facc15;
+      --danger: #fb7185;
       --line: rgba(255,255,255,0.12);
-      --brand: #6ea8ff;
-      --brand-2: #8b5cf6;
-      --success: #22c55e;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --shadow: 0 18px 40px rgba(0,0,0,0.35);
-      --radius: 22px;
-      --radius-sm: 14px;
-      --max: 1200px;
+      --shadow: 0 20px 50px rgba(0,0,0,0.35);
     }
 
-    * { box-sizing: border-box; }
-
-    html { scroll-behavior: smooth; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
-      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
       background:
-        radial-gradient(circle at top left, rgba(110,168,255,0.18), transparent 28%),
-        radial-gradient(circle at top right, rgba(139,92,246,0.18), transparent 24%),
-        linear-gradient(180deg, #09101f 0%, #0b1020 100%);
-      min-height: 100vh;
+        radial-gradient(circle at top left, rgba(56,189,248,0.25), transparent 35%),
+        radial-gradient(circle at top right, rgba(168,85,247,0.25), transparent 35%),
+        var(--bg);
+      color: var(--text);
     }
 
-    a { color: inherit; text-decoration: none; }
-    img { max-width: 100%; display: block; }
-
-    .container {
-      width: min(var(--max), calc(100% - 32px));
-      margin: 0 auto;
+    a {
+      color: inherit;
+      text-decoration: none;
     }
 
-    .topbar {
+    header {
       position: sticky;
       top: 0;
-      z-index: 30;
+      z-index: 10;
       backdrop-filter: blur(14px);
-      background: rgba(8, 12, 24, 0.72);
+      background: rgba(7,11,22,0.8);
       border-bottom: 1px solid var(--line);
     }
 
-    .topbar-inner {
+    .nav {
+      max-width: 1150px;
+      margin: auto;
+      padding: 16px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      padding: 14px 0;
     }
 
     .brand {
       display: flex;
       align-items: center;
       gap: 12px;
-      font-weight: 800;
-      letter-spacing: 0.2px;
+      font-weight: 900;
+      font-size: 22px;
     }
 
-    .brand-logo {
+    .brand img {
       width: 42px;
       height: 42px;
-      border-radius: 14px;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(135deg, var(--brand), var(--brand-2));
-      box-shadow: var(--shadow);
-      font-size: 18px;
+      border-radius: 12px;
+      background: white;
     }
 
-    .brand small {
-      display: block;
-      color: var(--muted);
-      font-weight: 600;
-      font-size: 12px;
-      margin-top: 2px;
-    }
-
-    .nav {
+    .nav-links {
       display: flex;
-      align-items: center;
-      gap: 10px;
+      gap: 12px;
       flex-wrap: wrap;
-    }
-
-    .nav a {
-      padding: 10px 14px;
-      border-radius: 999px;
       color: var(--muted);
-      font-weight: 600;
-      transition: 0.2s ease;
+      font-size: 14px;
     }
 
-    .nav a:hover {
-      color: var(--text);
-      background: rgba(255,255,255,0.06);
+    .nav-links a:hover {
+      color: var(--accent);
     }
 
     .hero {
-      padding: 64px 0 28px;
-    }
-
-    .hero-grid {
+      max-width: 1150px;
+      margin: auto;
+      padding: 70px 20px 40px;
       display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 24px;
-      align-items: stretch;
-    }
-
-    .hero-card,
-    .spotlight-card,
-    .stats-card,
-    .about-card,
-    .contact-card,
-    .filters-wrap,
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 28px;
+      align-items: center;
     }
 
     .hero-card {
+      background: linear-gradient(135deg, rgba(16,24,39,0.95), rgba(22,34,56,0.95));
+      border: 1px solid var(--line);
+      border-radius: 28px;
       padding: 34px;
-      position: relative;
-      overflow: hidden;
+      box-shadow: var(--shadow);
     }
 
-    .hero-card::before {
-      content: "";
-      position: absolute;
-      inset: auto -40px -60px auto;
-      width: 220px;
-      height: 220px;
-      background: radial-gradient(circle, rgba(110,168,255,0.22), transparent 65%);
-      pointer-events: none;
-    }
-
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: rgba(110,168,255,0.12);
-      border: 1px solid rgba(110,168,255,0.25);
-      color: #d9e7ff;
+    .tagline {
+      color: var(--accent);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
       font-size: 13px;
-      font-weight: 700;
-      margin-bottom: 18px;
     }
 
     h1 {
-      font-size: clamp(34px, 6vw, 64px);
-      line-height: 0.98;
-      margin: 0 0 16px;
-      letter-spacing: -1.6px;
+      font-size: clamp(42px, 7vw, 78px);
+      line-height: 0.95;
+      margin: 14px 0;
     }
 
-    .hero-card p {
+    .hero p {
       color: var(--muted);
       font-size: 18px;
       line-height: 1.6;
-      max-width: 720px;
-      margin: 0 0 26px;
+      max-width: 680px;
     }
 
-    .hero-actions {
+    .buttons {
       display: flex;
+      gap: 14px;
       flex-wrap: wrap;
-      gap: 12px;
+      margin-top: 24px;
     }
 
     .btn {
-      appearance: none;
-      border: 0;
-      border-radius: 999px;
-      padding: 14px 20px;
-      font-weight: 800;
-      font-size: 15px;
-      cursor: pointer;
-      transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      padding: 14px 20px;
+      border-radius: 16px;
+      font-weight: 900;
+      border: 1px solid var(--line);
+      transition: 0.2s;
     }
 
-    .btn:hover { transform: translateY(-1px); }
     .btn-primary {
-      background: linear-gradient(135deg, var(--brand), var(--brand-2));
-      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #020617;
     }
 
     .btn-secondary {
-      background: rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.06);
       color: var(--text);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.1);
+    }
+
+    .featured {
+      background: linear-gradient(160deg, rgba(56,189,248,0.18), rgba(168,85,247,0.18));
       border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: var(--shadow);
     }
 
-    .hero-side {
-      display: grid;
-      gap: 24px;
+    .featured h2 {
+      font-size: 32px;
+      margin: 10px 0;
     }
 
-    .spotlight-card {
-      overflow: hidden;
-      display: grid;
-      grid-template-rows: 220px auto;
+    .featured p {
+      font-size: 15px;
     }
 
-    .spotlight-media {
-      background:
-        linear-gradient(135deg, rgba(110,168,255,0.35), rgba(139,92,246,0.22)),
-        radial-gradient(circle at center, rgba(255,255,255,0.12), transparent 50%),
-        #111936;
-      display: grid;
-      place-items: center;
-      color: #dce7ff;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      text-align: center;
+    .status {
+      display: inline-block;
+      padding: 7px 11px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      color: #020617;
+      background: var(--warn);
+    }
+
+    main {
+      max-width: 1150px;
+      margin: auto;
       padding: 20px;
     }
 
-    .spotlight-content {
-      padding: 22px;
+    .section-title {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+      margin: 35px 0 18px;
     }
 
-    .spotlight-content h3,
-    .section-head h2,
-    .about-card h2,
-    .contact-card h2 {
-      margin: 0 0 10px;
-      font-size: 24px;
+    .section-title h2 {
+      font-size: 32px;
+      margin: 0;
     }
 
-    .spotlight-content p,
-    .about-card p,
-    .contact-card p,
-    .section-head p {
+    .section-title p {
       margin: 0;
       color: var(--muted);
-      line-height: 1.65;
     }
 
-    .stats-card {
-      padding: 22px;
+    .tools {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      margin-bottom: 20px;
     }
 
-    .stat {
-      padding: 16px;
-      border-radius: 18px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      text-align: center;
-    }
-
-    .stat strong {
-      display: block;
-      font-size: 28px;
-      margin-bottom: 6px;
-    }
-
-    .stat span {
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    section {
-      padding: 26px 0;
-    }
-
-    .section-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: end;
-      gap: 20px;
-      margin-bottom: 18px;
-    }
-
-    .section-head p { max-width: 700px; }
-
-    .filters-wrap {
-      padding: 18px;
-    }
-
-    .filters-grid {
-      display: grid;
-      grid-template-columns: 1.4fr 1fr 1fr;
-      gap: 14px;
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .field label {
-      font-size: 13px;
-      color: var(--muted);
-      font-weight: 700;
-    }
-
-    .field input,
-    .field select {
+    input {
       width: 100%;
-      background: rgba(255,255,255,0.06);
-      color: var(--text);
+      padding: 15px 16px;
+      border-radius: 16px;
       border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 14px 14px;
-      font: inherit;
+      background: rgba(255,255,255,0.07);
+      color: white;
       outline: none;
+      font-size: 15px;
     }
 
-    .field input::placeholder { color: #99a6cf; }
-
-    .chips {
+    .filters {
       display: flex;
+      gap: 8px;
       flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 14px;
     }
 
-    .chip {
+    .filter-btn {
       border: 1px solid var(--line);
-      background: rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.07);
       color: var(--text);
-      border-radius: 999px;
-      padding: 10px 14px;
-      font-weight: 700;
-      font-size: 13px;
+      padding: 12px 14px;
+      border-radius: 14px;
       cursor: pointer;
-      transition: 0.18s ease;
+      font-weight: 800;
     }
 
-    .chip:hover,
-    .chip.active {
-      background: rgba(110,168,255,0.16);
-      border-color: rgba(110,168,255,0.36);
+    .filter-btn.active {
+      background: var(--accent);
+      color: #020617;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 18px;
     }
 
-    .card {
-      overflow: hidden;
-      transition: transform 0.2s ease, border-color 0.2s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-4px);
-      border-color: rgba(110,168,255,0.28);
-    }
-
-    .card-media {
-      height: 200px;
-      background:
-        linear-gradient(135deg, rgba(110,168,255,0.24), rgba(139,92,246,0.16)),
-        #121938;
-      display: grid;
-      place-items: center;
-      color: #dfe7ff;
-      font-weight: 800;
-      text-align: center;
+    .game-card {
+      background: rgba(16,24,39,0.92);
+      border: 1px solid var(--line);
+      border-radius: 24px;
       padding: 20px;
-      border-bottom: 1px solid var(--line);
+      min-height: 245px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: 0.2s;
     }
 
-    .card-body {
-      padding: 18px;
+    .game-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(56,189,248,0.6);
+      box-shadow: var(--shadow);
+    }
+
+    .game-card h3 {
+      font-size: 23px;
+      margin: 12px 0 8px;
+    }
+
+    .game-card p {
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0;
+      font-size: 14px;
     }
 
     .badges {
       display: flex;
-      gap: 8px;
+      gap: 7px;
       flex-wrap: wrap;
-      margin-bottom: 12px;
     }
 
     .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+      padding: 6px 9px;
       border-radius: 999px;
-      padding: 7px 10px;
-      font-size: 12px;
-      font-weight: 800;
-      border: 1px solid transparent;
-    }
-
-    .badge.status-beta { background: rgba(245, 158, 11, 0.14); color: #ffd493; border-color: rgba(245, 158, 11, 0.26); }
-    .badge.status-basico { background: rgba(34, 197, 94, 0.14); color: #b5f2c7; border-color: rgba(34, 197, 94, 0.26); }
-    .badge.status-pro { background: rgba(110,168,255,0.15); color: #dbe8ff; border-color: rgba(110,168,255,0.28); }
-    .badge.status-idea { background: rgba(239,68,68,0.14); color: #ffc3c3; border-color: rgba(239,68,68,0.26); }
-    .badge.genre { background: rgba(255,255,255,0.07); color: var(--muted); border-color: rgba(255,255,255,0.08); }
-
-    .card h3 {
-      margin: 0 0 8px;
-      font-size: 22px;
-    }
-
-    .card p {
-      margin: 0 0 16px;
+      font-size: 11px;
+      font-weight: 900;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--line);
       color: var(--muted);
-      line-height: 1.6;
-      min-height: 76px;
     }
 
-    .meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 700;
-      margin-bottom: 16px;
-    }
+    .star { color: #020617; background: var(--warn); }
+    .beta { color: #020617; background: var(--accent); }
+    .idea { color: #020617; background: #fb7185; }
+    .basic { color: #020617; background: #22c55e; }
 
-    .card-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .card-actions .btn {
-      padding: 12px 16px;
-      font-size: 14px;
-      flex: 1 1 auto;
-    }
-
-    .empty-state {
-      display: none;
-      text-align: center;
-      padding: 32px 20px;
-      color: var(--muted);
-      border: 1px dashed rgba(255,255,255,0.2);
-      border-radius: var(--radius-sm);
-      background: rgba(255,255,255,0.03);
-      margin-top: 8px;
-    }
-
-    .about-grid,
-    .contact-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 18px;
-    }
-
-    .about-card,
-    .contact-card {
-      padding: 24px;
-    }
-
-    .checklist {
-      display: grid;
-      gap: 10px;
-      margin-top: 16px;
-    }
-
-    .check {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      color: var(--muted);
-      line-height: 1.55;
-    }
-
-    .check strong { color: var(--text); }
-
-    .contact-links {
-      display: grid;
-      gap: 12px;
+    .play {
       margin-top: 18px;
+      display: inline-block;
+      width: 100%;
+      text-align: center;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(56,189,248,0.15);
+      border: 1px solid rgba(56,189,248,0.35);
+      color: var(--accent);
+      font-weight: 900;
     }
 
-    .contact-link {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 14px 16px;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: var(--text);
-      font-weight: 700;
+    .play:hover {
+      background: var(--accent);
+      color: #020617;
     }
 
-    .contact-link span { color: var(--muted); font-weight: 600; }
+    .updates {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 20px;
+    }
+
+    .update-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 18px;
+    }
+
+    .update-card h3 {
+      margin-top: 0;
+    }
+
+    .update-card p {
+      color: var(--muted);
+      line-height: 1.5;
+    }
 
     footer {
-      padding: 20px 0 40px;
-      color: var(--muted);
-    }
-
-    .footer-box {
-      display: flex;
-      justify-content: space-between;
-      gap: 20px;
-      flex-wrap: wrap;
-      padding-top: 18px;
+      margin-top: 60px;
       border-top: 1px solid var(--line);
+      padding: 30px 20px;
+      color: var(--muted);
+      text-align: center;
     }
 
-    @media (max-width: 1080px) {
-      .hero-grid,
-      .about-grid,
-      .contact-grid,
-      .filters-grid,
-      .grid {
-        grid-template-columns: 1fr 1fr;
+    footer a {
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    @media (max-width: 900px) {
+      .hero {
+        grid-template-columns: 1fr;
       }
 
-      .hero-grid {
+      .grid,
+      .updates {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .tools {
         grid-template-columns: 1fr;
       }
     }
 
-    @media (max-width: 760px) {
-      .topbar-inner,
-      .section-head,
-      .footer-box {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
+    @media (max-width: 580px) {
       .nav {
-        justify-content: flex-start;
+        align-items: flex-start;
+        flex-direction: column;
       }
 
-      .stats-card,
-      .about-grid,
-      .contact-grid,
-      .filters-grid,
-      .grid {
+      .grid,
+      .updates {
         grid-template-columns: 1fr;
       }
 
       .hero {
-        padding-top: 34px;
+        padding-top: 40px;
       }
 
-      .hero-card,
-      .about-card,
-      .contact-card {
-        padding: 22px;
+      .hero-card {
+        padding: 24px;
       }
-
-      h1 { line-height: 1.02; }
     }
   </style>
 </head>
+
 <body>
-  <header class="topbar">
-    <div class="container topbar-inner">
-      <a class="brand" href="#inicio">
-        <div class="brand-logo">🎮</div>
+
+<header>
+  <div class="nav">
+    <div class="brand">
+      <img src="logo.png" alt="Logo Juegos JC">
+      <span>Juegos JC</span>
+    </div>
+
+    <nav class="nav-links">
+      <a href="#juegos">Juegos</a>
+      <a href="#novedades">Novedades</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-card">
+    <div class="tagline">Juegos creados por José Carlos</div>
+    <h1>Juega, mejora y desbloquea</h1>
+    <p>
+      Bienvenido a Juegos JC: una colección de prototipos, ideas y juegos en evolución.
+      Aquí mandan la acción, la estrategia y las ideas locas bien hechas.
+    </p>
+
+    <div class="buttons">
+      <a class="btn btn-primary" href="#juegos">Ver juegos</a>
+      <a class="btn btn-secondary" href="Circle_Brawl_v0.2.html">Jugar destacado</a>
+    </div>
+  </div>
+
+  <div class="featured">
+    <span class="status">Juego estrella</span>
+    <h2>Circle Brawl</h2>
+    <p>
+      Combate rápido con personajes circulares, ataques, habilidades y mucho potencial.
+      Este debe ser uno de los juegos principales de Juegos JC.
+    </p>
+    <a class="btn btn-primary" href="Circle_Brawl_v0.2.html">Jugar Circle Brawl</a>
+  </div>
+</section>
+
+<main>
+
+  <section id="juegos">
+    <div class="section-title">
+      <div>
+        <h2>Catálogo de juegos</h2>
+        <p>Busca, filtra y juega directamente.</p>
+      </div>
+    </div>
+
+    <div class="tools">
+      <input id="searchInput" type="text" placeholder="Buscar juego...">
+
+      <div class="filters">
+        <button class="filter-btn active" data-filter="todos">Todos</button>
+        <button class="filter-btn" data-filter="accion">Acción</button>
+        <button class="filter-btn" data-filter="aventura">Aventura</button>
+        <button class="filter-btn" data-filter="estrategia">Estrategia</button>
+        <button class="filter-btn" data-filter="clicker">Clicker</button>
+      </div>
+    </div>
+
+    <div class="grid" id="gamesGrid">
+
+      <article class="game-card" data-category="accion" data-title="Circle Brawl">
         <div>
-          Juegos JC
-          <small>Videojuegos creados por José Carlos</small>
+          <div class="badges">
+            <span class="badge star">Estrella</span>
+            <span class="badge beta">Beta</span>
+            <span class="badge">Acción</span>
+          </div>
+          <h3>Circle Brawl</h3>
+          <p>Combate con personajes circulares, ataques, habilidades especiales y potencial multijugador.</p>
         </div>
-      </a>
+        <a class="play" href="Circle_Brawl_v0.2.html">Jugar</a>
+      </article>
 
-      <nav class="nav">
-        <a href="#inicio">Inicio</a>
-        <a href="#destacados">Destacados</a>
-        <a href="#juegos">Juegos</a>
-        <a href="#sobre-mi">Sobre mí</a>
-        <a href="#contacto">Contacto</a>
-      </nav>
+      <article class="game-card" data-category="accion" data-title="Infinity Evolution">
+        <div>
+          <div class="badges">
+            <span class="badge star">Estrella</span>
+            <span class="badge beta">Beta</span>
+            <span class="badge">Acción</span>
+          </div>
+          <h3>Infinity Evolution</h3>
+          <p>Juego de evolución, mejoras, combate y progresión constante.</p>
+        </div>
+        <a class="play" href="infinity_evolution_v1.2.3.html">Jugar</a>
+      </article>
+
+      <article class="game-card" data-category="aventura" data-title="Zelda Dragona">
+        <div>
+          <div class="badges">
+            <span class="badge beta">Beta</span>
+            <span class="badge">Aventura</span>
+          </div>
+          <h3>Zelda Dragona</h3>
+          <p>Aventura inspirada en fantasía, exploración y combate.</p>
+        </div>
+        <a class="play" href="Zelda_Dragona.html">Jugar</a>
+      </article>
+
+      <article class="game-card" data-category="accion" data-title="Desert War">
+        <div>
+          <div class="badges">
+            <span class="badge beta">Beta</span>
+            <span class="badge">Acción</span>
+          </div>
+          <h3>Desert War</h3>
+          <p>Batallas en el desierto con tensión, enemigos y supervivencia.</p>
+        </div>
+        <a class="play" href="desertwar.html">Jugar</a>
+      </article>
+
+      <article class="game-card" data-category="estrategia" data-title="Empire">
+        <div>
+          <div class="badges">
+            <span class="badge beta">Beta</span>
+            <span class="badge">Estrategia</span>
+          </div>
+          <h3>Empire</h3>
+          <p>Construye, mejora y domina. Buena base para un juego de imperios.</p>
+        </div>
+        <a class="play" href="empire.html">Jugar</a>
+      </article>
+
+      <article class="game-card" data-category="clicker" data-title="Campaña Clicker">
+        <div>
+          <div class="badges">
+            <span class="badge basic">Básico</span>
+            <span class="badge">Clicker</span>
+          </div>
+          <h3>Campaña Clicker</h3>
+          <p>Juego simple de progreso rápido. Ideal para mejorar con tiendas y recompensas.</p>
+        </div>
+        <a class="play" href="campana-clicker.html">Jugar</a>
+      </article>
+
+      <article class="game-card" data-category="aventura" data-title="Isla Titán">
+        <div>
+          <div class="badges">
+            <span class="badge idea">Idea</span>
+            <span class="badge">Aventura</span>
+          </div>
+          <h3>Isla Titán</h3>
+          <p>Exploración en una isla misteriosa. Tiene nombre potente y buen potencial visual.</p>
+        </div>
+        <a class="play" href="isla_titan.html">Jugar</a>
+      </article>
+
+      <article class="game-card" data-category="estrategia" data-title="Juego Trincheras">
+        <div>
+          <div class="badges">
+            <span class="badge beta">Beta</span>
+            <span class="badge">Estrategia</span>
+          </div>
+          <h3>Juego Trincheras</h3>
+          <p>Defensa, ataque y táctica. Buena base para niveles y oleadas.</p>
+        </div>
+        <a class="play" href="juego_trincheras.html">Jugar</a>
+      </article>
+
+      <article class="game-card" data-category="aventura" data-title="Banana Stairs">
+        <div>
+          <div class="badges">
+            <span class="badge basic">Básico</span>
+            <span class="badge">Aventura</span>
+          </div>
+          <h3>Banana Stairs</h3>
+          <p>Un juego raro, divertido y con nombre memorable. Eso ya suma puntos.</p>
+        </div>
+        <a class="play" href="banana_stairs.html">Jugar</a>
+      </article>
+
+      <article class="game-card" data-category="accion" data-title="Maldición del Programador">
+        <div>
+          <div class="badges">
+            <span class="badge beta">Beta</span>
+            <span class="badge">Acción</span>
+          </div>
+          <h3>Maldición del Programador</h3>
+          <p>Nombre brutal. Puede convertirse en juego de humor, bugs y supervivencia.</p>
+        </div>
+        <a class="play" href="maldicion_del_programador2.0.html">Jugar</a>
+      </article>
+
     </div>
-  </header>
+  </section>
 
-  <main>
-    <section class="hero" id="inicio">
-      <div class="container hero-grid">
-        <div class="hero-card">
-          <div class="eyebrow">⚡ Proyecto indie en crecimiento</div>
-          <h1>Juegos JC</h1>
-          <p>
-            Un catálogo de videojuegos, demos y prototipos creados por José Carlos.
-            Aquí puedes descubrir proyectos jugables, ideas en desarrollo y nuevas versiones conforme van mejorando.
-          </p>
-          <div class="hero-actions">
-            <a href="#juegos" class="btn btn-primary">Jugar ahora</a>
-            <a href="#destacados" class="btn btn-secondary">Ver destacados</a>
-          </div>
-        </div>
-
-        <div class="hero-side">
-          <article class="spotlight-card">
-            <div class="spotlight-media">
-              AQUÍ PUEDES PONER
-              <br />
-              UNA IMAGEN POTENTE
-              <br />
-              DE TU MEJOR JUEGO
-            </div>
-            <div class="spotlight-content">
-              <h3>Juego destacado</h3>
-              <p>
-                Dale protagonismo a tu mejor proyecto. Lo ideal es que esta tarjeta enseñe la imagen más potente de tu juego estrella.
-              </p>
-            </div>
-          </article>
-
-          <div class="stats-card">
-            <div class="stat">
-              <strong>3+</strong>
-              <span>Proyectos visibles</span>
-            </div>
-            <div class="stat">
-              <strong>1</strong>
-              <span>Juego principal</span>
-            </div>
-            <div class="stat">
-              <strong>∞</strong>
-              <span>Ideas por crear</span>
-            </div>
-          </div>
-        </div>
+  <section id="novedades">
+    <div class="section-title">
+      <div>
+        <h2>Novedades y próximos pasos</h2>
+        <p>Lo que más merece avanzar ahora mismo.</p>
       </div>
-    </section>
-
-    <section id="destacados">
-      <div class="container">
-        <div class="section-head">
-          <div>
-            <h2>Juegos destacados</h2>
-            <p>Lo mejor del catálogo va arriba. Esto hace que la web parezca una plataforma de juegos y no una lista suelta de enlaces.</p>
-          </div>
-        </div>
-
-        <div class="grid">
-          <article class="card game-card" data-title="Infinity Evolution" data-genre="accion" data-status="beta">
-            <div class="card-media">CAPTURA O PORTADA DE INFINITY EVOLUTION</div>
-            <div class="card-body">
-              <div class="badges">
-                <span class="badge status-beta">Beta</span>
-                <span class="badge genre">Acción</span>
-              </div>
-              <h3>Infinity Evolution</h3>
-              <p>Tu proyecto principal. Pon aquí una descripción breve, directa y con gancho. Tiene que dar ganas de entrar, no de pensar.</p>
-              <div class="meta">
-                <span>Versión 0.3</span>
-                <span>PC / Web</span>
-              </div>
-              <div class="card-actions">
-                <a href="#" class="btn btn-primary">Jugar</a>
-                <a href="#" class="btn btn-secondary">Ver ficha</a>
-              </div>
-            </div>
-          </article>
-
-          <article class="card game-card" data-title="Circle Brawl" data-genre="shooter" data-status="basico">
-            <div class="card-media">IMAGEN O MINIATURA DE CIRCLE BRAWL</div>
-            <div class="card-body">
-              <div class="badges">
-                <span class="badge status-basico">Básico</span>
-                <span class="badge genre">Shooter</span>
-              </div>
-              <h3>Circle Brawl</h3>
-              <p>Batallas rápidas, personajes únicos y combates directos. Ideal si quieres enseñar jugabilidad y progreso real del proyecto.</p>
-              <div class="meta">
-                <span>Versión 0.1</span>
-                <span>Prototipo jugable</span>
-              </div>
-              <div class="card-actions">
-                <a href="#" class="btn btn-primary">Jugar</a>
-                <a href="#" class="btn btn-secondary">Ver ficha</a>
-              </div>
-            </div>
-          </article>
-
-          <article class="card game-card" data-title="Proyecto Nuevo" data-genre="plataformas" data-status="idea">
-            <div class="card-media">ARTE CONCEPTUAL O IDEA VISUAL DEL PROYECTO</div>
-            <div class="card-body">
-              <div class="badges">
-                <span class="badge status-idea">Idea</span>
-                <span class="badge genre">Plataformas</span>
-              </div>
-              <h3>Proyecto Nuevo</h3>
-              <p>Reserva esta tarjeta para un juego futuro. Así haces que la web parezca viva y das sensación de evolución constante.</p>
-              <div class="meta">
-                <span>En diseño</span>
-                <span>Próximamente</span>
-              </div>
-              <div class="card-actions">
-                <a href="#" class="btn btn-secondary">Seguir proyecto</a>
-                <a href="#contacto" class="btn btn-secondary">Dar ideas</a>
-              </div>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section id="juegos">
-      <div class="container">
-        <div class="section-head">
-          <div>
-            <h2>Explorar juegos</h2>
-            <p>Buscador, filtros y estados. Esto te sube el nivel visual una barbaridad y hace la web mucho más cómoda.</p>
-          </div>
-        </div>
-
-        <div class="filters-wrap">
-          <div class="filters-grid">
-            <div class="field">
-              <label for="searchInput">Buscar juego</label>
-              <input id="searchInput" type="text" placeholder="Escribe un nombre..." />
-            </div>
-
-            <div class="field">
-              <label for="genreFilter">Categoría</label>
-              <select id="genreFilter">
-                <option value="all">Todas</option>
-                <option value="accion">Acción</option>
-                <option value="shooter">Shooter</option>
-                <option value="plataformas">Plataformas</option>
-                <option value="prototipo">Prototipo</option>
-              </select>
-            </div>
-
-            <div class="field">
-              <label for="statusFilter">Estado</label>
-              <select id="statusFilter">
-                <option value="all">Todos</option>
-                <option value="basico">Básico</option>
-                <option value="beta">Beta</option>
-                <option value="pro">Pro</option>
-                <option value="idea">Idea</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="chips" id="quickFilters">
-            <button class="chip active" data-filter="all">Todos</button>
-            <button class="chip" data-filter="accion">Acción</button>
-            <button class="chip" data-filter="shooter">Shooter</button>
-            <button class="chip" data-filter="plataformas">Plataformas</button>
-            <button class="chip" data-filter="beta">Beta</button>
-            <button class="chip" data-filter="idea">Idea</button>
-          </div>
-        </div>
-
-        <div class="grid" id="gamesGrid" style="margin-top: 18px;">
-          <article class="card game-card" data-title="Infinity Evolution" data-genre="accion" data-status="beta">
-            <div class="card-media">PORTADA DE INFINITY EVOLUTION</div>
-            <div class="card-body">
-              <div class="badges">
-                <span class="badge status-beta">Beta</span>
-                <span class="badge genre">Acción</span>
-              </div>
-              <h3>Infinity Evolution</h3>
-              <p>Proyecto principal de Juegos JC. Acción, evolución y mejoras dentro de una propuesta que puede crecer muchísimo.</p>
-              <div class="meta">
-                <span>Última actualización: abril</span>
-                <span>Web / PC</span>
-              </div>
-              <div class="card-actions">
-                <a href="#" class="btn btn-primary">Jugar</a>
-                <a href="#" class="btn btn-secondary">Ver detalles</a>
-              </div>
-            </div>
-          </article>
-
-          <article class="card game-card" data-title="Circle Brawl" data-genre="shooter" data-status="basico">
-            <div class="card-media">PORTADA DE CIRCLE BRAWL</div>
-            <div class="card-body">
-              <div class="badges">
-                <span class="badge status-basico">Básico</span>
-                <span class="badge genre">Shooter</span>
-              </div>
-              <h3>Circle Brawl</h3>
-              <p>Combates rápidos con estilo propio. Muy buena opción para enseñar mecánicas, personajes y progreso visual.</p>
-              <div class="meta">
-                <span>Versión temprana</span>
-                <span>Prototipo</span>
-              </div>
-              <div class="card-actions">
-                <a href="#" class="btn btn-primary">Jugar</a>
-                <a href="#" class="btn btn-secondary">Ver detalles</a>
-              </div>
-            </div>
-          </article>
-
-          <article class="card game-card" data-title="Plataformas Pixel" data-genre="plataformas" data-status="idea">
-            <div class="card-media">IMAGEN DEL JUEGO DE PLATAFORMAS</div>
-            <div class="card-body">
-              <div class="badges">
-                <span class="badge status-idea">Idea</span>
-                <span class="badge genre">Plataformas</span>
-              </div>
-              <h3>Plataformas Pixel</h3>
-              <p>Un proyecto ideal para enseñar bloques, mecánicas y diseño de niveles. Aunque esté en idea, queda brutal tenerlo visible.</p>
-              <div class="meta">
-                <span>En planificación</span>
-                <span>Futuro juego</span>
-              </div>
-              <div class="card-actions">
-                <a href="#contacto" class="btn btn-secondary">Seguir proyecto</a>
-                <a href="#contacto" class="btn btn-secondary">Dar feedback</a>
-              </div>
-            </div>
-          </article>
-
-          <article class="card game-card" data-title="Arena Test" data-genre="prototipo" data-status="pro">
-            <div class="card-media">IMAGEN O CAPTURA DEL PROTOTIPO</div>
-            <div class="card-body">
-              <div class="badges">
-                <span class="badge status-pro">Pro</span>
-                <span class="badge genre">Prototipo</span>
-              </div>
-              <h3>Arena Test</h3>
-              <p>Usa esta tarjeta para prototipos fuertes o demos más pulidas. Así puedes mostrar avance sin depender de un juego terminado.</p>
-              <div class="meta">
-                <span>Demo técnica</span>
-                <span>Más pulido</span>
-              </div>
-              <div class="card-actions">
-                <a href="#" class="btn btn-primary">Probar</a>
-                <a href="#" class="btn btn-secondary">Ver detalles</a>
-              </div>
-            </div>
-          </article>
-
-          <article class="card game-card" data-title="Boss Rush" data-genre="accion" data-status="beta">
-            <div class="card-media">ARTE O CAPTURA DEL MODO BOSS RUSH</div>
-            <div class="card-body">
-              <div class="badges">
-                <span class="badge status-beta">Beta</span>
-                <span class="badge genre">Acción</span>
-              </div>
-              <h3>Boss Rush</h3>
-              <p>Perfecto para enseñar enemigos, mejoras y dificultad progresiva. También queda muy bien para vídeos cortos.</p>
-              <div class="meta">
-                <span>En pruebas</span>
-                <span>Alta acción</span>
-              </div>
-              <div class="card-actions">
-                <a href="#" class="btn btn-primary">Jugar</a>
-                <a href="#" class="btn btn-secondary">Ver detalles</a>
-              </div>
-            </div>
-          </article>
-
-          <article class="card game-card" data-title="Modo Supervivencia" data-genre="shooter" data-status="basico">
-            <div class="card-media">CAPTURA DEL MODO SUPERVIVENCIA</div>
-            <div class="card-body">
-              <div class="badges">
-                <span class="badge status-basico">Básico</span>
-                <span class="badge genre">Shooter</span>
-              </div>
-              <h3>Modo Supervivencia</h3>
-              <p>Una idea muy buena para tener algo jugable y rejugable rápido. Si funciona, luego ya le metes personajes y mejoras.</p>
-              <div class="meta">
-                <span>Jugable</span>
-                <span>Ideal para crecer</span>
-              </div>
-              <div class="card-actions">
-                <a href="#" class="btn btn-primary">Jugar</a>
-                <a href="#" class="btn btn-secondary">Ver detalles</a>
-              </div>
-            </div>
-          </article>
-        </div>
-
-        <div id="emptyState" class="empty-state">
-          No hay juegos que coincidan con ese filtro. Prueba otra búsqueda o cambia la categoría.
-        </div>
-      </div>
-    </section>
-
-    <section id="sobre-mi">
-      <div class="container about-grid">
-        <article class="about-card">
-          <h2>Sobre Juegos JC</h2>
-          <p>
-            Juegos JC es el espacio donde José Carlos reúne sus videojuegos, prototipos y nuevas ideas. La clave de esta web no es solo enseñar juegos, sino demostrar evolución, creatividad y constancia.
-          </p>
-          <div class="checklist">
-            <div class="check"><strong>✔ Proyecto real:</strong> juegos que se pueden enseñar y mejorar.</div>
-            <div class="check"><strong>✔ Marca propia:</strong> nombre, estilo y catálogo con personalidad.</div>
-            <div class="check"><strong>✔ Evolución visible:</strong> ideas, betas, demos y versiones mejores con el tiempo.</div>
-          </div>
-        </article>
-
-        <article class="about-card">
-          <h2>Qué hace buena esta web</h2>
-          <p>
-            Una web de juegos no tiene que parecer una tesis. Tiene que dejarte entrar, mirar, elegir y jugar. Cuanto más directa, más profesional parece.
-          </p>
-          <div class="checklist">
-            <div class="check"><strong>✔ Portada clara:</strong> sabes lo que es en 3 segundos.</div>
-            <div class="check"><strong>✔ Juegos ordenados:</strong> con filtros, estados y tarjetas.</div>
-            <div class="check"><strong>✔ Contacto visible:</strong> para ideas, colaboraciones o feedback.</div>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section id="contacto">
-      <div class="container contact-grid">
-        <article class="contact-card">
-          <h2>Contacto</h2>
-          <p>
-            Si quieres probar los juegos, mandar ideas o hablar sobre el proyecto, aquí tienes una forma directa de contactar.
-          </p>
-          <div class="contact-links">
-            <a class="contact-link" href="mailto:juegosjcdejosecarlos@gmail.com">
-              <div>
-                juegosjcdejosecarlos@gmail.com
-                <span>Correo principal</span>
-              </div>
-              <strong>Escribir</strong>
-            </a>
-          </div>
-        </article>
-
-        <article class="contact-card">
-          <h2>Siguiente nivel</h2>
-          <p>
-            Cuando esta base esté puesta, lo siguiente es meter miniaturas reales, fichas por juego, contador de visitas y páginas individuales. Ahí ya empieza a oler a estudio indie de verdad.
-          </p>
-        </article>
-      </div>
-    </section>
-  </main>
-
-  <footer>
-    <div class="container footer-box">
-      <div>© 2026 Juegos JC. Proyecto de videojuegos creado por José Carlos.</div>
-      <div>Hecho para crecer, iterar y publicar mejores versiones.</div>
     </div>
-  </footer>
 
-  <script>
-    const searchInput = document.getElementById('searchInput');
-    const genreFilter = document.getElementById('genreFilter');
-    const statusFilter = document.getElementById('statusFilter');
-    const cards = Array.from(document.querySelectorAll('.game-card'));
-    const emptyState = document.getElementById('emptyState');
-    const quickFilters = Array.from(document.querySelectorAll('.chip'));
+    <div class="updates">
+      <div class="update-card">
+        <h3>1. Juego estrella</h3>
+        <p>Circle Brawl debe tener prioridad: vida, daño, habilidades, enemigos y progresión.</p>
+      </div>
 
-    function filterGames() {
-      const searchValue = searchInput.value.trim().toLowerCase();
-      const genreValue = genreFilter.value;
-      const statusValue = statusFilter.value;
+      <div class="update-card">
+        <h3>2. Recompensas</h3>
+        <p>Añadir monedas, gemas, cofres y rarezas haría que los jugadores vuelvan.</p>
+      </div>
 
-      let visibleCount = 0;
+      <div class="update-card">
+        <h3>3. Web más seria</h3>
+        <p>Menos caos, más orden. La web ya empieza a parecer una marca real.</p>
+      </div>
+    </div>
+  </section>
 
-      cards.forEach(card => {
-        const title = (card.dataset.title || '').toLowerCase();
-        const genre = card.dataset.genre || '';
-        const status = card.dataset.status || '';
+</main>
 
-        const matchesSearch = title.includes(searchValue);
-        const matchesGenre = genreValue === 'all' || genre === genreValue;
-        const matchesStatus = statusValue === 'all' || status === statusValue;
+<footer id="contacto">
+  <p><strong>Juegos JC</strong> — Proyecto de juegos de José Carlos</p>
+  <p>Contacto: <a href="mailto:juegosjcdejosecarlos@gmail.com">juegosjcdejosecarlos@gmail.com</a></p>
+</footer>
 
-        const show = matchesSearch && matchesGenre && matchesStatus;
-        card.style.display = show ? '' : 'none';
-        if (show) visibleCount++;
-      });
+<script>
+  const searchInput = document.getElementById("searchInput");
+  const cards = document.querySelectorAll(".game-card");
+  const filterButtons = document.querySelectorAll(".filter-btn");
 
-      emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
-    }
+  let currentFilter = "todos";
 
-    searchInput.addEventListener('input', filterGames);
-    genreFilter.addEventListener('change', filterGames);
-    statusFilter.addEventListener('change', filterGames);
+  function updateGames() {
+    const search = searchInput.value.toLowerCase();
 
-    quickFilters.forEach(button => {
-      button.addEventListener('click', () => {
-        quickFilters.forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
+    cards.forEach(card => {
+      const title = card.dataset.title.toLowerCase();
+      const category = card.dataset.category;
 
-        const filter = button.dataset.filter;
+      const matchesSearch = title.includes(search);
+      const matchesFilter = currentFilter === "todos" || category === currentFilter;
 
-        if (['accion', 'shooter', 'plataformas', 'prototipo'].includes(filter)) {
-          genreFilter.value = filter;
-          statusFilter.value = 'all';
-        } else if (['beta', 'idea', 'basico', 'pro'].includes(filter)) {
-          statusFilter.value = filter;
-          genreFilter.value = 'all';
-        } else {
-          genreFilter.value = 'all';
-          statusFilter.value = 'all';
-        }
-
-        filterGames();
-      });
+      card.style.display = matchesSearch && matchesFilter ? "flex" : "none";
     });
+  }
 
-    filterGames();
-  </script>
+  searchInput.addEventListener("input", updateGames);
+
+  filterButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      filterButtons.forEach(btn => btn.classList.remove("active"));
+      button.classList.add("active");
+      currentFilter = button.dataset.filter;
+      updateGames();
+    });
+  });
+</script>
+
 </body>
 </html>
