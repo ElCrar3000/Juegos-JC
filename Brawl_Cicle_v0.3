@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Filiobraos - Prototipo</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #111827;
+      color: #fff;
+    }
+    .screen { display: none; min-height: 100vh; padding: 20px; }
+    .screen.active { display: block; }
+    .wrap { max-width: 1100px; margin: 0 auto; }
+    h1, h2, h3 { margin-top: 0; }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .card {
+      background: #1f2937;
+      border: 2px solid transparent;
+      border-radius: 18px;
+      padding: 16px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+    .card:hover { transform: translateY(-2px); border-color: #60a5fa; }
+    .card.selected { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,.2); }
+    .avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 42px;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #60a5fa, #2563eb);
+    }
+    .avatar.b { background: linear-gradient(135deg, #f59e0b, #dc2626); }
+    .btn {
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 18px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #22c55e;
+      color: white;
+    }
+    .btn.secondary { background: #374151; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .queue-box, .hud-box {
+      background: #1f2937;
+      border-radius: 18px;
+      padding: 18px;
+      margin-top: 20px;
+    }
+    .slots {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .slot {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+      min-height: 74px;
+      display: grid;
+      place-items: center;
+    }
+    #gameCanvas {
+      width: 100%;
+      max-width: 1000px;
+      aspect-ratio: 16/9;
+      background: #0b1220;
+      border: 2px solid #334155;
+      border-radius: 18px;
+      display: block;
+      margin: 18px auto 0;
+      touch-action: none;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-top: 15px;
+      color: #cbd5e1;
+      font-size: 14px;
+    }
+    .pill {
+      display: inline-block;
+      background: #0f172a;
+      border: 1px solid #334155;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 14px;
+    }
+    .small { color: #cbd5e1; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <section id="menuScreen" class="screen active">
+    <div class="wrap">
+      <div class="topbar">
+        <div>
+          <h1>Filiobraos - Prototipo básico</h1>
+          <div class="small">Selecciona personaje y entra a una partida de 10 jugadores. Si no se llena, entran bots.</div>
+        </div>
+        <span class="pill">Demo local</span>
+      </div>
+
+      <h2>Elige personaje</h2>
+      <div class="cards">
+        <article class="card selected" data-character="filio">
+          <div class="avatar">⚡</div>
+          <h3>Filio</h3>
+          <p>Más rápido. Ideal para escapar y rodear enemigos.</p>
+        </article>
+
+        <article class="card" data-character="brao">
+          <div class="avatar b">🪓</div>
+          <h3>Brao</h3>
+          <p>Más fuerte. Aguanta mejor y golpea más duro.</p>
+        </article>
+      </div>
+
+      <button id="playBtn" class="btn">Jugar partida rápida</button>
+      <p class="small">Esta versión es una base funcional. Simula emparejamiento y relleno con bots. El multijugador real necesita servidor.</p>
+    </div>
+  </section>
+
+  <section id="queueScreen" class="screen">
+    <div class="wrap">
+      <h2>Buscando partida...</h2>
+      <div class="queue-box">
+        <p><strong>Jugador elegido:</strong> <span id="chosenName"></span></p>
+        <p><strong>Tiempo en cola:</strong> <span id="queueTime">0</span>s</p>
+        <p><strong>Jugadores encontrados:</strong> <span id="foundCount">1</span>/10</p>
+        <p class="small">A los 60 segundos se rellenan los huecos con bots.</p>
+        <div id="slots" class="slots"></div>
+      </div>
+      <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button id="cancelBtn" class="btn secondary">Cancelar</button>
+        <button id="forceStartBtn" class="btn">Empezar ya con bots</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="gameScreen" class="screen">
+    <div class="wrap">
+      <div class="topbar">
+        <div>
+          <h2>Partida todos contra todos</h2>
+          <div class="small">Objetivo: sobrevivir y sumar bajas. Último vivo gana.</div>
+        </div>
+        <div class="hud-box" style="margin:0; padding:10px 14px;">
+          <strong>Vivos:</strong> <span id="aliveCount">10</span> |
+          <strong>Bajas:</strong> <span id="killCount">0</span> |
+          <strong>Vida:</strong> <span id="lifeCount">100</span>
+        </div>
+      </div>
+
+      <canvas id="gameCanvas" width="1000" height="562"></canvas>
+
+      <div class="controls">
+        <div>PC: mover con <strong>WASD</strong> o flechas</div>
+        <div>PC: atacar con <strong>espacio</strong></div>
+        <div>Móvil: joystick izquierdo y botón rojo</div>
+        <div>Esta demo guarda todo en tu navegador</div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <button id="backMenuBtn" class="btn secondary">Volver al menú</button>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const menuScreen = document.getElementById('menuScreen');
+    const queueScreen = document.getElementById('queueScreen');
+    const gameScreen = document.getElementById('gameScreen');
+    const cards = [...document.querySelectorAll('.card')];
+    const playBtn = document.getElementById('playBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const forceStartBtn = document.getElementById('forceStartBtn');
+    const backMenuBtn = document.getElementById('backMenuBtn');
+    const chosenName = document.getElementById('chosenName');
+    const queueTimeEl = document.getElementById('queueTime');
+    const foundCountEl = document.getElementById('foundCount');
+    const slotsEl = document.getElementById('slots');
+    const aliveCountEl = document.getElementById('aliveCount');
+    const killCountEl = document.getElementById('killCount');
+    const lifeCountEl = document.getElementById('lifeCount');
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let selectedCharacter = 'filio';
+    let queueTimer = null;
+    let queueSeconds = 0;
+    let foundPlayers = 1;
+    let gameLoop = null;
+    let player = null;
+    let entities = [];
+    let keys = {};
+    let lastTime = 0;
+    let touchState = { moveX: 0, moveY: 0, attack: false };
+
+    const CHARACTERS = {
+      filio: { name: 'Filio', speed: 180, hp: 100, damage: 18, color: '#60a5fa' },
+      brao: { name: 'Brao', speed: 145, hp: 130, damage: 24, color: '#f59e0b' }
+    };
+
+    function showScreen(screen) {
+      [menuScreen, queueScreen, gameScreen].forEach(s => s.classList.remove('active'));
+      screen.classList.add('active');
+    }
+
+    cards.forEach(card => {
+      card.addEventListener('click', () => {
+        cards.forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedCharacter = card.dataset.character;
+      });
+    });
+
+    function renderSlots(names) {
+      slotsEl.innerHTML = '';
+      names.forEach(name => {
+        const div = document.createElement('div');
+        div.className = 'slot';
+        div.textContent = name;
+        slotsEl.appendChild(div);
+      });
+    }
+
+    function startQueue() {
+      queueSeconds = 0;
+      foundPlayers = 1;
+      chosenName.textContent = CHARACTERS[selectedCharacter].name;
+      showScreen(queueScreen);
+      updateQueueUI();
+
+      queueTimer = setInterval(() => {
+        queueSeconds++;
+
+        if (queueSeconds % 9 === 0 && foundPlayers < 3) {
+          foundPlayers++;
+        }
+
+        if (queueSeconds >= 60) {
+          clearInterval(queueTimer);
+          startMatch(true);
+          return;
+        }
+
+        updateQueueUI();
+      }, 1000);
+    }
+
+    function updateQueueUI() {
+      queueTimeEl.textContent = queueSeconds;
+      foundCountEl.textContent = foundPlayers;
+      const names = [];
+      names.push('Tú (' + CHARACTERS[selectedCharacter].name + ')');
+      for (let i = 2; i <= foundPlayers; i++) names.push('Jugador ' + i);
+      for (let i = foundPlayers + 1; i <= 10; i++) names.push('Hueco libre');
+      renderSlots(names);
+    }
+
+    function startMatch(fillBots) {
+      if (queueTimer) clearInterval(queueTimer);
+      showScreen(gameScreen);
+      setupGame(fillBots);
+      lastTime = performance.now();
+      cancelAnimationFrame(gameLoop);
+      gameLoop = requestAnimationFrame(loop);
+    }
+
+    function rand(min, max) { return Math.random() * (max - min) + min; }
+
+    function spawnEntity(name, config, isBot, x, y) {
+      return {
+        name,
+        isBot,
+        x,
+        y,
+        r: 18,
+        hp: config.hp,
+        maxHp: config.hp,
+        speed: config.speed,
+        damage: config.damage,
+        color: config.color,
+        vx: 0,
+        vy: 0,
+        attackCd: 0,
+        alive: true,
+        kills: 0,
+        botTargetX: rand(80, canvas.width - 80),
+        botTargetY: rand(80, canvas.height - 80)
+      };
+    }
+
+    function setupGame(fillBots) {
+      entities = [];
+      const conf = CHARACTERS[selectedCharacter];
+      player = spawnEntity('Tú', conf, false, 120, 120);
+      entities.push(player);
+
+      const humanOpponents = Math.max(0, foundPlayers - 1);
+      for (let i = 0; i < humanOpponents; i++) {
+        const c = i % 2 === 0 ? CHARACTERS.filio : CHARACTERS.brao;
+        entities.push(spawnEntity('Jugador ' + (i + 2), c, true, rand(80, 920), rand(80, 480)));
+      }
+
+      const totalBots = fillBots ? 10 - entities.length : 0;
+      for (let i = 0; i < totalBots; i++) {
+        const c = i % 2 === 0 ? CHARACTERS.filio : CHARACTERS.brao;
+        entities.push(spawnEntity('Bot ' + (i + 1), c, true, rand(80, 920), rand(80, 480)));
+      }
+
+      aliveCountEl.textContent = entities.length;
+      killCountEl.textContent = 0;
+      lifeCountEl.textContent = player.hp;
+      buildTouchControls();
+    }
+
+    function buildTouchControls() {
+      if (!('ontouchstart' in window)) return;
+      const existing = document.getElementById('touchHud');
+      if (existing) existing.remove();
+
+      const hud = document.createElement('div');
+      hud.id = 'touchHud';
+      hud.style.position = 'fixed';
+      hud.style.left = '0';
+      hud.style.right = '0';
+      hud.style.bottom = '0';
+      hud.style.pointerEvents = 'none';
+      hud.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:end;padding:16px;">
+          <div id="joyBase" style="width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.08);position:relative;pointer-events:auto;touch-action:none;">
+            <div id="joyStick" style="width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.35);position:absolute;left:33px;top:33px;"></div>
+          </div>
+          <button id="attackBtn" style="width:90px;height:90px;border:0;border-radius:50%;background:#ef4444;color:#fff;font-size:20px;font-weight:700;pointer-events:auto;">AT</button>
+        </div>`;
+      document.body.appendChild(hud);
+
+      const joyBase = document.getElementById('joyBase');
+      const joyStick = document.getElementById('joyStick');
+      const attackBtn = document.getElementById('attackBtn');
+      const baseRect = () => joyBase.getBoundingClientRect();
+
+      function resetJoy() {
+        touchState.moveX = 0;
+        touchState.moveY = 0;
+        joyStick.style.left = '33px';
+        joyStick.style.top = '33px';
+      }
+
+      joyBase.addEventListener('touchstart', handleJoy);
+      joyBase.addEventListener('touchmove', handleJoy);
+      joyBase.addEventListener('touchend', resetJoy);
+
+      function handleJoy(e) {
+        e.preventDefault();
+        const t = e.touches[0];
+        const r = baseRect();
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        let dx = t.clientX - cx;
+        let dy = t.clientY - cy;
+        const dist = Math.hypot(dx, dy);
+        const max = 34;
+        if (dist > max) {
+          dx = dx / dist * max;
+          dy = dy / dist * max;
+        }
+        joyStick.style.left = (33 + dx) + 'px';
+        joyStick.style.top = (33 + dy) + 'px';
+        touchState.moveX = dx / max;
+        touchState.moveY = dy / max;
+      }
+
+      attackBtn.addEventListener('touchstart', e => { e.preventDefault(); touchState.attack = true; });
+      attackBtn.addEventListener('touchend', e => { e.preventDefault(); touchState.attack = false; });
+    }
+
+    function loop(ts) {
+      const dt = Math.min(0.033, (ts - lastTime) / 1000);
+      lastTime = ts;
+      update(dt);
+      draw();
+      gameLoop = requestAnimationFrame(loop);
+    }
+
+    function update(dt) {
+      if (!player || !player.alive) return;
+
+      const move = { x: 0, y: 0 };
+      if (keys['w'] || keys['arrowup']) move.y -= 1;
+      if (keys['s'] || keys['arrowdown']) move.y += 1;
+      if (keys['a'] || keys['arrowleft']) move.x -= 1;
+      if (keys['d'] || keys['arrowright']) move.x += 1;
+      move.x += touchState.moveX;
+      move.y += touchState.moveY;
+      const len = Math.hypot(move.x, move.y) || 1;
+      player.x += (move.x / len) * player.speed * dt;
+      player.y += (move.y / len) * player.speed * dt;
+      clamp(player);
+
+      if ((keys[' '] || touchState.attack) && player.attackCd <= 0) {
+        doAttack(player);
+        player.attackCd = 0.55;
+      }
+
+      entities.forEach(e => {
+        if (!e.alive) return;
+        if (e.attackCd > 0) e.attackCd -= dt;
+        if (e.isBot) updateBot(e, dt);
+      });
+
+      resolveDeaths();
+      aliveCountEl.textContent = entities.filter(e => e.alive).length;
+      killCountEl.textContent = player.kills;
+      lifeCountEl.textContent = Math.max(0, Math.round(player.hp));
+
+      const alive = entities.filter(e => e.alive);
+      if (alive.length <= 1) {
+        setTimeout(() => {
+          alert(alive[0] === player ? 'Has ganado.' : 'Partida terminada. Gana ' + (alive[0]?.name || 'nadie'));
+          showScreen(menuScreen);
+          const t = document.getElementById('touchHud');
+          if (t) t.remove();
+          cancelAnimationFrame(gameLoop);
+        }, 100);
+      }
+    }
+
+    function updateBot(bot, dt) {
+      const target = entities
+        .filter(e => e.alive && e !== bot)
+        .sort((a, b) => distance(bot, a) - distance(bot, b))[0];
+      if (!target) return;
+
+      const dist = distance(bot, target);
+      let dx = target.x - bot.x;
+      let dy = target.y - bot.y;
+      const len = Math.hypot(dx, dy) || 1;
+
+      if (dist > 55) {
+        bot.x += (dx / len) * bot.speed * 0.82 * dt;
+        bot.y += (dy / len) * bot.speed * 0.82 * dt;
+      }
+      if (dist <= 58 && bot.attackCd <= 0) {
+        doAttack(bot);
+        bot.attackCd = 0.8 + Math.random() * 0.35;
+      }
+      clamp(bot);
+    }
+
+    function doAttack(attacker) {
+      entities.forEach(target => {
+        if (!target.alive || target === attacker) return;
+        const dist = distance(attacker, target);
+        if (dist <= 58) {
+          target.hp -= attacker.damage;
+          const dx = target.x - attacker.x;
+          const dy = target.y - attacker.y;
+          const len = Math.hypot(dx, dy) || 1;
+          target.x += (dx / len) * 14;
+          target.y += (dy / len) * 14;
+          clamp(target);
+        }
+      });
+    }
+
+    function resolveDeaths() {
+      entities.forEach(e => {
+        if (e.alive && e.hp <= 0) {
+          e.alive = false;
+          const killer = entities.filter(k => k.alive && k !== e).sort((a, b) => distance(a, e) - distance(b, e))[0];
+          if (killer) killer.kills++;
+        }
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#14213d';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      for (let x = 0; x < canvas.width; x += 50) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += 50) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+      }
+
+      entities.filter(e => e.alive).forEach(e => {
+        ctx.beginPath();
+        ctx.fillStyle = e.color;
+        ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(e.name, e.x, e.y - 26);
+
+        ctx.fillStyle = '#111';
+        ctx.fillRect(e.x - 20, e.y + 22, 40, 6);
+        ctx.fillStyle = '#22c55e';
+        ctx.fillRect(e.x - 20, e.y + 22, 40 * Math.max(0, e.hp / e.maxHp), 6);
+      });
+    }
+
+    function clamp(e) {
+      e.x = Math.max(e.r, Math.min(canvas.width - e.r, e.x));
+      e.y = Math.max(e.r, Math.min(canvas.height - e.r, e.y));
+    }
+
+    function distance(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    playBtn.addEventListener('click', startQueue);
+    cancelBtn.addEventListener('click', () => {
+      if (queueTimer) clearInterval(queueTimer);
+      showScreen(menuScreen);
+    });
+    forceStartBtn.addEventListener('click', () => startMatch(true));
+    backMenuBtn.addEventListener('click', () => {
+      const t = document.getElementById('touchHud');
+      if (t) t.remove();
+      cancelAnimationFrame(gameLoop);
+      showScreen(menuScreen);
+    });
+
+    window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
+    window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+  </script>
+</body>
+</html>

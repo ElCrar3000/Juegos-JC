@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Campana Clicker</title>
+  <style>
+    :root{
+      --bg:#0b0f16; --panel:#101a2a; --panel2:#0f1726;
+      --text:#e7eefc; --muted:#9fb1d1; --line:#1f2a40;
+      --accent:#4ea6ff; --good:#37d67a; --warn:#ffd166;
+      --radius:18px; --shadow:0 12px 40px rgba(0,0,0,.45);
+      --max:1100px;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    }
+    body{ margin:0; background:radial-gradient(1000px 600px at 20% 10%, #122044, var(--bg)); color:var(--text); }
+    .wrap{ max-width:var(--max); margin:0 auto; padding:18px; display:grid; gap:14px; grid-template-columns: 1.2fr .8fr; }
+    @media (max-width: 920px){ .wrap{ grid-template-columns: 1fr; } }
+    header{ max-width:var(--max); margin:0 auto; padding:18px 18px 0; }
+    h1{ margin:0; font-size:22px; letter-spacing:.3px; }
+    .sub{ color:var(--muted); margin-top:6px; font-size:13px; }
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{ padding:12px 14px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+    .card .bd{ padding:14px; }
+    .pill{ font-size:12px; padding:5px 10px; border:1px solid var(--line); border-radius:999px; color:var(--muted); }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .kpi{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    .kpi .box{ background:rgba(255,255,255,.02); border:1px solid var(--line); border-radius:14px; padding:10px; }
+    .kpi .label{ color:var(--muted); font-size:12px; }
+    .kpi .val{ font-size:18px; margin-top:4px; font-weight:700; }
+
+    .arena{ display:grid; gap:12px; grid-template-columns: 1fr; }
+    canvas{ width:100%; height:340px; background:linear-gradient(180deg, rgba(78,166,255,.08), rgba(0,0,0,0)); border:1px dashed rgba(78,166,255,.25); border-radius:16px; }
+
+    .btn{
+      appearance:none; border:1px solid var(--line); background:rgba(255,255,255,.03);
+      color:var(--text); padding:10px 12px; border-radius:14px; cursor:pointer;
+      transition:transform .05s ease, border-color .15s ease, background .15s ease;
+      font-weight:650;
+    }
+    .btn:hover{ border-color:rgba(78,166,255,.55); }
+    .btn:active{ transform:translateY(1px); }
+    .btn.good{ border-color:rgba(55,215,122,.4); }
+    .btn.warn{ border-color:rgba(255,209,102,.45); }
+    .btn.danger{ border-color:rgba(255,90,90,.45); }
+    .btn:disabled{ opacity:.45; cursor:not-allowed; }
+
+    .shop{ display:grid; gap:10px; }
+    .item{
+      border:1px solid var(--line); border-radius:16px; padding:10px;
+      background:rgba(255,255,255,.02);
+      display:grid; gap:6px;
+    }
+    .item .top{ display:flex; justify-content:space-between; gap:10px; align-items:center; }
+    .item .name{ font-weight:800; }
+    .item .desc{ color:var(--muted); font-size:12px; line-height:1.35; }
+    .item .meta{ color:var(--muted); font-size:12px; display:flex; gap:10px; flex-wrap:wrap; }
+    .tag{ font-size:11px; padding:3px 8px; border:1px solid var(--line); border-radius:999px; color:var(--muted); }
+
+    .log{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size:12px; color:var(--muted); max-height:190px; overflow:auto; padding-right:4px; }
+    .log div{ padding:4px 0; border-bottom:1px dashed rgba(255,255,255,.06); }
+    .tiny{ font-size:12px; color:var(--muted); }
+    .sep{ height:1px; background:var(--line); margin:10px 0; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Campana Clicker</h1>
+  <div class="sub">Clicas la campana → ganas <b>sónicos</b>. Las estrellas giran y al completar una vuelta se chocan con la campana para generar sonido.</div>
+</header>
+
+<div class="wrap">
+  <section class="card">
+    <div class="hd">
+      <div class="row">
+        <span class="pill">Sónicos: <b id="sonicos">0</b></span>
+        <span class="pill">SPS (estrellas): <b id="sps">0</b></span>
+        <span class="pill">Prestigio: <b id="prestigio">0</b></span>
+      </div>
+      <div class="row">
+        <span class="pill">Click: <b id="clickVal">1</b> / clic</span>
+        <span class="pill">Bono Prestigio: <b id="pbonus">x1.00</b></span>
+      </div>
+    </div>
+
+    <div class="bd arena">
+      <div class="kpi">
+        <div class="box">
+          <div class="label">Estrellas activas</div>
+          <div class="val"><span id="starsCount">0</span></div>
+          <div class="tiny" id="starsRule">+1% por Lucía: (bloqueado hasta Zolo)</div>
+        </div>
+        <div class="box">
+          <div class="label">Total ganado (histórico)</div>
+          <div class="val"><span id="totalEarned">0</span></div>
+          <div class="tiny">Sirve para calcular el prestigio.</div>
+        </div>
+      </div>
+
+      <canvas id="cv" width="900" height="340"></canvas>
+
+      <div class="row">
+        <button class="btn good" id="btnBell">🔔 Campana</button>
+        <button class="btn" id="btnSave">💾 Guardar</button>
+        <button class="btn danger" id="btnReset">♻️ Reset</button>
+        <button class="btn" id="btnPrestige">📻 Prestigiar</button>
+      </div>
+
+      <div class="sep"></div>
+      <div class="log" id="log"></div>
+    </div>
+  </section>
+
+  <aside class="card">
+    <div class="hd">
+      <div class="row"><b>Tienda</b><span class="tag">Lucía / Candelo / Zolo</span></div>
+      <span class="pill">Auto-guardado ✅</span>
+    </div>
+    <div class="bd shop" id="shop"></div>
+  </aside>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const clamp = (n,a,b)=>Math.max(a,Math.min(b,n));
+  const fmt = (n) => {
+    if (!isFinite(n)) return "∞";
+    if (n < 1000) return String(Math.floor(n));
+    const u = ["K","M","B","T","Qa","Qi"];
+    let i=-1; while(n>=1000 && i<u.length-1){ n/=1000; i++; }
+    return (n>=100?n.toFixed(0):n>=10?n.toFixed(1):n.toFixed(2))+u[i];
+  };
+  const now = ()=>performance.now();
+
+  function log(msg){
+    const el = $("log");
+    const d = document.createElement("div");
+    d.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    el.prepend(d);
+    while(el.children.length>60) el.removeChild(el.lastChild);
+  }
+
+  // ----- Simple "ding" synth (sin archivos)
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  let ac = null;
+  function ding(){
+    try{
+      if(!ac) ac = new AudioCtx();
+      const t0 = ac.currentTime;
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(880, t0);
+      o.frequency.exponentialRampToValueAtTime(1320, t0+0.06);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.25, t0+0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0+0.12);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t0); o.stop(t0+0.13);
+    }catch{}
+  }
+
+  // ----- State
+  const DEFAULT = {
+    sonicos: 0,
+    totalEarned: 0,
+    prestigio: 0,
+
+    hasEstrellaMadre: false,
+
+    // Lucías son "cantidad" (múltiples)
+    lucias: 0,
+
+    // Candelo y Zolo son únicos (1 cada uno)
+    hasCandelo: false,
+    hasZolo: false
+  };
+  const KEY="campana_clicker_v2";
+  const state = load();
+
+  function load(){
+    try{
+      const raw=localStorage.getItem(KEY);
+      if(!raw) return structuredClone(DEFAULT);
+      return {...structuredClone(DEFAULT), ...JSON.parse(raw)};
+    }catch{ return structuredClone(DEFAULT); }
+  }
+  function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+
+  // ----- Rules (según tu mensaje)
+  // Click campana: 1 por clic * bono prestigio (esto sí afecta al click)
+  function prestigeBonus(){ return 1 + state.prestigio*0.05; }
+  function clickValue(){ return 1 * prestigeBonus(); }
+
+  // Bono de estrellas:
+  // +1% por cada Lucía SOLO si tienes Zolo, y SOLO a estrellas.
+  function starLuciaBonus(){
+    if(!state.hasZolo) return 1; // bloqueado hasta Zolo
+    return 1 + state.lucias*0.01;
+  }
+
+  // Estrellas existentes: cada Lucía es una estrella amarilla.
+  // Candelo: estrella roja única.
+  // Zolo: estrella morada única.
+  function totalStars(){
+    if(!state.hasEstrellaMadre) return 0;
+    let n = state.lucias;
+    if(state.hasCandelo) n += 1;
+    if(state.hasZolo) n += 1;
+    return n;
+  }
+
+  // Ganancia por choque:
+  // Lucía = 1
+  // Candelo = 2
+  // Zolo = 8
+  function gainForType(type){
+    if(type==="lucia") return 1;
+    if(type==="candelo") return 2;
+    if(type==="zolo") return 8;
+    return 0;
+  }
+
+  // ----- Star simulation (órbita + dash + choque)
+  const cv=$("cv"), ctx=cv.getContext("2d");
+  const W=cv.width, H=cv.height;
+  const center = { x: W*0.5, y: H*0.52 };
+  const bellR = 46;
+
+  function makeStar(type, idx){
+    // Cada estrella tiene una fase distinta
+    const baseR = 92 + (idx%3)*14;
+    return {
+      type,
+      baseR,
+      angle: Math.random()*Math.PI*2,
+      speed: 0.9 + Math.random()*0.35, // rad/s
+      // dash state
+      mode: "orbit", // orbit | dash | return
+      dashT: 0,
+      dashDur: 0.18, // s
+      returnDur: 0.20,
+      orbitPos: {x:0,y:0},
+      pos: {x:0,y:0},
+      prevAngle: 0
+    };
+  }
+
+  // Construye lista según state
+  let stars = [];
+  function rebuildStars(){
+    stars = [];
+    if(!state.hasEstrellaMadre) return;
+
+    // lucias (amarillas)
+    for(let i=0;i<state.lucias;i++) stars.push(makeStar("lucia", i));
+
+    // candelo (roja)
+    if(state.hasCandelo) stars.push(makeStar("candelo", 100));
+
+    // zolo (morada)
+    if(state.hasZolo) stars.push(makeStar("zolo", 200));
+  }
+  rebuildStars();
+
+  // ----- Shop
+  const shopItems = [
+    {
+      id:"estrellaMadre",
+      name:"Estrella madre",
+      desc:"Desbloquea el sistema de estrellas.",
+      cost: 100,
+      canBuy: ()=> !state.hasEstrellaMadre && state.sonicos>=100,
+      buy: ()=>{ state.hasEstrellaMadre=true; rebuildStars(); log("Comprada: Estrella madre."); }
+    },
+    {
+      id:"lucia",
+      name:"Lucía ⭐ (amarilla)",
+      desc:"Gira, completa la vuelta, se choca con la campana y da 1 sónico.",
+      cost: ()=>Math.floor(60*Math.pow(1.18, state.lucias)),
+      canBuy: ()=> state.hasEstrellaMadre && state.sonicos>=Math.floor(60*Math.pow(1.18, state.lucias)),
+      buy: ()=>{
+        state.lucias++;
+        rebuildStars();
+        log(`Comprada: Lucía (ahora ${state.lucias}).`);
+      }
+    },
+    {
+      id:"candelo",
+      name:"Candelo ⭐ (roja)",
+      desc:"Única. Igual que Lucía, pero al chocar da 2 sónicos.",
+      cost: 1200,
+      canBuy: ()=> state.hasEstrellaMadre && !state.hasCandelo && state.sonicos>=1200,
+      buy: ()=>{ state.hasCandelo=true; rebuildStars(); log("Comprado: Candelo (roja, +2 por choque)."); }
+    },
+    {
+      id:"zolo",
+      name:"Zolo ⭐ (morada)",
+      desc:"Única. Igual que Lucía, pero al chocar da 8 sónicos. Activa +1% por Lucía (solo estrellas).",
+      cost: 6500,
+      canBuy: ()=> state.hasEstrellaMadre && !state.hasZolo && state.sonicos>=6500,
+      buy: ()=>{ state.hasZolo=true; rebuildStars(); log("Comprado: Zolo (morada, +8 por choque, activa +1% por Lucía a estrellas)."); }
+    }
+  ];
+
+  function renderShop(){
+    const root=$("shop");
+    root.innerHTML="";
+    for(const it of shopItems){
+      const cost = (typeof it.cost==="function")?it.cost():it.cost;
+      const can = it.canBuy();
+      const div=document.createElement("div");
+      div.className="item";
+      div.innerHTML=`
+        <div class="top">
+          <div class="name">${it.name}</div>
+          <button class="btn ${can?"good":""}" ${can?"":"disabled"} data-buy="${it.id}">Comprar</button>
+        </div>
+        <div class="desc">${it.desc}</div>
+        <div class="meta">
+          <span class="tag">Coste: ${fmt(cost)}</span>
+        </div>
+      `;
+      root.appendChild(div);
+    }
+    root.querySelectorAll("[data-buy]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id=btn.getAttribute("data-buy");
+        const it=shopItems.find(x=>x.id===id);
+        const cost=(typeof it.cost==="function")?it.cost():it.cost;
+        if(!it.canBuy()) return;
+        state.sonicos -= cost;
+        it.buy();
+        save();
+        updateUI();
+      });
+    });
+  }
+
+  // ----- Prestige (simple)
+  function prestigeGainFromTotal(){ return Math.floor(state.totalEarned/50000); }
+  function doPrestige(){
+    const extra = prestigeGainFromTotal();
+    const keep = state.prestigio + extra;
+    Object.assign(state, structuredClone(DEFAULT));
+    state.prestigio = keep;
+    rebuildStars();
+    log(`¡Prestigio! Te quedas con ${keep} prestigio.`);
+  }
+
+  // ----- Canvas drawing: star shape
+  function drawStar(x,y,r,fill,stroke){
+    ctx.save();
+    ctx.beginPath();
+    const spikes=5;
+    const rot = Math.PI/2*3;
+    let ang = rot;
+    const outer = r;
+    const inner = r*0.45;
+    ctx.moveTo(x, y - outer);
+    for(let i=0;i<spikes;i++){
+      ctx.lineTo(x + Math.cos(ang)*outer, y + Math.sin(ang)*outer);
+      ang += Math.PI/spikes;
+      ctx.lineTo(x + Math.cos(ang)*inner, y + Math.sin(ang)*inner);
+      ang += Math.PI/spikes;
+    }
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = stroke;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function colorFor(type){
+    if(type==="lucia") return ["rgba(255,209,102,.90)","rgba(255,209,102,.25)"]; // amarilla
+    if(type==="candelo") return ["rgba(255,90,90,.90)","rgba(255,90,90,.25)"];   // roja
+    if(type==="zolo") return ["rgba(170,120,255,.90)","rgba(170,120,255,.25)"];  // morada
+    return ["rgba(255,255,255,.8)","rgba(255,255,255,.2)"];
+  }
+
+  // ----- Simulation
+  let last=now();
+  let sps=0;
+
+  function starOrbitPos(st, t){
+    const r = st.baseR + 10*Math.sin(t*0.7 + st.baseR*0.01);
+    return {
+      x: center.x + Math.cos(st.angle)*r,
+      y: center.y + Math.sin(st.angle)*r
+    };
+  }
+
+  function update(dt){
+    const t = performance.now()/1000;
+    sps = 0;
+
+    for(const st of stars){
+      if(st.mode==="orbit"){
+        st.prevAngle = st.angle;
+        st.angle += st.speed*dt;
+
+        // normaliza para detectar vuelta completa (cruce de 2π)
+        const prevWrap = st.prevAngle % (Math.PI*2);
+        const nowWrap  = st.angle % (Math.PI*2);
+
+        st.orbitPos = starOrbitPos(st, t);
+        st.pos.x = st.orbitPos.x;
+        st.pos.y = st.orbitPos.y;
+
+        // Detecta "vuelta completa": cuando el ángulo envuelve (ej. 6.2 -> 0.1)
+        if(nowWrap < prevWrap){
+          st.mode="dash";
+          st.dashT=0;
+        }
+
+      } else if(st.mode==="dash"){
+        st.dashT += dt;
+        const k = clamp(st.dashT / st.dashDur, 0, 1);
+        // easing "pum" hacia la campana
+        const ease = 1 - Math.pow(1-k, 3);
+        st.pos.x = st.orbitPos.x + (center.x - st.orbitPos.x) * ease;
+        st.pos.y = st.orbitPos.y + (center.y - st.orbitPos.y) * ease;
+
+        if(k>=1){
+          // choque => gana sónicos y sonido
+          const baseGain = gainForType(st.type);
+          const gain = baseGain * starLuciaBonus() * prestigeBonus(); // prestigio sí puede afectar, pero el +1% solo estrellas
+          state.sonicos += gain;
+          state.totalEarned += gain;
+          ding();
+
+          // contabiliza sps aproximado: ganancia por ciclo / tiempo por vuelta
+          const period = (Math.PI*2)/st.speed;
+          sps += (baseGain * starLuciaBonus() * prestigeBonus()) / period;
+
+          st.mode="return";
+          st.dashT=0;
+          log(`${st.type.toUpperCase()}: choque +${fmt(gain)} sónicos`);
+        }
+
+      } else if(st.mode==="return"){
+        st.dashT += dt;
+        const k = clamp(st.dashT / st.returnDur, 0, 1);
+        const ease = 1 - Math.pow(1-k, 2);
+        const target = starOrbitPos(st, t);
+        st.pos.x = center.x + (target.x - center.x) * ease;
+        st.pos.y = center.y + (target.y - center.y) * ease;
+        if(k>=1){
+          st.mode="orbit";
+        }
+      }
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+
+    // glow
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, bellR+18, 0, Math.PI*2);
+    ctx.fillStyle="rgba(78,166,255,.10)";
+    ctx.fill();
+
+    // bell
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, bellR, 0, Math.PI*2);
+    ctx.fillStyle="rgba(255,255,255,.06)";
+    ctx.fill();
+    ctx.lineWidth=2;
+    ctx.strokeStyle="rgba(78,166,255,.35)";
+    ctx.stroke();
+
+    ctx.font="34px system-ui";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillStyle="rgba(231,238,252,.95)";
+    ctx.fillText("🔔", center.x, center.y+2);
+
+    // orbits + stars
+    if(stars.length){
+      for(const st of stars){
+        // orbit trace
+        if(st.mode==="orbit"){
+          const r = st.baseR;
+          ctx.beginPath();
+          ctx.arc(center.x, center.y, r, 0, Math.PI*2);
+          ctx.strokeStyle="rgba(255,255,255,.03)";
+          ctx.lineWidth=1;
+          ctx.stroke();
+        }
+
+        const [fill,stroke]=colorFor(st.type);
+        drawStar(st.pos.x, st.pos.y, 10, fill, stroke);
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  // ----- UI
+  function updateUI(){
+    $("sonicos").textContent=fmt(state.sonicos);
+    $("prestigio").textContent=fmt(state.prestigio);
+    $("clickVal").textContent=fmt(clickValue());
+    $("totalEarned").textContent=fmt(state.totalEarned);
+    $("starsCount").textContent=fmt(totalStars());
+    $("pbonus").textContent="x"+prestigeBonus().toFixed(2);
+
+    const rule = state.hasZolo
+      ? `+1% por Lucía (solo estrellas): ACTIVO → x${starLuciaBonus().toFixed(2)}`
+      : `+1% por Lucía (solo estrellas): bloqueado hasta Zolo`;
+    $("starsRule").textContent = rule;
+
+    $("sps").textContent = (sps<10? sps.toFixed(2) : fmt(sps));
+    renderShop();
+    save();
+  }
+
+  // ----- Buttons
+  $("btnBell").addEventListener("click", ()=>{
+    const gain = clickValue();
+    state.sonicos += gain;
+    state.totalEarned += gain;
+    ding();
+    updateUI();
+  });
+
+  $("btnPrestige").addEventListener("click", ()=>{
+    const extra=prestigeGainFromTotal();
+    if(extra<=0 && state.prestigio===0){
+      log("Prestigio: aún falta progreso (total ganado).");
+      return;
+    }
+    if(!confirm(`¿Prestigiar? Ganarás +${extra} prestigio extra por progreso.`)) return;
+    doPrestige();
+    updateUI();
+  });
+
+  $("btnSave").addEventListener("click", ()=>{ save(); log("Guardado."); });
+  $("btnReset").addEventListener("click", ()=>{
+    if(!confirm("¿Reset total?")) return;
+    localStorage.removeItem(KEY);
+    location.reload();
+  });
+
+  // ----- Main loop
+  log("Listo. Compra Estrella madre y luego estrellas. 🔔⭐");
+  updateUI();
+
+  let lastT = now();
+  function loop(){
+    const t=now();
+    const dt = (t-lastT)/1000;
+    lastT=t;
+    update(dt);
+    updateUI(); // mantiene SPS y números vivos
+    requestAnimationFrame(loop);
+  }
+
+  requestAnimationFrame(loop);
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>

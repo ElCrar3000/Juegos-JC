@@ -1,0 +1,37 @@
+{
+    "activeFile": "",
+    "expandedProjectPaths": [
+    ],
+    "file.lastUsedOpenFilter": "Todos los archivos (*)",
+    "fileStates": {
+        "Bloques varios.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "ChatGPT Image 20 abr 2026, 08_56_16.tsx": {
+            "scaleInDock": 1
+        },
+        "sin nombre.tmx": {
+            "scale": 2.529375,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 248.08500123548305,
+                "y": 156.3627378304917
+            }
+        }
+    },
+    "last.externalTilesetPath": "C:/Users/jccar/OneDrive/Desktop/Juegos JC",
+    "last.imagePath": "C:/Users/jccar/OneDrive/Desktop/Juegos JC",
+    "map.height": 10,
+    "map.lastUsedFormat": "tmx",
+    "map.width": 15,
+    "openFiles": [
+    ],
+    "project": "sin nombre.tiled-project",
+    "recentFiles": [
+        "Bloques varios.tsx",
+        "sin nombre.tmx"
+    ],
+    "tileset.lastUsedFilter": "Archivos de conjuntos de patrones Tiled (*.tsx *.xml)",
+    "tileset.lastUsedFormat": "tsx"
+}

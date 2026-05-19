@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Infinity Evolution V1</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #08111f;
+      color: #fff;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle at center, #16243d 0%, #08111f 65%, #050914 100%);
+    }
+    .hud {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 5;
+      background: rgba(0,0,0,.42);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      padding: 12px 14px;
+      min-width: 250px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    .hud h1 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      color: #8ed6ff;
+    }
+    .hud .row {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      margin-left: 6px;
+      font-size: 12px;
+    }
+    .top-buttons {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    button {
+      border: none;
+      border-radius: 10px;
+      background: #1d6ff2;
+      color: #fff;
+      padding: 9px 12px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    button:hover { filter: brightness(1.08); }
+    button.alt { background: #27344d; }
+    button.green { background: #139c55; }
+    button.red { background: #c53d3d; }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      background: rgba(3,6,12,.72);
+      backdrop-filter: blur(6px);
+    }
+    .panel {
+      width: min(900px, 92vw);
+      max-height: 90vh;
+      overflow: auto;
+      background: linear-gradient(180deg, #111b2e 0%, #0a1120 100%);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.45);
+    }
+    .panel h2 {
+      margin: 0 0 10px;
+      color: #9be0ff;
+    }
+    .panel p { color: rgba(255,255,255,.88); line-height: 1.45; }
+
+    .comic {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .comic-card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .comic-drawing {
+      height: 150px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, #24395a 0%, #111c2f 100%);
+    }
+    .bubble {
+      position: absolute;
+      background: rgba(255,255,255,.95);
+      color: #111;
+      padding: 6px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+      max-width: 120px;
+    }
+    .circle-char {
+      position: absolute;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 3px solid rgba(0,0,0,.25);
+    }
+    .house {
+      position: absolute;
+      bottom: 15px;
+      left: 20px;
+      width: 80px;
+      height: 60px;
+      background: #8f6545;
+      border-radius: 6px;
+    }
+    .house::before {
+      content: "";
+      position: absolute;
+      left: -8px;
+      top: -28px;
+      border-left: 48px solid transparent;
+      border-right: 48px solid transparent;
+      border-bottom: 30px solid #5f342c;
+    }
+    .window {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: #f7d77c;
+      top: 18px;
+      left: 12px;
+      border-radius: 3px;
+    }
+    .window.w2 { left: 48px; }
+    .door {
+      position: absolute;
+      width: 18px;
+      height: 28px;
+      background: #4c2c23;
+      bottom: 0;
+      left: 31px;
+      border-radius: 4px 4px 0 0;
+    }
+    .ship {
+      position: absolute;
+      width: 130px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #98c6ff 0%, #5a7bb4 80%);
+      top: 18px;
+      right: 16px;
+      box-shadow: 0 0 20px rgba(131,190,255,.55);
+    }
+    .ship::after {
+      content: "";
+      position: absolute;
+      width: 56px;
+      height: 26px;
+      border-radius: 50% 50% 40% 40%;
+      background: rgba(180,220,255,.92);
+      top: -12px;
+      left: 36px;
+    }
+    .beam {
+      position: absolute;
+      right: 52px;
+      top: 58px;
+      width: 0;
+      height: 0;
+      border-left: 24px solid transparent;
+      border-right: 24px solid transparent;
+      border-top: 90px solid rgba(95,255,211,.22);
+      filter: blur(1px);
+    }
+
+    .shop-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+    .body-shop {
+      height: 520px;
+      border-radius: 18px;
+      background: radial-gradient(circle at top, rgba(69,110,177,.55), rgba(11,19,34,.9));
+      border: 1px solid rgba(255,255,255,.08);
+      position: relative;
+      overflow: hidden;
+    }
+    .body-outline {
+      position: absolute;
+      inset: 30px 30px 30px 30px;
+    }
+    .shop-part {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: white;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      border: 2px solid rgba(255,255,255,.16);
+      background: rgba(35,57,98,.55);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+      transition: .15s ease;
+      user-select: none;
+    }
+    .shop-part:hover {
+      transform: scale(1.03);
+      background: rgba(46,76,128,.75);
+    }
+    .head {
+      width: 92px; height: 92px; border-radius: 50%; left: 114px; top: 8px;
+    }
+    .heart {
+      width: 94px; height: 82px; left: 113px; top: 137px;
+      border-radius: 22px;
+      background: rgba(168,30,58,.78);
+    }
+    .hands {
+      width: 250px; height: 60px; left: 33px; top: 240px; border-radius: 22px;
+    }
+    .legs {
+      width: 160px; height: 160px; left: 80px; top: 330px; border-radius: 20px;
+    }
+    .part-card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .part-card h3 { margin: 0 0 6px; color: #c4e8ff; }
+    .part-card small { color: rgba(255,255,255,.7); }
+
+    .gameover-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .stat-box {
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .tiny { font-size: 12px; color: rgba(255,255,255,.7); }
+    .big { font-size: 24px; font-weight: 800; margin-top: 4px; }
+
+    .footer-note {
+      position: fixed;
+      bottom: 10px;
+      right: 12px;
+      z-index: 5;
+      background: rgba(0,0,0,.35);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: rgba(255,255,255,.8);
+    }
+
+    @media (max-width: 860px) {
+      .shop-grid { grid-template-columns: 1fr; }
+      .body-shop { height: 430px; }
+      .hud { min-width: 210px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div class="hud" id="hud">
+    <h1>Infinity Evolution V1</h1>
+    <div class="row">❤️ Vida: <strong id="hpText">100</strong> / <strong id="maxHpText">100</strong></div>
+    <div class="row">🌊 Oleada: <strong id="waveText">1</strong></div>
+    <div class="row">👾 Bajas: <strong id="killsText">0</strong></div>
+    <div class="row">💎 Cristales: <strong id="crystalsText">0</strong></div>
+    <div class="row">📦 Cofres: <strong id="chestsText">0</strong></div>
+    <div class="row">⚔️ Daño: <strong id="damageText">4</strong><span class="badge">Base</span></div>
+    <div class="row">🏃 Velocidad: <strong id="speedText">3.00</strong></div>
+    <div class="top-buttons">
+      <button id="startBtn" class="green">Jugar</button>
+      <button id="storyBtn" class="alt">Historia</button>
+      <button id="shopBtn" class="alt">Tienda</button>
+      <button id="resetBtn" class="red">Reiniciar guardado</button>
+    </div>
+    <div class="row tiny" style="margin-top:10px;">
+      Movimiento: WASD o flechas · Sprint: Shift · Disparo automático
+    </div>
+  </div>
+
+  <div class="footer-note">BSN: 35% de soltar cofre. El cofre da cristales o poderes temporales.</div>
+
+  <div class="overlay" id="menuOverlay" style="display:flex;">
+    <div class="panel">
+      <h2>Infinity Evolution V1</h2>
+      <p>
+        Versión base: historia simple, personaje único, oleadas, tienda permanente con cristales,
+        enemigos negro/amarillo/rojo/BSN y cofres de BSN con mejoras temporales.
+      </p>
+      <div class="top-buttons">
+        <button id="menuPlayBtn" class="green">Empezar</button>
+        <button id="menuStoryBtn" class="alt">Ver historia</button>
+        <button id="menuShopBtn" class="alt">Abrir tienda</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="storyOverlay">
+    <div class="panel">
+      <h2>Historia inicial</h2>
+      <div class="comic">
+        <div class="comic-card"><div class="comic-drawing"><div class="house"><div class="window"></div><div class="window w2"></div><div class="door"></div></div><div class="circle-char" style="background:#7cd6ff; left:118px; bottom:22px;"></div><div class="circle-char" style="background:#f6a4d8; left:165px; bottom:24px; width:38px; height:38px;"></div><div class="circle-char" style="background:#fff2a0; left:208px; bottom:28px; width:24px; height:24px;"></div><div class="bubble" style="left:118px; top:14px;">Un día normal.</div></div><strong>1. Casa</strong><p>El protagonista está en casa con su mujer y su bebé. Todo parece tranquilo.</p></div>
+        <div class="comic-card"><div class="comic-drawing"><div class="house" style="left:8px; transform:scale(.8); opacity:.75;"><div class="window"></div><div class="window w2"></div><div class="door"></div></div><div class="circle-char" style="background:#7cd6ff; left:110px; bottom:28px;"></div><div class="bubble" style="left:136px; top:24px;">Me voy al trabajo.</div></div><strong>2. Salida</strong><p>Sales de casa. No sabes que ese día el mundo va a cambiar.</p></div>
+        <div class="comic-card"><div class="comic-drawing"><div class="ship"></div><div class="beam"></div><div class="circle-char" style="background:#7cd6ff; left:48px; bottom:22px;"></div><div class="circle-char" style="background:#111; left:180px; bottom:18px; width:28px; height:28px;"></div><div class="circle-char" style="background:#facc15; left:220px; bottom:22px; width:30px; height:30px;"></div><div class="bubble" style="left:10px; top:12px;">¿Qué demonios es eso?</div></div><strong>3. Invasión</strong><p>Una nave alienígena aparece y empiezan a caer enemigos por todas partes.</p></div>
+        <div class="comic-card"><div class="comic-drawing"><div class="house"><div class="window" style="background:#1d2b45"></div><div class="window w2" style="background:#1d2b45"></div><div class="door"></div></div><div class="circle-char" style="background:#7cd6ff; left:120px; bottom:22px;"></div><div class="bubble" style="left:102px; top:12px;">No hay nadie...</div></div><strong>4. Vacío</strong><p>Vuelves a casa. Está vacía. Se acabó la parte fácil.</p></div>
+        <div class="comic-card"><div class="comic-drawing"><div class="circle-char" style="background:#7cd6ff; left:112px; bottom:28px;"></div><div style="position:absolute; left:150px; bottom:38px; width:52px; height:10px; background:#3b2c22; border-radius:6px;"></div><div style="position:absolute; left:196px; bottom:34px; width:16px; height:16px; background:#5b5b5b; border-radius:2px;"></div><div class="bubble" style="left:12px; top:12px;">Aguanta. Pelea. Evoluciona.</div></div><strong>5. Resistencia</strong><p>Recuperas tu equipo y decides sobrevivir. Aquí empieza Infinity Evolution.</p></div>
+      </div>
+      <div class="top-buttons" style="margin-top:16px;"><button id="storyCloseBtn" class="green">Cerrar</button></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="shopOverlay">
+    <div class="panel">
+      <h2>Tienda permanente</h2>
+      <p>Gasta cristales en el cuerpo del personaje. Cada compra es permanente.</p>
+      <div class="shop-grid">
+        <div class="body-shop">
+          <div class="body-outline">
+            <div class="shop-part head" data-part="head">Cabeza<br><span class="tiny">Cadencia</span></div>
+            <div class="shop-part heart" data-part="heart">Corazón<br><span class="tiny">Vida</span></div>
+            <div class="shop-part hands" data-part="hands">Manos<br><span class="tiny">Daño</span></div>
+            <div class="shop-part legs" data-part="legs">Piernas<br><span class="tiny">Velocidad</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="part-card"><h3>💎 Cristales disponibles: <span id="shopCrystalText">0</span></h3><small>Clic en una parte del cuerpo para mejorarla.</small></div>
+          <div class="part-card"><h3>Cabeza — cadencia</h3><p>Reduce ligeramente el tiempo entre disparos.</p><small>Coste actual: <span id="costHead">8</span> cristales · Nivel: <span id="levelHead">0</span></small></div>
+          <div class="part-card"><h3>Corazón — vida</h3><p>Aumenta la vida máxima del personaje.</p><small>Coste actual: <span id="costHeart">10</span> cristales · Nivel: <span id="levelHeart">0</span></small></div>
+          <div class="part-card"><h3>Manos — daño</h3><p>Sube el daño base de cada disparo.</p><small>Coste actual: <span id="costHands">10</span> cristales · Nivel: <span id="levelHands">0</span></small></div>
+          <div class="part-card"><h3>Piernas — velocidad</h3><p>Te mueves más rápido y el sprint rinde mejor.</p><small>Coste actual: <span id="costLegs">9</span> cristales · Nivel: <span id="levelLegs">0</span></small></div>
+          <div class="top-buttons"><button id="shopCloseBtn" class="green">Cerrar tienda</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="gameOverOverlay">
+    <div class="panel" style="max-width:640px;">
+      <h2>Has caído</h2>
+      <p>Los alienígenas han ganado esta ronda. Qué feo por su parte.</p>
+      <div class="gameover-stats">
+        <div class="stat-box"><div class="tiny">Oleada alcanzada</div><div class="big" id="goWave">1</div></div>
+        <div class="stat-box"><div class="tiny">Enemigos eliminados</div><div class="big" id="goKills">0</div></div>
+        <div class="stat-box"><div class="tiny">Cristales ganados</div><div class="big" id="goCrystals">0</div></div>
+        <div class="stat-box"><div class="tiny">Cofres abiertos</div><div class="big" id="goOpened">0</div></div>
+      </div>
+      <div class="top-buttons"><button id="retryBtn" class="green">Volver a jugar</button><button id="goShopBtn" class="alt">Tienda</button></div>
+    </div>
+  </div>
+
+  <script>
+    var canvas = document.getElementById('game');
+    var ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    var SAVE_KEY = 'infinity_evolution_v1_save';
+
+    function getDefaultSave() {
+      return {
+        crystals: 0,
+        levels: { head: 0, heart: 0, hands: 0, legs: 0 }
+      };
+    }
+
+    function loadSave() {
+      try {
+        var raw = JSON.parse(localStorage.getItem(SAVE_KEY));
+        if (!raw) return getDefaultSave();
+        return {
+          crystals: raw.crystals || 0,
+          levels: {
+            head: raw.levels && raw.levels.head || 0,
+            heart: raw.levels && raw.levels.heart || 0,
+            hands: raw.levels && raw.levels.hands || 0,
+            legs: raw.levels && raw.levels.legs || 0
+          }
+        };
+      } catch (e) {
+        return getDefaultSave();
+      }
+    }
+
+    function saveToStorage() {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+    }
+
+    var saveData = loadSave();
+
+    var ui = {
+      hpText: document.getElementById('hpText'),
+      maxHpText: document.getElementById('maxHpText'),
+      waveText: document.getElementById('waveText'),
+      killsText: document.getElementById('killsText'),
+      crystalsText: document.getElementById('crystalsText'),
+      chestsText: document.getElementById('chestsText'),
+      damageText: document.getElementById('damageText'),
+      speedText: document.getElementById('speedText'),
+      shopCrystalText: document.getElementById('shopCrystalText'),
+      costHead: document.getElementById('costHead'),
+      costHeart: document.getElementById('costHeart'),
+      costHands: document.getElementById('costHands'),
+      costLegs: document.getElementById('costLegs'),
+      levelHead: document.getElementById('levelHead'),
+      levelHeart: document.getElementById('levelHeart'),
+      levelHands: document.getElementById('levelHands'),
+      levelLegs: document.getElementById('levelLegs'),
+      goWave: document.getElementById('goWave'),
+      goKills: document.getElementById('goKills'),
+      goCrystals: document.getElementById('goCrystals'),
+      goOpened: document.getElementById('goOpened')
+    };
+
+    var overlays = {
+      menu: document.getElementById('menuOverlay'),
+      story: document.getElementById('storyOverlay'),
+      shop: document.getElementById('shopOverlay'),
+      over: document.getElementById('gameOverOverlay')
+    };
+
+    var keys = {};
+    window.addEventListener('keydown', function(e) { keys[e.key.toLowerCase()] = true; });
+    window.addEventListener('keyup', function(e) { keys[e.key.toLowerCase()] = false; });
+
+    var gameState = null;
+    var player = null;
+    var enemies = [];
+    var bullets = [];
+    var particles = [];
+    var floatingTexts = [];
+
+    function rand(min, max) { return Math.random() * (max - min) + min; }
+    function dist(ax, ay, bx, by) { return Math.hypot(bx - ax, by - ay); }
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+    function getStatBonuses() {
+      return {
+        maxHp: 100 + saveData.levels.heart * 12,
+        damage: 4 + saveData.levels.hands * 1,
+        speed: 3 + saveData.levels.legs * 0.18,
+        shootCooldown: Math.max(10, 28 - saveData.levels.head * 1.2),
+        critChance: saveData.levels.head * 0.01
+      };
+    }
+
+    function createPlayer() {
+      var b = getStatBonuses();
+      return {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        r: 20,
+        maxHp: b.maxHp,
+        hp: b.maxHp,
+        damage: b.damage,
+        speed: b.speed,
+        baseShootCooldown: b.shootCooldown,
+        shootTimer: 0,
+        invuln: 0,
+        sprintEnergy: 100,
+        critChance: b.critChance
+      };
+    }
+
+    function getPartCost(part) {
+      var level = saveData.levels[part];
+      var base = { head: 8, heart: 10, hands: 10, legs: 9 }[part];
+      return Math.floor(base + level * (part === 'hands' ? 5 : 4));
+    }
+
+    function buyUpgrade(part) {
+      var cost = getPartCost(part);
+      if (saveData.crystals < cost) {
+        alert('Te faltan cristales.');
+        return;
+      }
+      saveData.crystals -= cost;
+      saveData.levels[part] += 1;
+      saveToStorage();
+      updateShopUI();
+      if (player) {
+        var px = player.x;
+        var py = player.y;
+        player = createPlayer();
+        player.x = px;
+        player.y = py;
+      }
+      updateHUD();
+    }
+
+    function updateShopUI() {
+      ui.shopCrystalText.textContent = saveData.crystals;
+      ui.costHead.textContent = getPartCost('head');
+      ui.costHeart.textContent = getPartCost('heart');
+      ui.costHands.textContent = getPartCost('hands');
+      ui.costLegs.textContent = getPartCost('legs');
+      ui.levelHead.textContent = saveData.levels.head;
+      ui.levelHeart.textContent = saveData.levels.heart;
+      ui.levelHands.textContent = saveData.levels.hands;
+      ui.levelLegs.textContent = saveData.levels.legs;
+    }
+
+    var shopParts = document.querySelectorAll('.shop-part');
+    for (var i = 0; i < shopParts.length; i++) {
+      shopParts[i].addEventListener('click', function() {
+        buyUpgrade(this.getAttribute('data-part'));
+      });
+    }
+
+    function openOverlay(name) {
+      overlays.menu.style.display = 'none';
+      overlays.story.style.display = 'none';
+      overlays.shop.style.display = 'none';
+      overlays.over.style.display = 'none';
+      if (name) overlays[name].style.display = 'flex';
+      if (!gameState) return;
+      gameState.paused = !!name;
+      updateShopUI();
+    }
+
+    function spawnFloatingText(x, y, text, color, size) {
+      floatingTexts.push({ x: x, y: y, text: text, color: color || '#fff', size: size || 14, life: 45 });
+    }
+
+    function spawnParticles(x, y, color, amount, power) {
+      amount = amount || 10;
+      power = power || 2.2;
+      for (var i = 0; i < amount; i++) {
+        var a = rand(0, Math.PI * 2);
+        var s = rand(0.5, power);
+        particles.push({
+          x: x,
+          y: y,
+          dx: Math.cos(a) * s,
+          dy: Math.sin(a) * s,
+          life: rand(20, 40),
+          color: color,
+          size: rand(2, 4)
+        });
+      }
+    }
+
+    function createChestReward() {
+      var roll = Math.random();
+      if (roll < 0.50) return { type: 'crystals', amount: 5, label: '+5 cristales' };
+      if (roll < 0.75) return { type: 'crystals', amount: 10, label: '+10 cristales' };
+      if (roll < 0.80) return { type: 'crystals', amount: 30, label: '+30 cristales' };
+      if (roll < 0.87) return { type: 'clone', label: 'Mini clon' };
+      if (roll < 0.94) return { type: 'explosive', label: 'Balas explosivas' };
+      return { type: 'double', label: 'Disparo doble' };
+    }
+
+    function applyChestReward(reward, x, y) {
+      gameState.openedChests++;
+      if (reward.type === 'crystals') {
+        saveData.crystals += reward.amount;
+        saveToStorage();
+      } else if (reward.type === 'clone') {
+        gameState.clone.active = true;
+        gameState.clone.life = 800;
+      } else if (reward.type === 'explosive') {
+        gameState.tempExplosive = 900;
+      } else if (reward.type === 'double') {
+        gameState.tempDouble = 900;
+      }
+      spawnFloatingText(x, y, '📦 ' + reward.label, '#8ff1ff', 16);
+      updateHUD();
+    }
+
+    function startRun() {
+      player = createPlayer();
+      enemies = [];
+      bullets = [];
+      particles = [];
+      floatingTexts = [];
+
+      gameState = {
+        running: true,
+        paused: false,
+        wave: 1,
+        kills: 0,
+        runCrystals: 0,
+        chestCount: 0,
+        openedChests: 0,
+        spawnTimer: 0,
+        waveTimer: 0,
+        waveDuration: 720,
+        tempExplosive: 0,
+        tempDouble: 0,
+        clone: {
+          active: false,
+          life: 0,
+          shootTimer: 0,
+          x: player.x - 32,
+          y: player.y + 32
+        }
+      };
+
+      updateHUD();
+      openOverlay(null);
+    }
+
+    function updateHUD() {
+      ui.hpText.textContent = player ? Math.max(0, Math.floor(player.hp)) : 0;
+      ui.maxHpText.textContent = player ? Math.floor(player.maxHp) : 0;
+      ui.waveText.textContent = gameState ? gameState.wave : 1;
+      ui.killsText.textContent = gameState ? gameState.kills : 0;
+      ui.crystalsText.textContent = saveData.crystals;
+      ui.chestsText.textContent = gameState ? gameState.chestCount : 0;
+      ui.damageText.textContent = player ? player.damage.toFixed(1) : '0';
+      ui.speedText.textContent = player ? player.speed.toFixed(2) : '0';
+      updateShopUI();
+    }
+
+    function getEnemyTypeByRoll() {
+      var r = Math.random();
+      if (r < 0.60) return 'black';
+      if (r < 0.84) return 'yellow';
+      if (r < 0.96) return 'red';
+      return 'bsn';
+    }
+
+    function enemyConfig(type) {
+      var scale = 1 + (gameState.wave - 1) * 0.18;
+      var base = {
+        black:  { hp: 12, damage: 5, speed: 1.00, reward: 1, color: '#111111', r: 15 },
+        yellow: { hp: 24, damage: 8, speed: 1.25, reward: 2, color: '#f4cb1d', r: 17 },
+        red:    { hp: 48, damage: 12, speed: 1.50, reward: 3, color: '#dd3434', r: 19 },
+        bsn:    { hp: 120, damage: 20, speed: 1.80, reward: 5, color: '#8b5cf6', r: 24 }
+      }[type];
+      return {
+        hp: base.hp * scale,
+        damage: base.damage * (1 + (gameState.wave - 1) * 0.12),
+        speed: base.speed,
+        reward: base.reward,
+        color: base.color,
+        r: base.r,
+        faceMilitary: type === 'bsn'
+      };
+    }
+
+    function spawnEnemy() {
+      var type = getEnemyTypeByRoll();
+      var c = enemyConfig(type);
+      var x, y;
+      var side = Math.floor(Math.random() * 4);
+      if (side === 0) { x = rand(0, canvas.width); y = -40; }
+      if (side === 1) { x = canvas.width + 40; y = rand(0, canvas.height); }
+      if (side === 2) { x = rand(0, canvas.width); y = canvas.height + 40; }
+      if (side === 3) { x = -40; y = rand(0, canvas.height); }
+      enemies.push({
+        x: x,
+        y: y,
+        hp: c.hp,
+        maxHp: c.hp,
+        damage: c.damage,
+        speed: c.speed,
+        reward: c.reward,
+        color: c.color,
+        r: c.r,
+        hitCd: 0,
+        faceMilitary: c.faceMilitary
+      });
+    }
+
+    function nearestEnemy(fromX, fromY) {
+      if (!enemies.length) return null;
+      var best = enemies[0];
+      var bestD = dist(fromX, fromY, best.x, best.y);
+      for (var i = 1; i < enemies.length; i++) {
+        var d = dist(fromX, fromY, enemies[i].x, enemies[i].y);
+        if (d < bestD) {
+          bestD = d;
+          best = enemies[i];
+        }
+      }
+      return best;
+    }
+
+    function fireBullet(originX, originY, source, bonusAngle) {
+      source = source || 'player';
+      bonusAngle = bonusAngle || 0;
+      var target = nearestEnemy(originX, originY);
+      if (!target) return;
+      var angle = Math.atan2(target.y - originY, target.x - originX) + bonusAngle;
+      bullets.push({
+        x: originX,
+        y: originY,
+        dx: Math.cos(angle) * 7,
+        dy: Math.sin(angle) * 7,
+        r: source === 'clone' ? 4 : 5,
+        source: source,
+        damage: source === 'clone' ? 1 : player.damage,
+        life: 65,
+        explosive: gameState.tempExplosive > 0
+      });
+    }
+
+    function doExplosion(x, y, radius) {
+      spawnParticles(x, y, '#ff9944', 20, 3.5);
+      for (var i = 0; i < enemies.length; i++) {
+        var e = enemies[i];
+        var d = dist(x, y, e.x, e.y);
+        if (d <= radius) {
+          var extra = Math.max(1, Math.floor((radius - d) * 0.12));
+          e.hp -= extra;
+          spawnFloatingText(e.x, e.y - 18, '-' + extra, '#ffb066');
+        }
+      }
+    }
+
+    function playerInput() {
+      if (!player) return;
+      var mx = 0, my = 0;
+      if (keys['w'] || keys['arrowup']) my -= 1;
+      if (keys['s'] || keys['arrowdown']) my += 1;
+      if (keys['a'] || keys['arrowleft']) mx -= 1;
+      if (keys['d'] || keys['arrowright']) mx += 1;
+      if (mx || my) {
+        var len = Math.hypot(mx, my);
+        mx /= len;
+        my /= len;
+      }
+
+      var speed = player.speed;
+      if (keys['shift'] && player.sprintEnergy > 0) {
+        speed *= 1.7;
+        player.sprintEnergy = Math.max(0, player.sprintEnergy - 1.15);
+      } else {
+        player.sprintEnergy = Math.min(100, player.sprintEnergy + 0.42);
+      }
+
+      player.x += mx * speed;
+      player.y += my * speed;
+      player.x = clamp(player.x, player.r, canvas.width - player.r);
+      player.y = clamp(player.y, player.r, canvas.height - player.r);
+
+      if (player.invuln > 0) player.invuln--;
+
+      player.shootTimer++;
+      if (player.shootTimer >= player.baseShootCooldown) {
+        player.shootTimer = 0;
+        fireBullet(player.x, player.y, 'player', 0);
+        if (gameState.tempDouble > 0) {
+          fireBullet(player.x, player.y, 'player', -0.15);
+          fireBullet(player.x, player.y, 'player', 0.15);
+        }
+      }
+    }
+
+    function updateClone() {
+      if (!gameState.clone.active) return;
+      if (gameState.clone.life <= 0) {
+        gameState.clone.active = false;
+        return;
+      }
+      gameState.clone.life--;
+      var desiredX = player.x - 30;
+      var desiredY = player.y + 30;
+      gameState.clone.x += (desiredX - gameState.clone.x) * 0.08;
+      gameState.clone.y += (desiredY - gameState.clone.y) * 0.08;
+      gameState.clone.shootTimer++;
+      if (gameState.clone.shootTimer >= 40) {
+        gameState.clone.shootTimer = 0;
+        fireBullet(gameState.clone.x, gameState.clone.y, 'clone', 0);
+      }
+    }
+
+    function updateEnemies() {
+      for (var i = enemies.length - 1; i >= 0; i--) {
+        var e = enemies[i];
+        var angle = Math.atan2(player.y - e.y, player.x - e.x);
+        e.x += Math.cos(angle) * e.speed;
+        e.y += Math.sin(angle) * e.speed;
+        if (e.hitCd > 0) e.hitCd--;
+        var d = dist(player.x, player.y, e.x, e.y);
+        if (d < player.r + e.r) {
+          if (player.invuln <= 0 && e.hitCd <= 0) {
+            player.hp -= e.damage;
+            player.invuln = 18;
+            e.hitCd = 25;
+            spawnFloatingText(player.x, player.y - 24, '-' + Math.floor(e.damage), '#ff7b7b');
+            if (player.hp <= 0) {
+              player.hp = 0;
+              endRun();
+              return;
+            }
+          }
+        }
+      }
+    }
+
+    function handleEnemyDeath(index) {
+      var e = enemies[index];
+      saveData.crystals += e.reward;
+      gameState.runCrystals += e.reward;
+      gameState.kills++;
+      spawnParticles(e.x, e.y, e.color, 18, 3.2);
+      spawnFloatingText(e.x, e.y, '+' + e.reward + '💎', '#ffe66d', 15);
+      if (e.faceMilitary && Math.random() < 0.35) {
+        gameState.chestCount++;
+        var reward = createChestReward();
+        applyChestReward(reward, e.x, e.y - 12);
+      }
+      enemies.splice(index, 1);
+      saveToStorage();
+    }
+
+    function updateBullets() {
+      for (var i = bullets.length - 1; i >= 0; i--) {
+        var b = bullets[i];
+        b.x += b.dx;
+        b.y += b.dy;
+        b.life--;
+        var removed = false;
+        for (var j = enemies.length - 1; j >= 0; j--) {
+          var e = enemies[j];
+          if (dist(b.x, b.y, e.x, e.y) < b.r + e.r) {
+            var damage = b.damage;
+            if (b.source === 'player' && Math.random() < player.critChance) {
+              damage *= 1.6;
+              spawnFloatingText(e.x, e.y - 28, 'CRIT', '#8fe0ff', 12);
+            }
+            e.hp -= damage;
+            spawnFloatingText(e.x, e.y - 18, '-' + Math.floor(damage), '#9fe3ff');
+            if (b.explosive) {
+              var radius = Math.max(26, e.r * 1.8);
+              doExplosion(e.x, e.y, radius);
+            }
+            bullets.splice(i, 1);
+            removed = true;
+            if (e.hp <= 0) handleEnemyDeath(j);
+            break;
+          }
+        }
+        if (!removed && (b.life <= 0 || b.x < -30 || b.y < -30 || b.x > canvas.width + 30 || b.y > canvas.height + 30)) {
+          bullets.splice(i, 1);
+        }
+      }
+    }
+
+    function updateWaves() {
+      gameState.waveTimer++;
+      if (gameState.waveTimer >= gameState.waveDuration) {
+        gameState.wave++;
+        gameState.waveTimer = 0;
+        spawnFloatingText(player.x, player.y - 56, 'OLEADA ' + gameState.wave, '#ffffff', 18);
+      }
+      gameState.spawnTimer++;
+      var spawnRate = Math.max(10, 44 - gameState.wave * 1.2);
+      if (gameState.spawnTimer >= spawnRate) {
+        gameState.spawnTimer = 0;
+        var amount = 1 + Math.floor(gameState.wave / 8);
+        for (var i = 0; i < amount; i++) spawnEnemy();
+      }
+    }
+
+    function updateParticles() {
+      for (var i = particles.length - 1; i >= 0; i--) {
+        var p = particles[i];
+        p.x += p.dx;
+        p.y += p.dy;
+        p.dx *= 0.98;
+        p.dy *= 0.98;
+        p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+      for (var j = floatingTexts.length - 1; j >= 0; j--) {
+        var t = floatingTexts[j];
+        t.y -= 0.55;
+        t.life--;
+        if (t.life <= 0) floatingTexts.splice(j, 1);
+      }
+    }
+
+    function updateTemps() {
+      if (gameState.tempExplosive > 0) gameState.tempExplosive--;
+      if (gameState.tempDouble > 0) gameState.tempDouble--;
+    }
+
+    function drawGrid() {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.lineWidth = 1;
+      var gap = 54;
+      for (var x = 0; x <= canvas.width; x += gap) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+      }
+      for (var y = 0; y <= canvas.height; y += gap) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawPlayer() {
+      if (!player) return;
+      ctx.save();
+      if (player.invuln > 0 && Math.floor(player.invuln / 2) % 2 === 0) ctx.globalAlpha = 0.55;
+      ctx.fillStyle = '#7cd6ff';
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(player.x - 6, player.y - 2, 3, 0, Math.PI * 2);
+      ctx.arc(player.x + 6, player.y - 2, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#1e2e44';
+      ctx.fillRect(player.x + 10, player.y - 4, 20, 8);
+      ctx.fillStyle = '#6f6f6f';
+      ctx.fillRect(player.x + 28, player.y - 2, 8, 4);
+      ctx.restore();
+      var barW = 60;
+      ctx.fillStyle = 'rgba(0,0,0,.45)';
+      ctx.fillRect(player.x - barW / 2, player.y + 28, barW, 6);
+      ctx.fillStyle = '#ffd54f';
+      ctx.fillRect(player.x - barW / 2, player.y + 28, barW * (player.sprintEnergy / 100), 6);
+    }
+
+    function drawClone() {
+      if (!gameState || !gameState.clone.active) return;
+      ctx.save();
+      ctx.globalAlpha = 0.72;
+      ctx.fillStyle = '#c7f0ff';
+      ctx.beginPath();
+      ctx.arc(gameState.clone.x, gameState.clone.y, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawEnemy(e) {
+      ctx.save();
+      ctx.fillStyle = e.color;
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+      ctx.fill();
+      if (e.faceMilitary) {
+        ctx.fillStyle = '#232323';
+        ctx.fillRect(e.x - 12, e.y - e.r - 8, 24, 8);
+        ctx.fillRect(e.x - 8, e.y - e.r - 13, 16, 6);
+        ctx.fillStyle = '#e4e4e4';
+        ctx.fillRect(e.x - 4, e.y - 2, 8, 4);
+        ctx.fillStyle = '#292929';
+        ctx.fillRect(e.x + 9, e.y - 4, 14, 6);
+      } else {
+        ctx.fillStyle = 'rgba(255,255,255,.8)';
+        ctx.beginPath();
+        ctx.arc(e.x - 5, e.y - 2, 2.3, 0, Math.PI * 2);
+        ctx.arc(e.x + 5, e.y - 2, 2.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      var w = e.r * 2;
+      ctx.fillStyle = 'rgba(0,0,0,.45)';
+      ctx.fillRect(e.x - w / 2, e.y - e.r - 12, w, 5);
+      ctx.fillStyle = '#22c55e';
+      ctx.fillRect(e.x - w / 2, e.y - e.r - 12, w * Math.max(0, e.hp / e.maxHp), 5);
+      ctx.restore();
+    }
+
+    function drawBullets() {
+      for (var i = 0; i < bullets.length; i++) {
+        var b = bullets[i];
+        ctx.save();
+        ctx.fillStyle = b.explosive ? '#ffb15f' : (b.source === 'clone' ? '#d8fbff' : '#98ccff');
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function drawParticles() {
+      for (var i = 0; i < particles.length; i++) {
+        var p = particles[i];
+        ctx.save();
+        ctx.globalAlpha = p.life / 40;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.size, p.size);
+        ctx.restore();
+      }
+    }
+
+    function drawFloatingTexts() {
+      for (var i = 0; i < floatingTexts.length; i++) {
+        var t = floatingTexts[i];
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, t.life / 45);
+        ctx.fillStyle = t.color;
+        ctx.font = 'bold ' + t.size + 'px Arial';
+        ctx.fillText(t.text, t.x, t.y);
+        ctx.restore();
+      }
+    }
+
+    function drawRunEffects() {
+      if (!gameState) return;
+      ctx.save();
+      var y = canvas.height - 50;
+      if (gameState.tempExplosive > 0) {
+        ctx.fillStyle = 'rgba(255,166,77,.15)';
+        ctx.fillRect(12, y, 160, 24);
+        ctx.fillStyle = '#ffb15f';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText('Balas explosivas', 20, y + 16);
+        y -= 30;
+      }
+      if (gameState.tempDouble > 0) {
+        ctx.fillStyle = 'rgba(99,178,255,.15)';
+        ctx.fillRect(12, y, 160, 24);
+        ctx.fillStyle = '#8cc5ff';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText('Disparo doble', 20, y + 16);
+        y -= 30;
+      }
+      if (gameState.clone.active) {
+        ctx.fillStyle = 'rgba(195,255,245,.15)';
+        ctx.fillRect(12, y, 160, 24);
+        ctx.fillStyle = '#c7fff4';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText('Mini clon activo', 20, y + 16);
+      }
+      ctx.restore();
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGrid();
+      drawBullets();
+      for (var i = 0; i < enemies.length; i++) drawEnemy(enemies[i]);
+      drawClone();
+      drawPlayer();
+      drawParticles();
+      drawFloatingTexts();
+      drawRunEffects();
+    }
+
+    function endRun() {
+      gameState.running = false;
+      updateHUD();
+      ui.goWave.textContent = gameState.wave;
+      ui.goKills.textContent = gameState.kills;
+      ui.goCrystals.textContent = gameState.runCrystals;
+      ui.goOpened.textContent = gameState.openedChests;
+      openOverlay('over');
+    }
+
+    function loop() {
+      if (gameState && gameState.running && !gameState.paused) {
+        playerInput();
+        updateClone();
+        updateEnemies();
+        updateBullets();
+        updateWaves();
+        updateParticles();
+        updateTemps();
+        updateHUD();
+      } else {
+        updateParticles();
+      }
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    document.getElementById('startBtn').onclick = startRun;
+    document.getElementById('storyBtn').onclick = function() { openOverlay('story'); };
+    document.getElementById('shopBtn').onclick = function() { openOverlay('shop'); };
+    document.getElementById('resetBtn').onclick = function() {
+      if (confirm('¿Seguro que quieres borrar el guardado?')) {
+        localStorage.removeItem(SAVE_KEY);
+        saveData = loadSave();
+        player = createPlayer();
+        updateShopUI();
+        updateHUD();
+      }
+    };
+    document.getElementById('menuPlayBtn').onclick = startRun;
+    document.getElementById('menuStoryBtn').onclick = function() { openOverlay('story'); };
+    document.getElementById('menuShopBtn').onclick = function() { openOverlay('shop'); };
+    document.getElementById('storyCloseBtn').onclick = function() { openOverlay('menu'); };
+    document.getElementById('shopCloseBtn').onclick = function() { openOverlay('menu'); };
+    document.getElementById('retryBtn').onclick = startRun;
+    document.getElementById('goShopBtn').onclick = function() { openOverlay('shop'); };
+
+    gameState = { running: false, paused: true, wave: 1, kills: 0, chestCount: 0, clone: { active: false } };
+    player = createPlayer();
+    updateShopUI();
+    updateHUD();
+    loop();
+  </script>
+</body>
+</html>

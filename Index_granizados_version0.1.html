@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Granizado Game 🎮</title>
+<style>
+body {
+    font-family: Arial;
+    background: linear-gradient(135deg, #00c6ff, #0072ff);
+    color: white;
+    text-align: center;
+}
+
+.container {
+    margin-top: 40px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 18px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    background: #ffcc00;
+}
+
+input {
+    padding: 10px;
+    font-size: 18px;
+    border-radius: 10px;
+}
+
+.card {
+    background: rgba(255,255,255,0.1);
+    padding: 20px;
+    margin: 10px;
+    border-radius: 15px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🍧 GRANIZADO GAME</h1>
+
+<div class="container">
+
+<div class="card">
+<h2>🎟️ Introducir código</h2>
+<input id="codigo" placeholder="Código aquí">
+<br><br>
+<button onclick="canjear()">Canjear</button>
+</div>
+
+<div class="card">
+<h2>🎁 Recompensa</h2>
+<p id="resultado">---</p>
+</div>
+
+<div class="card">
+<h2>📦 Inventario</h2>
+<p>🧩 Piezas: <span id="piezas">0</span></p>
+<p>💰 Monedas: <span id="monedas">0</span></p>
+<p>✨ Saborizante: <span id="esencia">0</span></p>
+<p>💎 Gemas: <span id="gemas">0</span></p>
+</div>
+
+</div>
+
+<script>
+
+// DATOS
+let piezas = localStorage.getItem("piezas") || 0;
+let monedas = localStorage.getItem("monedas") || 0;
+let esencia = localStorage.getItem("esencia") || 0;
+let gemas = localStorage.getItem("gemas") || 0;
+
+// ACTUALIZAR UI
+function actualizar() {
+    document.getElementById("piezas").innerText = piezas;
+    document.getElementById("monedas").innerText = monedas;
+    document.getElementById("esencia").innerText = esencia;
+    document.getElementById("gemas").innerText = gemas;
+}
+
+actualizar();
+
+// PROBABILIDADES
+function recompensa() {
+    let rand = Math.random() * 100;
+
+    if (rand < 25) {
+        piezas++;
+        return "🧩 Has conseguido una PIEZA";
+    }
+    else if (rand < 60) {
+        monedas += 10;
+        return "💰 +10 MONEDAS";
+    }
+    else if (rand < 95) {
+        esencia += 5;
+        return "✨ +5 SABORIZANTE";
+    }
+    else {
+        gemas += 1;
+        return "💎 +1 GEMA (SUERTE!)";
+    }
+}
+
+// CANJEAR
+function canjear() {
+    let codigo = document.getElementById("codigo").value;
+
+    if (codigo == "") {
+        alert("Introduce un código");
+        return;
+    }
+
+    let resultado = recompensa();
+
+    document.getElementById("resultado").innerText = resultado;
+
+    // GUARDAR
+    localStorage.setItem("piezas", piezas);
+    localStorage.setItem("monedas", monedas);
+    localStorage.setItem("esencia", esencia);
+    localStorage.setItem("gemas", gemas);
+
+    actualizar();
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Aventuras en Finca Buenaventura</title>
+  <style>
+    :root{
+      --bg:#0b1020; --card:#121a33; --card2:#0f1730; --text:#e9ecff; --muted:#a8b0d6;
+      --good:#6fffb0; --warn:#ffd36f; --bad:#ff6f8f; --accent:#7aa7ff; --accent2:#b47aff;
+      --line:rgba(255,255,255,.10);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Noto Sans",sans-serif;
+      background: radial-gradient(1200px 700px at 15% 10%, rgba(122,167,255,.18), transparent 55%),
+                  radial-gradient(900px 600px at 80% 30%, rgba(180,122,255,.16), transparent 60%),
+                  radial-gradient(1100px 800px at 50% 90%, rgba(111,255,176,.10), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+    }
+    header{
+      padding:18px 16px; border-bottom:1px solid var(--line);
+      position:sticky; top:0; backdrop-filter: blur(8px);
+      background: rgba(11,16,32,.75);
+      z-index:10;
+    }
+    .wrap{max-width:1100px; margin:0 auto; padding:16px}
+    .top{
+      display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+    }
+    h1{margin:0; font-size:18px; letter-spacing:.2px}
+    .sub{color:var(--muted); font-size:12px}
+    .stats{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .pill{
+      padding:8px 10px; border:1px solid var(--line); border-radius:999px;
+      background: rgba(18,26,51,.7);
+      display:flex; gap:8px; align-items:center; font-weight:600;
+      font-size:13px;
+    }
+    .pill small{color:var(--muted); font-weight:700; font-size:11px; letter-spacing:.3px}
+    .grid{
+      display:grid; grid-template-columns: 1.15fr .85fr; gap:14px; align-items:start;
+    }
+    @media (max-width: 920px){ .grid{grid-template-columns:1fr} }
+    .card{
+      border:1px solid var(--line); border-radius:16px;
+      background: linear-gradient(180deg, rgba(18,26,51,.85), rgba(15,23,48,.85));
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:14px 14px 10px 14px; border-bottom:1px solid var(--line);
+      display:flex; justify-content:space-between; align-items:flex-end; gap:10px; flex-wrap:wrap;
+    }
+    .card .hd .t{font-weight:800}
+    .card .hd .d{color:var(--muted); font-size:12px}
+    .card .bd{padding:14px}
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    button{
+      cursor:pointer; border:1px solid var(--line); border-radius:14px;
+      background: rgba(122,167,255,.18);
+      color:var(--text); padding:12px 12px; font-weight:800;
+      transition: transform .05s ease, background .15s ease, border-color .15s ease;
+      user-select:none;
+    }
+    button:hover{background: rgba(122,167,255,.26); border-color: rgba(122,167,255,.35)}
+    button:active{transform: translateY(1px) scale(.995)}
+    button.secondary{background: rgba(180,122,255,.16)}
+    button.secondary:hover{background: rgba(180,122,255,.24); border-color: rgba(180,122,255,.35)}
+    button.danger{background: rgba(255,111,143,.14)}
+    button.danger:hover{background: rgba(255,111,143,.22); border-color: rgba(255,111,143,.35)}
+    button:disabled{
+      opacity:.55; cursor:not-allowed; filter:grayscale(.15);
+    }
+    .big{
+      font-size:15px; padding:14px 14px; width:100%;
+    }
+    .hint{color:var(--muted); font-size:12px; line-height:1.4}
+    .sep{height:1px; background:var(--line); margin:12px 0}
+    .upg{
+      display:grid; grid-template-columns: 1fr auto; gap:10px;
+      padding:12px; border:1px solid var(--line); border-radius:14px;
+      background: rgba(0,0,0,.12);
+      margin-bottom:10px;
+    }
+    .upg .name{font-weight:900}
+    .upg .desc{color:var(--muted); font-size:12px; margin-top:4px; line-height:1.35}
+    .tag{
+      display:inline-flex; gap:6px; align-items:center;
+      padding:4px 8px; border-radius:999px; border:1px solid var(--line);
+      background: rgba(0,0,0,.16); color:var(--muted); font-size:11px; font-weight:800;
+      margin-top:6px;
+    }
+    .toast{
+      position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+      background: rgba(18,26,51,.92); border:1px solid var(--line); color:var(--text);
+      border-radius:999px; padding:10px 12px; font-size:13px; font-weight:700;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      opacity:0; pointer-events:none; transition: opacity .2s ease, transform .2s ease;
+      z-index:999;
+      max-width:min(92vw,900px);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .toast.show{opacity:1; transform:translateX(-50%) translateY(-2px)}
+    .mini{
+      display:grid; grid-template-columns: 1fr 1fr; gap:10px;
+    }
+    @media (max-width: 520px){ .mini{grid-template-columns:1fr} }
+    .kpi{
+      border:1px solid var(--line); border-radius:14px; padding:10px 12px;
+      background: rgba(0,0,0,.12);
+    }
+    .kpi .k{color:var(--muted); font-size:11px; font-weight:900; letter-spacing:.35px}
+    .kpi .v{font-size:16px; font-weight:950; margin-top:4px}
+    .log{
+      height:210px; overflow:auto; padding-right:6px;
+      font-size:12px; color:var(--muted); line-height:1.35;
+    }
+    .log b{color:var(--text)}
+    .progress{
+      height:10px; background: rgba(255,255,255,.08);
+      border-radius:999px; overflow:hidden; border:1px solid var(--line);
+      margin-top:10px;
+    }
+    .progress > div{
+      height:100%; width:0%;
+      background: linear-gradient(90deg, rgba(111,255,176,.75), rgba(122,167,255,.75));
+    }
+    .footer{
+      color:var(--muted); font-size:12px; text-align:center; padding:14px 0 24px;
+    }
+    a{color:var(--accent); text-decoration:none}
+    a:hover{text-decoration:underline}
+  </style>
+</head>
+
+<body>
+<header>
+  <div class="wrap top">
+    <div>
+      <h1>🌿 Aventuras en <span style="color:var(--good)">Finca Buenaventura</span></h1>
+      <div class="sub">Empiezas con una finca abandonada. La conviertes en una máquina de eventos (sin perder el alma). 😉</div>
+    </div>
+
+    <div class="stats">
+      <div class="pill"><small>DINERO</small> <span id="money">0 €</span></div>
+      <div class="pill"><small>REPUTACIÓN</small> <span id="rep">0 ⭐</span></div>
+      <div class="pill"><small>€/DÍA</small> <span id="perDay">0 €</span></div>
+      <div class="pill"><small>NIVEL</small> <span id="level">1</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+    <!-- IZQUIERDA -->
+    <section class="card">
+      <div class="hd">
+        <div>
+          <div class="t">Acciones</div>
+          <div class="d">Haz clic para currar y usa mejoras para que la finca produzca sola.</div>
+        </div>
+        <div class="d" id="season">Estación: —</div>
+      </div>
+
+      <div class="bd">
+        <button id="btnWork" class="big">🧹 Trabajar en la finca (+€)</button>
+        <div class="hint" style="margin-top:8px">
+          Consejo: al principio tú eres la “maquinaria”. Luego la finca trabaja por ti (como debe ser).
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="mini">
+          <div class="kpi">
+            <div class="k">Ingresos por clic</div>
+            <div class="v" id="clickIncome">+1 €</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Multiplicador por estación</div>
+            <div class="v" id="seasonMult">x1.00</div>
+          </div>
+        </div>
+
+        <div class="progress" title="Progreso al siguiente nivel">
+          <div id="xpBar"></div>
+        </div>
+        <div class="hint" style="margin-top:8px">
+          Subes de nivel ganando reputación. A más ⭐, más caro puedes alquilar y más confianza para eventos grandes.
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="row">
+          <button id="btnSave" class="secondary">💾 Guardar</button>
+          <button id="btnExport" class="secondary">📦 Exportar partida</button>
+          <button id="btnImport" class="secondary">📥 Importar partida</button>
+          <button id="btnReset" class="danger">🗑️ Reiniciar</button>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="t" style="font-weight:900; margin-bottom:8px">Registro</div>
+        <div class="log" id="log"></div>
+      </div>
+    </section>
+
+    <!-- DERECHA -->
+    <aside class="card">
+      <div class="hd">
+        <div>
+          <div class="t">Mejoras</div>
+          <div class="d">Orden inicial: A → C → B → D → E (como has pedido).</div>
+        </div>
+        <div class="d"><span id="ownedCount">0</span> / <span id="totalCount">0</span> compradas</div>
+      </div>
+
+      <div class="bd">
+        <div id="upgrades"></div>
+        <div class="hint">
+          Nota: el juego está pensado “largo”: los costes suben, pero también la producción. Si te aburres, subo el ritmo en 2 minutos.
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="footer">
+    Hecho en un solo HTML (sin instalaciones). Si esto lo engancha Rodrigo, ya lo siento… 😄
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  // ========= Utilidades =========
+  const $ = (id) => document.getElementById(id);
+  const fmtEUR = (n) => {
+    if (!isFinite(n)) return "0 €";
+    const v = Math.max(0, n);
+    return v.toLocaleString("es-ES", { maximumFractionDigits: 0 }) + " €";
+  };
+  const fmtStar = (n) => {
+    if (!isFinite(n)) return "0 ⭐";
+    const v = Math.max(0, n);
+    return v.toLocaleString("es-ES", { maximumFractionDigits: 0 }) + " ⭐";
+  };
+  const now = () => Date.now();
+
+  function toast(msg){
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(()=> t.classList.remove("show"), 2200);
+  }
+
+  function addLog(msg){
+    const el = $("log");
+    const line = document.createElement("div");
+    line.innerHTML = msg;
+    el.prepend(line);
+  }
+
+  // ========= Estado del juego =========
+  const STORAGE_KEY = "aventuras_buenaventura_v1";
+
+  // Estaciones (simple): afecta ingresos pasivos (piscina en verano etc.)
+  // (No es meteorología real; es “balanza de juego”.)
+  const seasons = [
+    { name: "Invierno", multPassive: 0.90, multClick: 1.00 },
+    { name: "Primavera", multPassive: 1.05, multClick: 1.00 },
+    { name: "Verano", multPassive: 1.25, multClick: 0.98 },
+    { name: "Otoño", multPassive: 1.05, multClick: 1.02 },
+  ];
+
+  // Progreso "largo": base costs altos + escalado
+  const baseState = {
+    money: 0,
+    rep: 0,
+    level: 1,
+    clickBase: 1,
+    passiveBasePerDay: 0,
+    // upgrades compradas
+    owned: {},
+    // última vez que se calculó pasivo (para offline)
+    lastTs: now(),
+    // estación actual (0..3)
+    seasonIndex: 0,
+    // contador de ticks para cambiar estación cada X tiempo
+    seasonTicks: 0
+  };
+
+  // ========= Mejoras (A, C, B, D, E) =========
+  // Cada mejora puede: aumentar €/día, subir click, dar reputación, desbloquear etc.
+  const upgrades = [
+    {
+      id: "A_clean_pool",
+      code: "A",
+      name: "Limpiar piscina",
+      desc: "Quitas el barro, algas y el “ecosistema Jurassic Park”. Desbloquea ingresos de piscina.",
+      baseCost: 250,
+      repGain: 8,
+      req: () => true,
+      apply: (s) => { s.passiveBasePerDay += 40; } // ahora ya “alquila algo”
+    },
+    {
+      id: "C_gardens",
+      code: "C",
+      name: "Jardines y césped",
+      desc: "La finca empieza a lucir. Sube reputación y permite cobrar mejor en general.",
+      baseCost: 900,
+      repGain: 20,
+      req: (s) => s.owned["A_clean_pool"],
+      apply: (s) => { s.passiveBasePerDay += 85; s.clickBase += 1; }
+    },
+    {
+      id: "B_pump",
+      code: "B",
+      name: "Depuradora nueva",
+      desc: "Piscina como espejo. Más alquileres y menos dramas.",
+      baseCost: 1800,
+      repGain: 18,
+      req: (s) => s.owned["A_clean_pool"],
+      apply: (s) => { s.passiveBasePerDay += 140; }
+    },
+    {
+      id: "D_lighting",
+      code: "D",
+      name: "Iluminación del salón",
+      desc: "Pasa de “nave industrial” a “eventazo”. Aumenta la reputación y el valor percibido.",
+      baseCost: 3200,
+      repGain: 35,
+      req: (s) => s.owned["C_gardens"],
+      apply: (s) => { s.passiveBasePerDay += 170; s.clickBase += 2; }
+    },
+    {
+      id: "E_parking",
+      code: "E",
+      name: "Parking básico",
+      desc: "Menos caos, más coches, más gente. Lo agradece hasta el vecino gruñón.",
+      baseCost: 5500,
+      repGain: 55,
+      req: (s) => s.owned["D_lighting"],
+      apply: (s) => { s.passiveBasePerDay += 260; }
+    },
+    // Siguientes (bloqueados al principio, pero ya listos)
+    {
+      id: "F_horses",
+      code: "F",
+      name: "Comprar caballos (rutas)",
+      desc: "Rutas a caballo para familias y sesiones de fotos. Sube reputación mucho.",
+      baseCost: 12000,
+      repGain: 120,
+      req: (s) => s.level >= 4 && s.owned["E_parking"],
+      apply: (s) => { s.passiveBasePerDay += 520; s.clickBase += 3; }
+    },
+    {
+      id: "G_neighbor_plot",
+      code: "G",
+      name: "Comprar parcela al vecino",
+      desc: "Expandes finca. Más capacidad para eventos grandes.",
+      baseCost: 25000,
+      repGain: 180,
+      req: (s) => s.level >= 5 && s.owned["E_parking"],
+      apply: (s) => { s.passiveBasePerDay += 800; }
+    },
+    {
+      id: "H_casa_rural",
+      code: "H",
+      name: "Casa rural lista",
+      desc: "Ingresos todo el año. El invierno deja de dar miedo.",
+      baseCost: 42000,
+      repGain: 250,
+      req: (s) => s.level >= 6 && (s.owned["G_neighbor_plot"] || s.money >= 60000),
+      apply: (s) => { s.passiveBasePerDay += 1200; s.clickBase += 4; }
+    }
+  ];
+
+  // Coste escalado por nivel/reputación (modo largo, pero que avance)
+  function upgradeCost(u, s){
+    // Si se compró ya, no hay coste (no repetible)
+    if (s.owned[u.id]) return Infinity;
+    // Escalado suave por nivel para alargar progresión
+    const levelFactor = 1 + (s.level - 1) * 0.12;
+    // Pequeño ajuste por reputación (si tienes mucha ⭐, “todo cuesta más” porque ya juegas en ligas mayores)
+    const repFactor = 1 + Math.min(1.5, s.rep / 900);
+    return Math.round(u.baseCost * levelFactor * repFactor);
+  }
+
+  function seasonMult(s){
+    const season = seasons[s.seasonIndex] || seasons[0];
+    return season;
+  }
+
+  // Reputación necesaria para subir nivel (creciente)
+  function repForNextLevel(level){
+    // Nivel 1->2: 20, 2->3: 55, 3->4: 110...
+    return Math.round(20 * Math.pow(1.65, level - 1));
+  }
+
+  // ========= Cargar / Guardar =========
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return structuredClone(baseState);
+      const data = JSON.parse(raw);
+      // Compatibilidad básica
+      return { ...structuredClone(baseState), ...data, owned: data.owned || {} };
+    }catch(e){
+      console.warn("No se pudo cargar:", e);
+      return structuredClone(baseState);
+    }
+  }
+
+  function save(s){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+      toast("Partida guardada ✅");
+    }catch(e){
+      toast("No se pudo guardar (¿modo incógnito?)");
+    }
+  }
+
+  // ========= Motor =========
+  let state = load();
+
+  // Offline gains
+  function applyOffline(s){
+    const nowTs = now();
+    const dt = Math.max(0, (nowTs - (s.lastTs || nowTs)) / 1000); // seg
+    const season = seasonMult(s);
+    const perSec = (calcPassivePerDay(s) / 86400) * season.multPassive;
+    const gained = perSec * dt;
+    if (gained >= 1){
+      s.money += gained;
+      addLog(`⏳ Offline: has generado <b>${fmtEUR(gained)}</b>. (La finca no duerme, solo tú 😄)`);
+      toast(`+${fmtEUR(gained)} offline`);
+    }
+    s.lastTs = nowTs;
+  }
+
+  // Calcula €/día real (base + bonificaciones por reputación)
+  function calcPassivePerDay(s){
+    // reputación aumenta precio (hasta +120%)
+    const repBonus = 1 + Math.min(1.2, s.rep / 700);
+    return s.passiveBasePerDay * repBonus;
+  }
+
+  function calcClickIncome(s){
+    const repBonus = 1 + Math.min(0.9, s.rep / 1200); // click sube menos que pasivo
+    return Math.max(1, Math.round(s.clickBase * repBonus));
+  }
+
+  function maybeLevelUp(s){
+    let needed = repForNextLevel(s.level);
+    while (s.rep >= needed){
+      s.level += 1;
+      addLog(`🎉 Subes a <b>NIVEL ${s.level}</b>. (La finca ya impone respeto)`);
+      toast(`Nivel ${s.level} 🎉`);
+      needed = repForNextLevel(s.level);
+    }
+  }
+
+  // Cambiar estación cada X ticks (para que se note pero no maree)
+  function advanceSeason(s){
+    // Cambia cada 180 ticks (~3 min si tick=1s)
+    s.seasonTicks = (s.seasonTicks || 0) + 1;
+    if (s.seasonTicks >= 180){
+      s.seasonTicks = 0;
+      s.seasonIndex = (s.seasonIndex + 1) % seasons.length;
+      const season = seasonMult(s);
+      addLog(`🍂 Cambio de estación: <b>${season.name}</b> (multiplicador pasivo x${season.multPassive.toFixed(2)})`);
+      toast(`Estación: ${season.name}`);
+    }
+  }
+
+  // ========= UI =========
+  function render(){
+    $("money").textContent = fmtEUR(state.money);
+    $("rep").textContent = fmtStar(state.rep);
+    $("level").textContent = String(state.level);
+
+    const perDay = calcPassivePerDay(state);
+    $("perDay").textContent = fmtEUR(perDay);
+
+    const season = seasonMult(state);
+    $("season").textContent = `Estación: ${season.name}`;
+    $("seasonMult").textContent = `x${season.multPassive.toFixed(2)}`;
+    $("clickIncome").textContent = `+${fmtEUR(calcClickIncome(state))}`;
+
+    // XP bar (reputación hacia nivel siguiente)
+    const need = repForNextLevel(state.level);
+    const prevNeed = repForNextLevel(Math.max(1, state.level-1));
+    // Para barra: progreso dentro del nivel actual
+    // (En nivel 1, prevNeed es 20 pero rep puede ser 0; ajustamos)
+    const base = (state.level === 1) ? 0 : prevNeed;
+    const span = Math.max(1, need - base);
+    const prog = Math.max(0, Math.min(1, (state.rep - base) / span));
+    $("xpBar").style.width = (prog*100).toFixed(1) + "%";
+
+    // Upgrades
+    const cont = $("upgrades");
+    cont.innerHTML = "";
+    let ownedCount = 0;
+
+    upgrades.forEach(u => {
+      const owned = !!state.owned[u.id];
+      if (owned) ownedCount++;
+
+      const canSee = true; // se ven todas, pero con requisitos
+      if (!canSee) return;
+
+      const reqOk = u.req(state);
+      const cost = upgradeCost(u, state);
+
+      const box = document.createElement("div");
+      box.className = "upg";
+
+      const left = document.createElement("div");
+      left.innerHTML = `
+        <div class="name">${u.code}. ${u.name} ${owned ? '<span style="color:var(--good)">✓</span>' : ''}</div>
+        <div class="desc">${u.desc}</div>
+        <div class="tag">${owned ? 'Comprada' : (reqOk ? 'Disponible' : 'Bloqueada')}</div>
+      `;
+
+      const right = document.createElement("div");
+      const btn = document.createElement("button");
+
+      if (owned){
+        btn.textContent = "Comprada";
+        btn.disabled = true;
+      } else {
+        btn.textContent = `Comprar (${fmtEUR(cost)})`;
+        btn.disabled = !reqOk || state.money < cost;
+        btn.addEventListener("click", () => buyUpgrade(u));
+      }
+
+      right.appendChild(btn);
+      box.appendChild(left);
+      box.appendChild(right);
+      cont.appendChild(box);
+    });
+
+    $("ownedCount").textContent = String(ownedCount);
+    $("totalCount").textContent = String(upgrades.length);
+  }
+
+  function buyUpgrade(u){
+    if (state.owned[u.id]) return;
+    if (!u.req(state)){
+      toast("Aún no cumples los requisitos");
+      return;
+    }
+    const cost = upgradeCost(u, state);
+    if (state.money < cost){
+      toast("Te falta dinero");
+      return;
+    }
+
+    state.money -= cost;
+    state.owned[u.id] = true;
+
+    // Efectos
+    u.apply(state);
+    state.rep += (u.repGain || 0);
+
+    addLog(`🛠️ Compras <b>${u.code}. ${u.name}</b> por <b>${fmtEUR(cost)}</b> y ganas <b>${fmtStar(u.repGain || 0)}</b>.`);
+    toast(`Comprado: ${u.name}`);
+
+    maybeLevelUp(state);
+    state.lastTs = now();
+    saveSilently();
+    render();
+  }
+
+  function saveSilently(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+
+  // ========= Eventos de UI =========
+  $("btnWork").addEventListener("click", () => {
+    const season = seasonMult(state);
+    const inc = calcClickIncome(state) * season.multClick;
+    const incRound = Math.max(1, Math.round(inc));
+    state.money += incRound;
+
+    // micro-reputación por trabajar (lento, para modo largo)
+    const repGain = (Math.random() < 0.18) ? 1 : 0;
+    if (repGain) state.rep += repGain;
+
+    addLog(`🧹 Trabajas y ganas <b>${fmtEUR(incRound)}</b>${repGain ? ` + <b>${fmtStar(repGain)}</b>` : ""}.`);
+    maybeLevelUp(state);
+
+    state.lastTs = now();
+    saveSilently();
+    render();
+  });
+
+  $("btnSave").addEventListener("click", () => save(state));
+
+  $("btnReset").addEventListener("click", () => {
+    const ok = confirm("¿Seguro que quieres reiniciar? Se borra la partida.");
+    if (!ok) return;
+    state = structuredClone(baseState);
+    localStorage.removeItem(STORAGE_KEY);
+    $("log").innerHTML = "";
+    addLog("🧨 Partida reiniciada. La finca vuelve a estar hecha un cristo. ¡A currar!");
+    toast("Reiniciado");
+    render();
+  });
+
+  $("btnExport").addEventListener("click", async () => {
+    try{
+      const data = JSON.stringify(state);
+      await navigator.clipboard.writeText(data);
+      toast("Partida copiada al portapapeles ✅");
+      addLog("📦 Export: partida copiada al portapapeles.");
+    }catch(e){
+      prompt("Copia este texto y guárdalo:", JSON.stringify(state));
+    }
+  });
+
+  $("btnImport").addEventListener("click", () => {
+    const txt = prompt("Pega aquí el texto de tu partida exportada:");
+    if (!txt) return;
+    try{
+      const data = JSON.parse(txt);
+      state = { ...structuredClone(baseState), ...data, owned: data.owned || {} };
+      applyOffline(state);
+      saveSilently();
+      addLog("📥 Import: partida importada correctamente.");
+      toast("Importado ✅");
+      render();
+    }catch(e){
+      toast("Texto inválido ❌");
+    }
+  });
+
+  // ========= Tick (1s) =========
+  function tick(){
+    // pasivo
+    const season = seasonMult(state);
+    const perSec = (calcPassivePerDay(state) / 86400) * season.multPassive;
+
+    state.money += perSec;
+
+    // Reputación pasiva muy lenta cuando ya tienes “cosas”
+    const passiveRepChance = Math.min(0.08, calcPassivePerDay(state) / 80000); // escala suave
+    if (Math.random() < passiveRepChance) state.rep += 1;
+
+    maybeLevelUp(state);
+    advanceSeason(state);
+
+    // guardar a veces
+    if (Math.random() < 0.08) saveSilently();
+
+    state.lastTs = now();
+    render();
+  }
+
+  // ========= Inicio =========
+  applyOffline(state);
+  if (!$("log").children.length){
+    addLog("🏚️ Compras una finca abandonada. Piscina verde, salón triste… pero con potencial.");
+    addLog("👉 Empieza con <b>🧹 Trabajar en la finca</b> y compra: A → C → B → D → E.");
+  }
+
+  // Estación inicial según mes real (solo para ambientar)
+  // Europa/Madrid; aproximación simple por mes
+  try{
+    const m = new Date().getMonth() + 1;
+    // 12-2 inv, 3-5 pri, 6-8 ver, 9-11 oto
+    state.seasonIndex = (m<=2 || m===12) ? 0 : (m<=5 ? 1 : (m<=8 ? 2 : 3));
+  }catch(e){}
+
+  render();
+  setInterval(tick, 1000);
+})();
+</script>
+</body>
+</html>

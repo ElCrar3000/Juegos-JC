@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Infiltración: Ciudad Viva</title>
+  <style>
+    :root{
+      --bg:#081018;
+      --bg2:#0f1b28;
+      --panel:#132233;
+      --panel2:#1a2b40;
+      --line:#2d4663;
+      --text:#e9f1fb;
+      --muted:#9db1c8;
+      --accent:#65c6ff;
+      --accent2:#9b7cff;
+      --good:#4dd98c;
+      --warn:#ffcf5a;
+      --bad:#ff6b6b;
+      --chip:#203246;
+      --shadow:0 14px 40px rgba(0,0,0,.35);
+    }
+
+    *{ box-sizing:border-box; }
+
+    html,body{
+      margin:0;
+      padding:0;
+      background:
+        radial-gradient(circle at top, #13283f 0%, #0b1521 45%, #071018 100%);
+      color:var(--text);
+      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      min-height:100%;
+    }
+
+    body{
+      padding:18px;
+    }
+
+    h1,h2,h3,p{
+      margin:0;
+    }
+
+    button{
+      border:none;
+      cursor:pointer;
+      font:inherit;
+    }
+
+    .app{
+      max-width:1600px;
+      margin:0 auto;
+      display:grid;
+      grid-template-columns: 300px 1fr 360px;
+      gap:16px;
+    }
+
+    .panel{
+      background:linear-gradient(180deg,var(--panel),var(--panel2));
+      border:1px solid var(--line);
+      border-radius:18px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .panel-header{
+      padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      background:rgba(255,255,255,.02);
+    }
+
+    .panel-title{
+      font-size:14px;
+      font-weight:800;
+      letter-spacing:.5px;
+      text-transform:uppercase;
+      color:#d7e6f7;
+    }
+
+    .panel-body{
+      padding:14px;
+    }
+
+    .left-column,
+    .right-column{
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
+
+    .logo-box{
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .logo-title{
+      font-size:28px;
+      font-weight:900;
+      line-height:1;
+      letter-spacing:.5px;
+    }
+
+    .logo-sub{
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.5;
+    }
+
+    .badge-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    .badge{
+      background:var(--chip);
+      color:#d9e7f7;
+      border:1px solid var(--line);
+      padding:7px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+    }
+
+    .stat-list{
+      display:grid;
+      gap:12px;
+    }
+
+    .stat-card{
+      background:rgba(255,255,255,.02);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+    }
+
+    .stat-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      margin-bottom:8px;
+      font-size:13px;
+    }
+
+    .stat-name{
+      font-weight:800;
+      color:#dceafb;
+    }
+
+    .stat-value{
+      font-weight:900;
+      font-size:14px;
+    }
+
+    .bar{
+      width:100%;
+      height:10px;
+      background:#0a1520;
+      border:1px solid var(--line);
+      border-radius:999px;
+      overflow:hidden;
+    }
+
+    .bar-fill{
+      height:100%;
+      width:0%;
+      transition:width .25s ease;
+      border-radius:999px;
+    }
+
+    .good{ background:linear-gradient(90deg,#2fb96f,#61f3a4); }
+    .warn{ background:linear-gradient(90deg,#d8a22d,#ffd76a); }
+    .bad{ background:linear-gradient(90deg,#c84e4e,#ff8585); }
+    .info{ background:linear-gradient(90deg,#42a8ef,#7dd8ff); }
+    .violet{ background:linear-gradient(90deg,#7c6af2,#b29bff); }
+
+    .main-column{
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
+
+    .topbar{
+      display:grid;
+      grid-template-columns: 1fr auto auto auto auto;
+      gap:12px;
+      align-items:center;
+      padding:14px 16px;
+    }
+
+    .time-box{
+      font-size:14px;
+      color:var(--muted);
+    }
+
+    .time-box strong{
+      display:block;
+      color:var(--text);
+      font-size:20px;
+      margin-bottom:2px;
+    }
+
+    .pill{
+      background:var(--chip);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:10px 14px;
+      min-width:120px;
+      text-align:center;
+    }
+
+    .pill-label{
+      display:block;
+      font-size:11px;
+      text-transform:uppercase;
+      color:var(--muted);
+      font-weight:800;
+      letter-spacing:.4px;
+      margin-bottom:4px;
+    }
+
+    .pill-value{
+      font-size:20px;
+      font-weight:900;
+    }
+
+    .world-grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:16px;
+    }
+
+    .city-map{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+    }
+
+    .district{
+      background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(0,0,0,.08));
+      border:1px solid var(--line);
+      border-radius:18px;
+      min-height:160px;
+      padding:12px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      position:relative;
+      overflow:hidden;
+      transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+    }
+
+    .district:hover{
+      transform:translateY(-2px);
+      border-color:#4c6d91;
+      box-shadow:0 10px 24px rgba(0,0,0,.25);
+    }
+
+    .district.active{
+      outline:2px solid var(--accent);
+      border-color:#6bd3ff;
+    }
+
+    .district-title{
+      font-size:16px;
+      font-weight:900;
+    }
+
+    .district-sub{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.45;
+      min-height:34px;
+    }
+
+    .district-stats{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:auto;
+    }
+
+    .mini-chip{
+      background:#122131;
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:5px 8px;
+      font-size:11px;
+      font-weight:700;
+      color:#d7e6f7;
+    }
+
+    .district-people{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+    }
+
+    .person-dot{
+      width:12px;
+      height:12px;
+      border-radius:50%;
+      border:1px solid rgba(255,255,255,.3);
+      background:#56728f;
+    }
+
+    .person-dot.journalist{ background:#4cc2ff; }
+    .person-dot.politician{ background:#ffcf5a; }
+    .person-dot.military{ background:#ff7f7f; }
+    .person-dot.business{ background:#8de1a2; }
+    .person-dot.civilian{ background:#c7d5e6; }
+    .person-dot.police{ background:#9c8bff; }
+
+    .action-list{
+      display:grid;
+      gap:10px;
+    }
+
+    .action-btn{
+      width:100%;
+      text-align:left;
+      padding:12px 12px;
+      border-radius:14px;
+      background:linear-gradient(180deg,#17314a,#11253a);
+      color:var(--text);
+      border:1px solid var(--line);
+      font-weight:800;
+      transition:transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+
+    .action-btn:hover{
+      transform:translateY(-1px);
+      border-color:#6aaad9;
+      background:linear-gradient(180deg,#1b3853,#12283f);
+    }
+
+    .action-btn:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+      transform:none;
+    }
+
+    .action-desc{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      font-weight:600;
+      margin-top:3px;
+      line-height:1.4;
+    }
+
+    .npc-list{
+      display:grid;
+      gap:10px;
+      max-height:380px;
+      overflow:auto;
+      padding-right:4px;
+    }
+
+    .npc-card{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.025);
+      border-radius:16px;
+      padding:12px;
+      display:grid;
+      gap:8px;
+      cursor:pointer;
+      transition:border-color .12s ease, transform .12s ease;
+    }
+
+    .npc-card:hover{
+      transform:translateY(-1px);
+      border-color:#5f90bd;
+    }
+
+    .npc-card.selected{
+      border-color:#70d5ff;
+      outline:2px solid rgba(101,198,255,.25);
+    }
+
+    .npc-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .npc-name{
+      font-size:16px;
+      font-weight:900;
+      line-height:1.1;
+    }
+
+    .npc-role{
+      color:var(--muted);
+      font-size:12px;
+      margin-top:3px;
+      font-weight:700;
+    }
+
+    .npc-suspicion{
+      font-size:12px;
+      font-weight:800;
+      white-space:nowrap;
+    }
+
+    .npc-tags{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+    }
+
+    .npc-tag{
+      background:#152638;
+      border:1px solid var(--line);
+      color:#dceafb;
+      border-radius:999px;
+      padding:4px 8px;
+      font-size:11px;
+      font-weight:800;
+    }
+
+    .npc-memory{
+      font-size:12px;
+      color:#b8c8da;
+      line-height:1.45;
+    }
+
+    .diary{
+      display:grid;
+      gap:10px;
+      max-height:420px;
+      overflow:auto;
+      padding-right:4px;
+    }
+
+    .log-entry{
+      border:1px solid var(--line);
+      border-left:4px solid var(--accent);
+      border-radius:14px;
+      background:rgba(255,255,255,.025);
+      padding:12px;
+      display:grid;
+      gap:4px;
+    }
+
+    .log-time{
+      font-size:11px;
+      color:var(--muted);
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.4px;
+    }
+
+    .log-text{
+      font-size:13px;
+      line-height:1.5;
+      color:#e6eef8;
+    }
+
+    .log-entry.good-log{ border-left-color:var(--good); }
+    .log-entry.warn-log{ border-left-color:var(--warn); }
+    .log-entry.bad-log{ border-left-color:var(--bad); }
+    .log-entry.violet-log{ border-left-color:var(--accent2); }
+
+    .footer-note{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.5;
+    }
+
+    .small{
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .section-gap{
+      margin-top:8px;
+    }
+
+    @media (max-width: 1280px){
+      .app{
+        grid-template-columns: 280px 1fr;
+      }
+      .right-column{
+        grid-column:1 / -1;
+        display:grid;
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 900px){
+      .app{
+        grid-template-columns:1fr;
+      }
+      .world-grid{
+        grid-template-columns:1fr;
+      }
+      .topbar{
+        grid-template-columns:1fr 1fr;
+      }
+      .city-map{
+        grid-template-columns:1fr;
+      }
+      .right-column{
+        grid-template-columns:1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="left-column">
+      <section class="panel">
+        <div class="logo-box">
+          <div class="logo-title">INFILTRACIÓN</div>
+          <div class="logo-title" style="color:var(--accent)">CIUDAD VIVA</div>
+          <p class="logo-sub">
+            Eres una criatura alienígena capaz de escanear, poseer y suplantar personas dentro de una gran ciudad.
+            Sobrevive, manipula el sistema o protégelo. Solo hay un problema: cada humano tiene memoria, rutina, enemigos y secretos.
+          </p>
+          <div class="badge-row">
+            <span class="badge">Sandbox</span>
+            <span class="badge">Simulación</span>
+            <span class="badge">Suplantación</span>
+            <span class="badge">Tensión social</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Estado global</div>
+        </div>
+        <div class="panel-body">
+          <div class="stat-list">
+            <div class="stat-card">
+              <div class="stat-top">
+                <span class="stat-name">Estabilidad social</span>
+                <span class="stat-value" id="stabilityValue">100</span>
+              </div>
+              <div class="bar"><div id="stabilityBar" class="bar-fill good"></div></div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-top">
+                <span class="stat-name">Nivel de sospecha global</span>
+                <span class="stat-value" id="globalSuspicionValue">0</span>
+              </div>
+              <div class="bar"><div id="globalSuspicionBar" class="bar-fill bad"></div></div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-top">
+                <span class="stat-name">Cobertura mediática</span>
+                <span class="stat-value" id="mediaValue">20</span>
+              </div>
+              <div class="bar"><div id="mediaBar" class="bar-fill info"></div></div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-top">
+                <span class="stat-name">Tensión militar</span>
+                <span class="stat-value" id="militaryValue">10</span>
+              </div>
+              <div class="bar"><div id="militaryBar" class="bar-fill warn"></div></div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-top">
+                <span class="stat-name">Influencia económica</span>
+                <span class="stat-value" id="economyValue">55</span>
+              </div>
+              <div class="bar"><div id="economyBar" class="bar-fill violet"></div></div>
+            </div>
+          </div>
+
+          <div class="section-gap small">
+            Regla de oro: si la sociedad se rompe demasiado, tú también pierdes. Muy bonito ser un parásito espacial… hasta que no queda ciudad que parasitar.
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Acciones principales</div>
+        </div>
+        <div class="panel-body">
+          <div class="action-list">
+            <button class="action-btn" id="scanBtn">
+              Escanear objetivo
+              <span class="action-desc">Analiza recuerdos, hábitos, relaciones y secretos del NPC seleccionado.</span>
+            </button>
+
+            <button class="action-btn" id="possessBtn">
+              Poseer cuerpo
+              <span class="action-desc">Entra en el cuerpo del objetivo. Si fallas su identidad, la sospecha sube.</span>
+            </button>
+
+            <button class="action-btn" id="releaseBtn">
+              Abandonar cuerpo
+              <span class="action-desc">Sales del huésped actual. Útil si el riesgo es alto.</span>
+            </button>
+
+            <button class="action-btn" id="advanceBtn">
+              Avanzar 1 hora
+              <span class="action-desc">El mundo sigue vivo, los NPC se mueven, hablan, conspiran y reaccionan.</span>
+            </button>
+
+            <button class="action-btn" id="restBtn">
+              Pasar desapercibido
+              <span class="action-desc">Reducir ruido, calmar sospechas y dejar que la ciudad respire un poco.</span>
+            </button>
+
+            <button class="action-btn" id="newsBtn">
+              Provocar noticia menor
+              <span class="action-desc">Manipulas información local. Puede dar ventaja o sembrar tensión.</span>
+            </button>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <main class="main-column">
+      <section class="panel">
+        <div class="topbar">
+          <div class="time-box">
+            <strong id="dayLabel">Día 1</strong>
+            <span id="hourLabel">08:00</span>
+          </div>
+
+          <div class="pill">
+            <span class="pill-label">Forma actual</span>
+            <span class="pill-value" id="bodyLabel">Libre</span>
+          </div>
+
+          <div class="pill">
+            <span class="pill-label">Distrito</span>
+            <span class="pill-value" id="districtLabel">Centro</span>
+          </div>
+
+          <div class="pill">
+            <span class="pill-label">Energía alien</span>
+            <span class="pill-value" id="energyLabel">100</span>
+          </div>
+
+          <div class="pill">
+            <span class="pill-label">Dinero</span>
+            <span class="pill-value" id="moneyLabel">120</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="world-grid">
+        <section class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Ciudad</div>
+            <div class="small">Haz clic en un distrito</div>
+          </div>
+          <div class="panel-body">
+            <div class="city-map" id="cityMap"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Objetivo seleccionado</div>
+          </div>
+          <div class="panel-body" id="targetDetails">
+            <p class="small">Selecciona un NPC del distrito para ver información.</p>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Habitantes del distrito</div>
+          <div class="small" id="districtPeopleCount">0 NPCs</div>
+        </div>
+        <div class="panel-body">
+          <div class="npc-list" id="npcList"></div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="right-column">
+      <section class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Diario de la ciudad</div>
+        </div>
+        <div class="panel-body">
+          <div class="diary" id="diary"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Misión implícita</div>
+        </div>
+        <div class="panel-body">
+          <p class="footer-note">
+            No hay una misión obligatoria, pero hay una lógica cruel:
+            necesitas un cuerpo, una identidad, recursos, refugio y una ciudad lo bastante funcional como para vivir sin que te ejecuten, te estudien o conviertan tu existencia en un titular.
+          </p>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <script>
+    const ROLE_LABELS = {
+      journalist: "Periodista",
+      politician: "Político",
+      military: "Militar",
+      business: "Empresario",
+      civilian: "Civil",
+      police: "Policía"
+    };
+
+    const DISTRICTS = [
+      {
+        id: "centro",
+        name: "Centro",
+        description: "Medios, comercios, tráfico político y ojos por todas partes.",
+        security: 55,
+        wealth: 65
+      },
+      {
+        id: "gobierno",
+        name: "Gobierno",
+        description: "Despachos, ministros, asesores, pactos y traiciones con corbata.",
+        security: 80,
+        wealth: 78
+      },
+      {
+        id: "industrial",
+        name: "Industrial",
+        description: "Fábricas, contratos, mano de obra, accidentes y dinero rápido.",
+        security: 48,
+        wealth: 72
+      },
+      {
+        id: "residencial",
+        name: "Residencial",
+        description: "Familias, rutina, barrios tranquilos y secretos de puertas cerradas.",
+        security: 35,
+        wealth: 52
+      },
+      {
+        id: "militar",
+        name: "Base Militar",
+        description: "Armas, disciplina, paranoia y protocolos de emergencia.",
+        security: 92,
+        wealth: 50
+      },
+      {
+        id: "puerto",
+        name: "Puerto",
+        description: "Contrabando, logística, barcos, mercancía y favores turbios.",
+        security: 58,
+        wealth: 69
+      }
+    ];
+
+    function createNPCs() {
+      return [
+        {
+          id: "npc_1",
+          name: "Clara Vidal",
+          role: "journalist",
+          district: "centro",
+          suspicion: 5,
+          loyalty: 42,
+          health: 100,
+          wealth: 48,
+          routine: "Redacción, cafetería, entrevistas de calle y vuelta nocturna.",
+          publicInfo: "Reportera ambiciosa. Busca el escándalo que la haga famosa.",
+          hiddenInfo: "Tiene una fuente dentro del Gobierno y otra en el puerto.",
+          family: "Vive sola. Hermano policía en Residencial.",
+          memories: [
+            "Siempre pide café doble a las 09:00.",
+            "Odia al ministro de seguridad.",
+            "Guarda audios delicados en una nube privada.",
+            "Quiere dinero y fama, pero no quiere una guerra."
+          ],
+          traits: ["ambiciosa", "observadora", "persistente"],
+          schedule: {
+            8: "centro",
+            9: "centro",
+            10: "centro",
+            11: "gobierno",
+            12: "gobierno",
+            13: "centro",
+            14: "centro",
+            15: "residencial",
+            16: "centro",
+            17: "centro",
+            18: "puerto",
+            19: "puerto",
+            20: "centro",
+            21: "residencial",
+            22: "residencial",
+            23: "residencial"
+          }
+        },
+        {
+          id: "npc_2",
+          name: "Héctor Salas",
+          role: "politician",
+          district: "gobierno",
+          suspicion: 7,
+          loyalty: 61,
+          health: 100,
+          wealth: 89,
+          routine: "Reuniones, ruedas de prensa y cenas privadas.",
+          publicInfo: "Ministro de orden público. Carismático, duro y calculador.",
+          hiddenInfo: "Firma contratos con empresarios del puerto y tapa operaciones oscuras.",
+          family: "Casado. Una hija estudia en el extranjero.",
+          memories: [
+            "No soporta que le contradigan en público.",
+            "Tiene pánico a un escándalo personal.",
+            "Oculta pagos indirectos a un medio local.",
+            "Desconfía del ejército, pero lo necesita."
+          ],
+          traits: ["frío", "carismático", "dominante"],
+          schedule: {
+            8: "gobierno",
+            9: "gobierno",
+            10: "gobierno",
+            11: "gobierno",
+            12: "centro",
+            13: "centro",
+            14: "gobierno",
+            15: "gobierno",
+            16: "gobierno",
+            17: "gobierno",
+            18: "residencial",
+            19: "residencial",
+            20: "centro",
+            21: "centro",
+            22: "residencial",
+            23: "residencial"
+          }
+        },
+        {
+          id: "npc_3",
+          name: "Lucio Barrera",
+          role: "military",
+          district: "militar",
+          suspicion: 4,
+          loyalty: 78,
+          health: 100,
+          wealth: 60,
+          routine: "Base, entrenamiento, informes y patrullas de supervisión.",
+          publicInfo: "Coronel respetado. Cree que la ciudad se ablanda demasiado.",
+          hiddenInfo: "Tiene un plan de contingencia para declarar estado de excepción.",
+          family: "Divorciado. Hijo adolescente muy rebelde.",
+          memories: [
+            "No confía en los periodistas.",
+            "Revisa informes a las 06:00 incluso en días libres.",
+            "Tiene una caja fuerte con órdenes no autorizadas.",
+            "Admira el control. Detesta el caos."
+          ],
+          traits: ["disciplinado", "duro", "paranoico"],
+          schedule: {
+            8: "militar",
+            9: "militar",
+            10: "militar",
+            11: "militar",
+            12: "gobierno",
+            13: "gobierno",
+            14: "militar",
+            15: "militar",
+            16: "militar",
+            17: "centro",
+            18: "centro",
+            19: "militar",
+            20: "militar",
+            21: "militar",
+            22: "militar",
+            23: "militar"
+          }
+        },
+        {
+          id: "npc_4",
+          name: "Elena Montalbán",
+          role: "business",
+          district: "industrial",
+          suspicion: 6,
+          loyalty: 55,
+          health: 100,
+          wealth: 96,
+          routine: "Consejo de dirección, visitas al puerto y llamadas discretas.",
+          publicInfo: "Empresaria líder del sector logístico.",
+          hiddenInfo: "Ha financiado campañas políticas y compra silencios periodísticos.",
+          family: "Separada. Un padre enfermo en Residencial.",
+          memories: [
+            "No entra en edificios sin salida alternativa.",
+            "Tiene contabilidad doble.",
+            "Usa chófer solo en días de tensión social.",
+            "Su mayor miedo es una auditoría total."
+          ],
+          traits: ["pragmática", "codiciosa", "metódica"],
+          schedule: {
+            8: "industrial",
+            9: "industrial",
+            10: "industrial",
+            11: "puerto",
+            12: "puerto",
+            13: "gobierno",
+            14: "gobierno",
+            15: "industrial",
+            16: "industrial",
+            17: "centro",
+            18: "centro",
+            19: "residencial",
+            20: "residencial",
+            21: "residencial",
+            22: "residencial",
+            23: "residencial"
+          }
+        },
+        {
+          id: "npc_5",
+          name: "Iván Roldán",
+          role: "police",
+          district: "residencial",
+          suspicion: 3,
+          loyalty: 67,
+          health: 100,
+          wealth: 43,
+          routine: "Turnos largos, vigilancia urbana y visitas fugaces a casa.",
+          publicInfo: "Inspector con fama de honesto.",
+          hiddenInfo: "Está investigando desapariciones y movimientos extraños en el puerto.",
+          family: "Hermano de Clara Vidal.",
+          memories: [
+            "Se fija en pequeños cambios de comportamiento.",
+            "Anota matrículas a mano.",
+            "Ha visto a políticos mentir de cerca.",
+            "Tiene una deuda personal que no cuenta."
+          ],
+          traits: ["atento", "agotado", "ético"],
+          schedule: {
+            8: "residencial",
+            9: "centro",
+            10: "centro",
+            11: "centro",
+            12: "puerto",
+            13: "puerto",
+            14: "centro",
+            15: "gobierno",
+            16: "gobierno",
+            17: "centro",
+            18: "residencial",
+            19: "residencial",
+            20: "residencial",
+            21: "residencial",
+            22: "residencial",
+            23: "residencial"
+          }
+        },
+        {
+          id: "npc_6",
+          name: "Noa Ferrer",
+          role: "civilian",
+          district: "residencial",
+          suspicion: 1,
+          loyalty: 38,
+          health: 100,
+          wealth: 35,
+          routine: "Supermercado, transporte, redes sociales y vida barrial.",
+          publicInfo: "Ciudadana corriente. Parece irrelevante. Error típico.",
+          hiddenInfo: "Administra un foro local donde se filtran rumores antes que en prensa.",
+          family: "Vive con su madre y un sobrino.",
+          memories: [
+            "Todo lo cuenta en chats privados.",
+            "Observa a los vecinos más de lo que parece.",
+            "Se cree invisiblemente importante.",
+            "Conoce medio barrio y sus miserias."
+          ],
+          traits: ["curiosa", "charlatana", "subestimada"],
+          schedule: {
+            8: "residencial",
+            9: "residencial",
+            10: "centro",
+            11: "centro",
+            12: "centro",
+            13: "residencial",
+            14: "residencial",
+            15: "residencial",
+            16: "centro",
+            17: "centro",
+            18: "residencial",
+            19: "residencial",
+            20: "residencial",
+            21: "residencial",
+            22: "residencial",
+            23: "residencial"
+          }
+        },
+        {
+          id: "npc_7",
+          name: "Tomás Requena",
+          role: "journalist",
+          district: "centro",
+          suspicion: 4,
+          loyalty: 50,
+          health: 100,
+          wealth: 40,
+          routine: "Radio local, tertulia, contactos y alcohol nocturno.",
+          publicInfo: "Locutor muy conocido. Hace opinión disfrazada de información.",
+          hiddenInfo: "Cobra por inclinar discursos y destruir reputaciones.",
+          family: "Ex mujer. Hijo al que apenas ve.",
+          memories: [
+            "No revisa fuentes si la historia vende.",
+            "Teme perder relevancia.",
+            "Tiene una amante en el Gobierno.",
+            "Se derrumba si su prestigio cae."
+          ],
+          traits: ["vanidoso", "rápido", "manipulable"],
+          schedule: {
+            8: "centro",
+            9: "centro",
+            10: "centro",
+            11: "centro",
+            12: "gobierno",
+            13: "gobierno",
+            14: "centro",
+            15: "centro",
+            16: "centro",
+            17: "puerto",
+            18: "puerto",
+            19: "centro",
+            20: "centro",
+            21: "residencial",
+            22: "residencial",
+            23: "residencial"
+          }
+        },
+        {
+          id: "npc_8",
+          name: "Bruno Celada",
+          role: "business",
+          district: "puerto",
+          suspicion: 8,
+          loyalty: 49,
+          health: 100,
+          wealth: 88,
+          routine: "Puerto, almacenes, llamadas, cenas y acuerdos.",
+          publicInfo: "Intermediario empresarial con muchas conexiones.",
+          hiddenInfo: "Mueve mercancía ilegal mezclada con carga legal.",
+          family: "Sin familia visible en la ciudad.",
+          memories: [
+            "Nunca usa el mismo chófer dos semanas seguidas.",
+            "Tiene sobornados a dos inspectores.",
+            "No cree en nadie.",
+            "Sabe más de lo que parece sobre desapariciones."
+          ],
+          traits: ["astuto", "cauto", "corrupto"],
+          schedule: {
+            8: "puerto",
+            9: "puerto",
+            10: "puerto",
+            11: "industrial",
+            12: "industrial",
+            13: "puerto",
+            14: "puerto",
+            15: "centro",
+            16: "gobierno",
+            17: "gobierno",
+            18: "puerto",
+            19: "puerto",
+            20: "residencial",
+            21: "residencial",
+            22: "residencial",
+            23: "residencial"
+          }
+        }
+      ];
+    }
+
+    const state = {
+      day: 1,
+      hour: 8,
+      selectedDistrict: "centro",
+      selectedNPCId: null,
+      possessedNPCId: null,
+      scannedNPCIds: [],
+      alienEnergy: 100,
+      money: 120,
+      global: {
+        stability: 100,
+        globalSuspicion: 0,
+        media: 20,
+        military: 10,
+        economy: 55
+      },
+      npcs: createNPCs(),
+      logs: []
+    };
+
+    function clamp(value, min, max){
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function rand(min, max){
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function pick(arr){
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function getDistrictById(id){
+      return DISTRICTS.find(d => d.id === id);
+    }
+
+    function getNPCById(id){
+      return state.npcs.find(n => n.id === id);
+    }
+
+    function isScanned(id){
+      return state.scannedNPCIds.includes(id);
+    }
+
+    function addLog(text, type = "info"){
+      const hourStr = String(state.hour).padStart(2,"0") + ":00";
+      const entry = {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+        day: state.day,
+        hour: hourStr,
+        text,
+        type
+      };
+      state.logs.unshift(entry);
+      state.logs = state.logs.slice(0, 120);
+      renderLogs();
+    }
+
+    function getVisibleNPCsInDistrict(districtId){
+      return state.npcs.filter(npc => npc.district === districtId);
+    }
+
+    function updateNPCDistrictsFromSchedules(){
+      state.npcs.forEach(npc => {
+        const scheduled = npc.schedule[state.hour];
+        if(scheduled){
+          npc.district = scheduled;
+        }
+      });
+    }
+
+    function getRoleColorClass(role){
+      if(role === "journalist") return "journalist";
+      if(role === "politician") return "politician";
+      if(role === "military") return "military";
+      if(role === "business") return "business";
+      if(role === "police") return "police";
+      return "civilian";
+    }
+
+    function getSuspicionText(value){
+      if(value < 15) return "Baja";
+      if(value < 35) return "Vigilancia";
+      if(value < 60) return "Peligrosa";
+      return "Crítica";
+    }
+
+    function getBarClass(value, inverted = false){
+      if(!inverted){
+        if(value >= 66) return "good";
+        if(value >= 33) return "warn";
+        return "bad";
+      } else {
+        if(value <= 25) return "good";
+        if(value <= 50) return "warn";
+        return "bad";
+      }
+    }
+
+    function renderTop(){
+      document.getElementById("dayLabel").textContent = `Día ${state.day}`;
+      document.getElementById("hourLabel").textContent = `${String(state.hour).padStart(2,"0")}:00`;
+
+      const possessed = state.possessedNPCId ? getNPCById(state.possessedNPCId) : null;
+      document.getElementById("bodyLabel").textContent = possessed ? possessed.name.split(" ")[0] : "Libre";
+      document.getElementById("districtLabel").textContent = getDistrictById(state.selectedDistrict)?.name || "—";
+      document.getElementById("energyLabel").textContent = state.alienEnergy;
+      document.getElementById("moneyLabel").textContent = state.money;
+    }
+
+    function renderGlobalStats(){
+      const { stability, globalSuspicion, media, military, economy } = state.global;
+
+      document.getElementById("stabilityValue").textContent = stability;
+      document.getElementById("globalSuspicionValue").textContent = globalSuspicion;
+      document.getElementById("mediaValue").textContent = media;
+      document.getElementById("militaryValue").textContent = military;
+      document.getElementById("economyValue").textContent = economy;
+
+      const stabilityBar = document.getElementById("stabilityBar");
+      const suspicionBar = document.getElementById("globalSuspicionBar");
+      const mediaBar = document.getElementById("mediaBar");
+      const militaryBar = document.getElementById("militaryBar");
+      const economyBar = document.getElementById("economyBar");
+
+      stabilityBar.style.width = `${stability}%`;
+      suspicionBar.style.width = `${globalSuspicion}%`;
+      mediaBar.style.width = `${media}%`;
+      militaryBar.style.width = `${military}%`;
+      economyBar.style.width = `${economy}%`;
+
+      stabilityBar.className = `bar-fill ${getBarClass(stability)}`;
+      suspicionBar.className = `bar-fill ${getBarClass(globalSuspicion, true)}`;
+      mediaBar.className = `bar-fill info`;
+      militaryBar.className = `bar-fill warn`;
+      economyBar.className = `bar-fill violet`;
+    }
+
+    function renderCity(){
+      const cityMap = document.getElementById("cityMap");
+      cityMap.innerHTML = "";
+
+      DISTRICTS.forEach(district => {
+        const people = getVisibleNPCsInDistrict(district.id);
+        const card = document.createElement("button");
+        card.className = `district ${district.id === state.selectedDistrict ? "active" : ""}`;
+        card.onclick = () => {
+          state.selectedDistrict = district.id;
+          state.selectedNPCId = null;
+          renderAll();
+        };
+
+        const dots = people.map(p => `<span class="person-dot ${getRoleColorClass(p.role)}" title="${p.name}"></span>`).join("");
+
+        card.innerHTML = `
+          <div class="district-title">${district.name}</div>
+          <div class="district-sub">${district.description}</div>
+          <div class="district-people">${dots || '<span class="small">Sin presencia visible</span>'}</div>
+          <div class="district-stats">
+            <span class="mini-chip">Seguridad ${district.security}</span>
+            <span class="mini-chip">Riqueza ${district.wealth}</span>
+            <span class="mini-chip">${people.length} NPCs</span>
+          </div>
+        `;
+        cityMap.appendChild(card);
+      });
+    }
+
+    function renderNPCList(){
+      const list = document.getElementById("npcList");
+      const people = getVisibleNPCsInDistrict(state.selectedDistrict);
+      document.getElementById("districtPeopleCount").textContent = `${people.length} NPCs`;
+
+      list.innerHTML = "";
+
+      if(people.length === 0){
+        list.innerHTML = `<p class="small">No hay NPCs visibles aquí ahora mismo.</p>`;
+        return;
+      }
+
+      people.forEach(npc => {
+        const scanned = isScanned(npc.id);
+        const selected = npc.id === state.selectedNPCId;
+        const possessed = npc.id === state.possessedNPCId;
+
+        const card = document.createElement("div");
+        card.className = `npc-card ${selected ? "selected" : ""}`;
+        card.onclick = () => {
+          state.selectedNPCId = npc.id;
+          renderTargetDetails();
+          renderNPCList();
+        };
+
+        const memText = scanned
+          ? npc.hiddenInfo
+          : "Información superficial. Necesita escaneo para revelar recuerdos y secretos.";
+
+        card.innerHTML = `
+          <div class="npc-top">
+            <div>
+              <div class="npc-name">${npc.name}${possessed ? " 👽" : ""}</div>
+              <div class="npc-role">${ROLE_LABELS[npc.role] || npc.role}</div>
+            </div>
+            <div class="npc-suspicion">${getSuspicionText(npc.suspicion)} · ${npc.suspicion}</div>
+          </div>
+
+          <div class="npc-tags">
+            <span class="npc-tag">${scanned ? "Escaneado" : "No escaneado"}</span>
+            <span class="npc-tag">${npc.district}</span>
+            <span class="npc-tag">Lealtad ${npc.loyalty}</span>
+            <span class="npc-tag">Salud ${npc.health}</span>
+          </div>
+
+          <div class="npc-memory">${memText}</div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function renderTargetDetails(){
+      const box = document.getElementById("targetDetails");
+      const npc = state.selectedNPCId ? getNPCById(state.selectedNPCId) : null;
+
+      if(!npc){
+        box.innerHTML = `<p class="small">Selecciona un NPC del distrito para ver información.</p>`;
+        return;
+      }
+
+      const scanned = isScanned(npc.id);
+      const memories = scanned
+        ? `<ul style="margin:8px 0 0 18px; padding:0; color:#c9d8e8; font-size:12px; line-height:1.5;">
+            ${npc.memories.map(m => `<li>${m}</li>`).join("")}
+           </ul>`
+        : `<p class="small">Los recuerdos profundos siguen bloqueados. Primero escanéalo.</p>`;
+
+      box.innerHTML = `
+        <div style="display:grid; gap:10px;">
+          <div>
+            <div style="font-size:22px; font-weight:900;">${npc.name}</div>
+            <div class="small">${ROLE_LABELS[npc.role] || npc.role}</div>
+          </div>
+
+          <div style="display:flex; flex-wrap:wrap; gap:6px;">
+            <span class="npc-tag">Sospecha ${npc.suspicion}</span>
+            <span class="npc-tag">Lealtad ${npc.loyalty}</span>
+            <span class="npc-tag">Riqueza ${npc.wealth}</span>
+            <span class="npc-tag">${scanned ? "Perfil completo" : "Perfil parcial"}</span>
+          </div>
+
+          <div>
+            <div class="panel-title" style="font-size:12px;">Rutina</div>
+            <div class="small" style="margin-top:4px;">${npc.routine}</div>
+          </div>
+
+          <div>
+            <div class="panel-title" style="font-size:12px;">Información pública</div>
+            <div class="small" style="margin-top:4px;">${npc.publicInfo}</div>
+          </div>
+
+          <div>
+            <div class="panel-title" style="font-size:12px;">Familia y entorno</div>
+            <div class="small" style="margin-top:4px;">${scanned ? npc.family : "Relaciones aún no verificadas."}</div>
+          </div>
+
+          <div>
+            <div class="panel-title" style="font-size:12px;">Rasgos</div>
+            <div class="small" style="margin-top:4px;">${scanned ? npc.traits.join(", ") : "Necesita escaneo."}</div>
+          </div>
+
+          <div>
+            <div class="panel-title" style="font-size:12px;">Recuerdos clave</div>
+            ${memories}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderLogs(){
+      const diary = document.getElementById("diary");
+      diary.innerHTML = "";
+
+      if(state.logs.length === 0){
+        diary.innerHTML = `<p class="small">Todavía no ha pasado nada relevante. Eso cambiará. Siempre cambia.</p>`;
+        return;
+      }
+
+      state.logs.forEach(log => {
+        const div = document.createElement("div");
+        let cls = "log-entry";
+        if(log.type === "good") cls += " good-log";
+        else if(log.type === "warn") cls += " warn-log";
+        else if(log.type === "bad") cls += " bad-log";
+        else if(log.type === "violet") cls += " violet-log";
+
+        div.className = cls;
+        div.innerHTML = `
+          <div class="log-time">Día ${log.day} · ${log.hour}</div>
+          <div class="log-text">${log.text}</div>
+        `;
+        diary.appendChild(div);
+      });
+    }
+
+    function scanSelectedNPC(){
+      const npc = state.selectedNPCId ? getNPCById(state.selectedNPCId) : null;
+      if(!npc){
+        addLog("Intentaste escanear a nadie. Técnica avanzada de perder el tiempo.", "warn");
+        return;
+      }
+
+      if(isScanned(npc.id)){
+        addLog(`Ya habías escaneado a ${npc.name}. No hace falta freírle el cerebro dos veces.`, "warn");
+        return;
+      }
+
+      if(state.alienEnergy < 12){
+        addLog("No tienes suficiente energía alienígena para un escaneo profundo.", "bad");
+        return;
+      }
+
+      state.alienEnergy = clamp(state.alienEnergy - 12, 0, 100);
+      state.scannedNPCIds.push(npc.id);
+
+      npc.suspicion = clamp(npc.suspicion + rand(1, 5), 0, 100);
+      state.global.globalSuspicion = clamp(state.global.globalSuspicion + rand(0, 2), 0, 100);
+
+      addLog(
+        `Escaneaste a ${npc.name}. Ahora conoces mejor su rutina, sus recuerdos y sus grietas personales.`,
+        "violet"
+      );
+
+      renderAll();
+    }
+
+    function possessSelectedNPC(){
+      const npc = state.selectedNPCId ? getNPCById(state.selectedNPCId) : null;
+      if(!npc){
+        addLog("No puedes poseer el vacío. Aún.", "warn");
+        return;
+      }
+
+      if(!isScanned(npc.id)){
+        addLog(`Intentaste poseer a ${npc.name} sin escaneo previo. Mala idea. Primero conoce a tu víctima.`, "bad");
+        npc.suspicion = clamp(npc.suspicion + 8, 0, 100);
+        state.global.globalSuspicion = clamp(state.global.globalSuspicion + 3, 0, 100);
+        renderAll();
+        return;
+      }
+
+      if(state.alienEnergy < 20){
+        addLog("No tienes suficiente energía alienígena para una posesión estable.", "bad");
+        return;
+      }
+
+      const previousHost = state.possessedNPCId ? getNPCById(state.possessedNPCId) : null;
+
+      state.possessedNPCId = npc.id;
+      state.alienEnergy = clamp(state.alienEnergy - 20, 0, 100);
+
+      npc.suspicion = clamp(npc.suspicion + rand(2, 6), 0, 100);
+      state.selectedDistrict = npc.district;
+
+      if(previousHost && previousHost.id !== npc.id){
+        previousHost.suspicion = clamp(previousHost.suspicion + rand(3, 8), 0, 100);
+      }
+
+      addLog(
+        `Has entrado en el cuerpo de ${npc.name}. Ya no solo debes sobrevivir: debes parecer ${npc.name}.`,
+        "violet"
+      );
+
+      renderAll();
+    }
+
+    function releaseBody(){
+      const host = state.possessedNPCId ? getNPCById(state.possessedNPCId) : null;
+
+      if(!host){
+        addLog("No estás dentro de ningún cuerpo.", "warn");
+        return;
+      }
+
+      host.suspicion = clamp(host.suspicion + rand(4, 9), 0, 100);
+      state.global.globalSuspicion = clamp(state.global.globalSuspicion + rand(1, 4), 0, 100);
+      state.possessedNPCId = null;
+
+      addLog(`Abandonaste el cuerpo de ${host.name}. Queda un rastro raro en su comportamiento.`, "warn");
+      renderAll();
+    }
+
+    function restAndHide(){
+      state.alienEnergy = clamp(state.alienEnergy + rand(6, 12), 0, 100);
+      state.global.globalSuspicion = clamp(state.global.globalSuspicion - rand(1, 4), 0, 100);
+
+      if(state.possessedNPCId){
+        const host = getNPCById(state.possessedNPCId);
+        host.suspicion = clamp(host.suspicion - rand(2, 5), 0, 100);
+        addLog(`Te mantuviste discreto dentro de ${host.name}. La sospecha baja un poco.`, "good");
+      } else {
+        addLog("Permaneciste oculto y recuperaste parte de tu energía.", "good");
+      }
+
+      renderAll();
+    }
+
+    function causeMinorNews(){
+      const host = state.possessedNPCId ? getNPCById(state.possessedNPCId) : null;
+      const selected = state.selectedNPCId ? getNPCById(state.selectedNPCId) : null;
+      const actor = host || selected;
+
+      if(state.alienEnergy < 8){
+        addLog("No tienes energía para alterar el flujo de información.", "bad");
+        return;
+      }
+
+      state.alienEnergy = clamp(state.alienEnergy - 8, 0, 100);
+
+      const outcomes = [
+        {
+          text: "Se extiende un rumor sobre corrupción menor en contratos públicos.",
+          media: 8, suspicion: 3, stability: -3
+        },
+        {
+          text: "Una noticia humana banal tapa durante unas horas un asunto serio.",
+          media: 4, suspicion: -1, stability: 1
+        },
+        {
+          text: "Aparecen filtraciones contradictorias que siembran dudas en la prensa.",
+          media: 7, suspicion: 2, stability: -2
+        },
+        {
+          text: "Un pequeño escándalo empresarial distrae a la ciudad.",
+          media: 6, suspicion: 1, economy: -4
+        }
+      ];
+
+      const chosen = pick(outcomes);
+
+      state.global.media = clamp(state.global.media + (chosen.media || 0), 0, 100);
+      state.global.globalSuspicion = clamp(state.global.globalSuspicion + (chosen.suspicion || 0), 0, 100);
+      state.global.stability = clamp(state.global.stability + (chosen.stability || 0), 0, 100);
+      if(chosen.economy){
+        state.global.economy = clamp(state.global.economy + chosen.economy, 0, 100);
+      }
+
+      if(actor){
+        actor.suspicion = clamp(actor.suspicion + rand(1, 5), 0, 100);
+      }
+
+      addLog(`${chosen.text}${actor ? ` ${actor.name} queda ligeramente más expuesto.` : ""}`, "warn");
+      renderAll();
+    }
+
+    function processNPCInteractions(){
+      const randomEvents = [];
+
+      const clara = getNPCById("npc_1");
+      const hector = getNPCById("npc_2");
+      const lucio = getNPCById("npc_3");
+      const elena = getNPCById("npc_4");
+      const ivan = getNPCById("npc_5");
+      const noa = getNPCById("npc_6");
+      const tomas = getNPCById("npc_7");
+      const bruno = getNPCById("npc_8");
+
+      const allPairs = [
+        [clara, hector],
+        [clara, ivan],
+        [elena, bruno],
+        [lucio, hector],
+        [tomas, clara],
+        [ivan, bruno],
+        [noa, clara]
+      ];
+
+      allPairs.forEach(([a,b]) => {
+        if(a.district === b.district && Math.random() < 0.35){
+          randomEvents.push([a,b]);
+        }
+      });
+
+      randomEvents.forEach(([a,b]) => {
+        const interactionType = pick(["rumor","deal","conflict","observation"]);
+
+        if(interactionType === "rumor"){
+          state.global.media = clamp(state.global.media + 2, 0, 100);
+          addLog(`${a.name} intercambió rumores con ${b.name} en ${getDistrictById(a.district).name}.`, "info");
+        }
+
+        if(interactionType === "deal"){
+          state.global.economy = clamp(state.global.economy + 1, 0, 100);
+          addLog(`${a.name} y ${b.name} cerraron un acuerdo discreto en ${getDistrictById(a.district).name}.`, "violet");
+        }
+
+        if(interactionType === "conflict"){
+          state.global.stability = clamp(state.global.stability - 2, 0, 100);
+          a.suspicion = clamp(a.suspicion + 1, 0, 100);
+          b.suspicion = clamp(b.suspicion + 1, 0, 100);
+          addLog(`${a.name} y ${b.name} tuvieron un choque tenso en ${getDistrictById(a.district).name}.`, "warn");
+        }
+
+        if(interactionType === "observation"){
+          a.suspicion = clamp(a.suspicion + 1, 0, 100);
+          addLog(`${b.name} observó algo extraño en el comportamiento de ${a.name}.`, "warn");
+        }
+      });
+    }
+
+    function processHostPressure(){
+      if(!state.possessedNPCId) return;
+
+      const host = getNPCById(state.possessedNPCId);
+
+      const pressure = rand(2, 7);
+      host.suspicion = clamp(host.suspicion + pressure, 0, 100);
+
+      if(host.role === "politician" || host.role === "journalist" || host.role === "military"){
+        host.suspicion = clamp(host.suspicion + 2, 0, 100);
+      }
+
+      if(host.suspicion >= 70){
+        state.global.globalSuspicion = clamp(state.global.globalSuspicion + rand(4, 8), 0, 100);
+        addLog(`La suplantación de ${host.name} empieza a chirriar de forma peligrosa.`, "bad");
+      } else if(host.suspicion >= 45){
+        addLog(`Algunas personas notan detalles raros en ${host.name}.`, "warn");
+      }
+    }
+
+    function processWorldDrift(){
+      state.global.media = clamp(state.global.media + rand(-2, 3), 0, 100);
+      state.global.economy = clamp(state.global.economy + rand(-2, 2), 0, 100);
+      state.global.military = clamp(state.global.military + rand(-1, 2), 0, 100);
+
+      if(state.global.media > 70){
+        state.global.stability = clamp(state.global.stability - rand(1, 4), 0, 100);
+      }
+
+      if(state.global.military > 65){
+        state.global.stability = clamp(state.global.stability - 1, 0, 100);
+        state.global.globalSuspicion = clamp(state.global.globalSuspicion + 1, 0, 100);
+      }
+
+      if(state.global.economy < 30){
+        state.global.stability = clamp(state.global.stability - rand(1, 4), 0, 100);
+      }
+    }
+
+    function checkCriticalStates(){
+      if(state.global.stability <= 0){
+        addLog("La ciudad ha colapsado. Sin orden, sin confianza y sin vida normal. Mal sitio para querer pasar desapercibido.", "bad");
+      }
+
+      if(state.global.globalSuspicion >= 100){
+        addLog("La existencia de algo no humano ya se discute abiertamente en círculos de poder. Esto se pone feo.", "bad");
+      }
+
+      state.npcs.forEach(npc => {
+        if(npc.suspicion >= 100){
+          addLog(`${npc.name} ha sido marcado como caso crítico. Su entorno exige respuestas inmediatas.`, "bad");
+          npc.suspicion = 95;
+        }
+      });
+    }
+
+    function advanceHour(){
+      state.hour += 1;
+
+      if(state.hour >= 24){
+        state.hour = 0;
+        state.day += 1;
+        addLog(`Empieza el Día ${state.day}. La ciudad sigue viva. Tus problemas también.`, "info");
+      }
+
+      updateNPCDistrictsFromSchedules();
+      processNPCInteractions();
+      processHostPressure();
+      processWorldDrift();
+      checkCriticalStates();
+
+      state.alienEnergy = clamp(state.alienEnergy - rand(1, 3), 0, 100);
+
+      if(state.alienEnergy <= 10){
+        addLog("Tu energía alienígena está peligrosamente baja.", "warn");
+      }
+
+      renderAll();
+    }
+
+    function renderAll(){
+      renderTop();
+      renderGlobalStats();
+      renderCity();
+      renderNPCList();
+      renderTargetDetails();
+
+      const hasSelected = !!state.selectedNPCId;
+      document.getElementById("scanBtn").disabled = !hasSelected;
+      document.getElementById("possessBtn").disabled = !hasSelected;
+      document.getElementById("releaseBtn").disabled = !state.possessedNPCId;
+    }
+
+    document.getElementById("scanBtn").addEventListener("click", scanSelectedNPC);
+    document.getElementById("possessBtn").addEventListener("click", possessSelectedNPC);
+    document.getElementById("releaseBtn").addEventListener("click", releaseBody);
+    document.getElementById("advanceBtn").addEventListener("click", advanceHour);
+    document.getElementById("restBtn").addEventListener("click", restAndHide);
+    document.getElementById("newsBtn").addEventListener("click", causeMinorNews);
+
+    function init(){
+      addLog("Has llegado a la ciudad. Nadie sabe lo que eres. De momento.", "violet");
+      addLog("Tu primer objetivo es encontrar una identidad útil y no reventar el sistema demasiado pronto.", "info");
+      updateNPCDistrictsFromSchedules();
+      renderAll();
+    }
+
+    init();
+  </script>
+</body>
+</html>

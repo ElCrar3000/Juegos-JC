@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Camel Cube War</title>
+  <style>
+    html, body { margin:0; padding:0; overflow:hidden; background:#000; }
+    #ui{
+      position:absolute; left:12px; top:12px; z-index:10;
+      font-family:Arial, sans-serif; color:#fff; font-size:14px;
+      background:rgba(0,0,0,.35); padding:10px 12px; border-radius:10px;
+      line-height:1.35;
+      user-select:none;
+    }
+    #tip{
+      position:absolute; left:12px; bottom:12px; z-index:10;
+      font-family:Arial, sans-serif; color:#fff; font-size:13px;
+      background:rgba(0,0,0,.35); padding:10px 12px; border-radius:10px;
+      max-width:520px;
+      user-select:none;
+    }
+    #cross{
+      position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+      color:#fff; font-family:monospace; z-index:10; opacity:.7;
+      user-select:none; pointer-events:none;
+    }
+    .btn {
+      display:inline-block; margin-top:6px; padding:6px 10px; border-radius:8px;
+      background:rgba(255,255,255,.12); cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <div><b>Camel Cube War</b></div>
+    Vida: <span id="vida">100</span> |
+    Escudo: <span id="shield">0</span> |
+    Bombas: <span id="bombas">3</span><br/>
+    Arma: <span id="arma">Pistola</span> |
+    Munición: <span id="ammo">∞</span><br/>
+    Zombis: <span id="zcount">0</span> |
+    Aliados: <span id="acount">0</span><br/>
+    Camello jefe: <span id="boss">VIVO</span><br/>
+    <div class="btn" id="lockBtn">🔒 Click para capturar ratón</div>
+  </div>
+  <div id="cross">+</div>
+  <div id="tip">
+    <b>Controles</b><br/>
+    WASD = mover | SHIFT = sprint | ESPACIO = saltar<br/>
+    Click = disparar | Q/E = cambiar arma | B = bomba (explosión destructiva)<br/>
+    R = recargar (solo Rifle) | V = “grito” (los aliados se acercan)<br/>
+    <br/>
+    Objetivo: sobrevive, rompe cubos, aguanta al <b>camello gigante de hierro</b>.
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+
+  <script>
+  // =========================
+  // Config general
+  // =========================
+  const UI = {
+    vida: document.getElementById("vida"),
+    shield: document.getElementById("shield"),
+    bombas: document.getElementById("bombas"),
+    arma: document.getElementById("arma"),
+    ammo: document.getElementById("ammo"),
+    zcount: document.getElementById("zcount"),
+    acount: document.getElementById("acount"),
+    boss: document.getElementById("boss"),
+    lockBtn: document.getElementById("lockBtn"),
+  };
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x000000, 30, 220);
+
+  const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer({ antialias:true });
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  document.body.appendChild(renderer.domElement);
+
+  // Luces
+  const amb = new THREE.AmbientLight(0xffffff, 0.55);
+  scene.add(amb);
+  const sun = new THREE.DirectionalLight(0xffffff, 0.7);
+  sun.position.set(30, 60, 10);
+  scene.add(sun);
+
+  // =========================
+  // Jugador (todo cubos)
+  // =========================
+  const player = {
+    pos: new THREE.Vector3(0, 2, 0),
+    vel: new THREE.Vector3(0, 0, 0),
+    yaw: 0,
+    pitch: 0,
+    grounded: false,
+    hp: 100,
+    shield: 0,
+    bombs: 3,
+    speed: 7.0,
+    sprintMul: 1.55,
+    jump: 8.5,
+    radius: 0.55,
+    height: 1.75,
+    weaponIndex: 0,
+    weapons: [
+      { name:"Pistola", fireRate: 7.5, damage: 12, spread: 0.010, bulletSpeed: 38, ammo: Infinity, reload: 0.0 },
+      { name:"Rifle",   fireRate: 11.0, damage: 9,  spread: 0.020, bulletSpeed: 46, ammo: 30, reload: 1.1, ammoMax: 30, reserve: 120 },
+      { name:"Escopeta",fireRate: 1.7, damage: 6,  spread: 0.065, bulletSpeed: 34, pellets: 8, ammo: 8, reload: 1.4, ammoMax: 8, reserve: 40 }
+    ],
+    lastShot: 0,
+    reloading: false,
+    reloadEnd: 0
+  };
+
+  // Cámara
+  camera.position.copy(player.pos);
+  camera.position.y += 0.5;
+
+  // Suelo
+  const ground = new THREE.Mesh(
+    new THREE.BoxGeometry(250, 2, 250),
+    new THREE.MeshStandardMaterial({ color: 0x8a6b3a, roughness: 1 })
+  );
+  ground.position.y = -1.5;
+  scene.add(ground);
+
+  // =========================
+  // Mundo cúbico (edificios + cubos destructibles)
+  // =========================
+  const world = {
+    blocks: [],          // cubos destructibles (barriles/cajas)
+    buildings: [],       // edificios (no destructibles en esta versión)
+    props: [],           // coches/helicópteros
+    size: 220
+  };
+
+  function rand(min, max){ return Math.random()*(max-min)+min; }
+  function randi(min, max){ return Math.floor(rand(min, max+1)); }
+
+  function makeBlock(x,y,z, size=1.5, color=0x2bdcff, destructible=true){
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(size,size,size),
+      new THREE.MeshStandardMaterial({ color, roughness: 0.9 })
+    );
+    mesh.position.set(x,y,z);
+    mesh.userData = { destructible, hp: destructible ? 25 : 999999, size };
+    scene.add(mesh);
+    if(destructible) world.blocks.push(mesh);
+    else world.buildings.push(mesh);
+    return mesh;
+  }
+
+  function makeBuilding(cx, cz, w=6, d=6, h=10){
+    // edificio cúbico simple: base + niveles
+    const mat = new THREE.MeshStandardMaterial({ color: 0x4b4b4b, roughness: 1 });
+    const geo = new THREE.BoxGeometry(w, h, d);
+    const b = new THREE.Mesh(geo, mat);
+    b.position.set(cx, h/2 - 0.1, cz);
+    b.userData = { destructible:false, hp:999999 };
+    scene.add(b);
+    world.buildings.push(b);
+
+    // ventanitas como cubitos
+    for(let i=0;i<randi(8,18);i++){
+      const wx = cx + rand(-w/2+0.8, w/2-0.8);
+      const wy = rand(1.2, h-1.2);
+      const wz = cz + (Math.random()<0.5 ? -d/2-0.2 : d/2+0.2);
+      const win = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6,0.6,0.2),
+        new THREE.MeshStandardMaterial({ color: 0x99ccff, emissive:0x224466, roughness:0.3 })
+      );
+      win.position.set(wx, wy, wz);
+      scene.add(win);
+    }
+    return b;
+  }
+
+  function makeCar(x,z){
+    const group = new THREE.Group();
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(2.3, 0.8, 1.3),
+      new THREE.MeshStandardMaterial({ color: 0x202020, roughness: 0.9 })
+    );
+    body.position.y = 0.45;
+    group.add(body);
+
+    const top = new THREE.Mesh(
+      new THREE.BoxGeometry(1.2, 0.6, 1.1),
+      new THREE.MeshStandardMaterial({ color: 0x353535, roughness: 0.9 })
+    );
+    top.position.set(0.1, 0.95, 0);
+    group.add(top);
+
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x0b0b0b, roughness: 1 });
+    const wheelGeo = new THREE.BoxGeometry(0.35,0.35,0.35);
+    const wheels = [
+      [-0.9,0.2, 0.65], [0.9,0.2, 0.65],
+      [-0.9,0.2,-0.65], [0.9,0.2,-0.65]
+    ];
+    for(const [wx,wy,wz] of wheels){
+      const wh = new THREE.Mesh(wheelGeo, wheelMat);
+      wh.position.set(wx,wy,wz);
+      group.add(wh);
+    }
+    group.position.set(x, 0, z);
+    group.rotation.y = rand(0, Math.PI*2);
+    scene.add(group);
+    world.props.push(group);
+    return group;
+  }
+
+  function makeHelicopter(x,z){
+    const group = new THREE.Group();
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(2.6, 0.7, 1.1),
+      new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.85 })
+    );
+    body.position.y = 6.5;
+    group.add(body);
+
+    const tail = new THREE.Mesh(
+      new THREE.BoxGeometry(2.0, 0.25, 0.25),
+      new THREE.MeshStandardMaterial({ color: 0x2b2b2b, roughness: 0.9 })
+    );
+    tail.position.set(-2.1, 6.6, 0);
+    group.add(tail);
+
+    const rotor = new THREE.Mesh(
+      new THREE.BoxGeometry(3.8, 0.08, 0.25),
+      new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 1 })
+    );
+    rotor.position.set(0, 7.0, 0);
+    group.add(rotor);
+
+    group.userData = { rotor, t: rand(0, 1000) };
+    group.position.set(x, 0, z);
+    group.rotation.y = rand(0, Math.PI*2);
+    scene.add(group);
+    world.props.push(group);
+    return group;
+  }
+
+  function generateCity(){
+    // Edificios en una zona
+    for(let i=0;i<18;i++){
+      const x = rand(-65, 65);
+      const z = rand(-65, 65);
+      if(Math.abs(x)<10 && Math.abs(z)<10) continue;
+      const w = randi(6, 14);
+      const d = randi(6, 14);
+      const h = randi(8, 26);
+      makeBuilding(x, z, w, d, h);
+    }
+
+    // Bloques destructibles dispersos
+    for(let i=0;i<70;i++){
+      const x = rand(-100, 100);
+      const z = rand(-100, 100);
+      if(Math.abs(x)<8 && Math.abs(z)<8) continue;
+      const col = (Math.random()<0.5) ? 0x7bdc65 : 0xffcc66;
+      makeBlock(x, 0.25, z, rand(1.0, 2.0), col, true);
+    }
+
+    // Coches y helicópteros
+    for(let i=0;i<10;i++) makeCar(rand(-80,80), rand(-80,80));
+    for(let i=0;i<4;i++)  makeHelicopter(rand(-90,90), rand(-90,90));
+  }
+  generateCity();
+
+  // =========================
+  // Enemigos (zombis verdes) + Aliados (te ayudan)
+  // =========================
+  const mobs = {
+    zombies: [],
+    allies: [],
+    bullets: [],
+    enemyBullets: [],
+    particles: []
+  };
+
+  function makeZombie(x,z){
+    const zmb = new THREE.Mesh(
+      new THREE.BoxGeometry(1.2, 2.3, 1.2),
+      new THREE.MeshStandardMaterial({ color: 0x00ff00, roughness: 0.9 })
+    );
+    zmb.position.set(x, 1.15, z);
+    zmb.userData = { hp: 40, speed: rand(1.1, 1.6), atk: 10, cd: 0, type:"zombie" };
+    scene.add(zmb);
+    mobs.zombies.push(zmb);
+    return zmb;
+  }
+
+  function makeAlly(x,z){
+    const ally = new THREE.Mesh(
+      new THREE.BoxGeometry(1.2, 2.2, 1.2),
+      new THREE.MeshStandardMaterial({ color: 0x66aaff, roughness: 0.8 })
+    );
+    ally.position.set(x, 1.1, z);
+    ally.userData = { hp: 85, speed: 2.2, cd: 0, type:"ally" };
+    scene.add(ally);
+    mobs.allies.push(ally);
+    return ally;
+  }
+
+  // Spawn inicial
+  for(let i=0;i<18;i++) makeZombie(rand(-90,90), rand(-90,90));
+  for(let i=0;i<3;i++)  makeAlly(rand(-6,6), rand(-6,6));
+
+  // =========================
+  // Camello gigante de hierro (Jefe)
+  // =========================
+  const boss = {
+    alive: true,
+    mesh: null,
+    hp: 650,
+    cdShoot: 0,
+    cdRam: 0
+  };
+
+  function makeIronCamel(x,z){
+    const g = new THREE.Group();
+
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(6.5, 4.2, 3.0),
+      new THREE.MeshStandardMaterial({ color: 0x9aa3ad, metalness: 0.7, roughness: 0.35 })
+    );
+    body.position.y = 3.1;
+    g.add(body);
+
+    // patas (cubos)
+    const legGeo = new THREE.BoxGeometry(1.0, 3.2, 1.0);
+    for(const sx of [-2.6, 2.6]){
+      for(const sz of [-1.0, 1.0]){
+        const leg = new THREE.Mesh(legGeo, body.material);
+        leg.position.set(sx, 1.6, sz);
+        g.add(leg);
+      }
+    }
+
+    // cuello + cabeza
+    const neck = new THREE.Mesh(new THREE.BoxGeometry(1.6, 3.0, 1.6), body.material);
+    neck.position.set(3.8, 5.0, 0);
+    g.add(neck);
+
+    const head = new THREE.Mesh(new THREE.BoxGeometry(2.6, 2.0, 2.0), body.material);
+    head.position.set(4.7, 6.1, 0);
+    g.add(head);
+
+    // "mofletes" con pistolas
+    function cheekGun(side){
+      const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 1.2), body.material);
+      cheek.position.set(5.5, 5.7, side*1.2);
+      g.add(cheek);
+
+      const gun = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.35, 0.35), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 }));
+      gun.position.set(6.3, 5.65, side*1.2);
+      g.add(gun);
+      return gun;
+    }
+    const gunL = cheekGun(-1);
+    const gunR = cheekGun(1);
+
+    g.position.set(x, 0, z);
+    g.userData = { type:"bossCamel", hp: boss.hp, gunL, gunR, speed: 2.3 };
+    scene.add(g);
+
+    boss.mesh = g;
+    return g;
+  }
+  makeIronCamel(40, 40);
+
+  // =========================
+  // Pointer Lock (capturar ratón)
+  // =========================
+  UI.lockBtn.addEventListener("click", ()=>{
+    renderer.domElement.requestPointerLock();
+  });
+
+  document.addEventListener("pointerlockchange", ()=>{
+    const locked = document.pointerLockElement === renderer.domElement;
+    UI.lockBtn.textContent = locked ? "✅ Ratón capturado (ESC para soltar)" : "🔒 Click para capturar ratón";
+  });
+
+  document.addEventListener("mousemove", (e)=>{
+    if(document.pointerLockElement !== renderer.domElement) return;
+    const sens = 0.0022;
+    player.yaw   -= e.movementX * sens;
+    player.pitch -= e.movementY * sens;
+    player.pitch = Math.max(-1.35, Math.min(1.25, player.pitch));
+  });
+
+  // =========================
+  // Input
+  // =========================
+  const keys = {};
+  addEventListener("keydown", (e)=>{
+    keys[e.key.toLowerCase()] = true;
+
+    if(e.key.toLowerCase() === "q") prevWeapon();
+    if(e.key.toLowerCase() === "e") nextWeapon();
+    if(e.key.toLowerCase() === "b") doBomb();
+    if(e.key.toLowerCase() === "r") tryReload();
+    if(e.key.toLowerCase() === "v") callAllies();
+  });
+  addEventListener("keyup", (e)=> keys[e.key.toLowerCase()] = false);
+
+  addEventListener("mousedown", (e)=>{
+    if(e.button === 0) shooting = true;
+  });
+  addEventListener("mouseup", (e)=>{
+    if(e.button === 0) shooting = false;
+  });
+  let shooting = false;
+
+  function currentWeapon(){ return player.weapons[player.weaponIndex]; }
+  function updateWeaponUI(){
+    const w = currentWeapon();
+    UI.arma.textContent = w.name;
+    if(w.ammo === Infinity) UI.ammo.textContent = "∞";
+    else UI.ammo.textContent = `${w.ammo}/${w.reserve ?? 0}`;
+  }
+  updateWeaponUI();
+
+  function nextWeapon(){
+    player.weaponIndex = (player.weaponIndex + 1) % player.weapons.length;
+    updateWeaponUI();
+  }
+  function prevWeapon(){
+    player.weaponIndex = (player.weaponIndex - 1 + player.weapons.length) % player.weapons.length;
+    updateWeaponUI();
+  }
+
+  // =========================
+  // Disparo, balas y efectos
+  // =========================
+  const ray = new THREE.Raycaster();
+
+  function spawnParticleBurst(pos, color=0xffffff, count=10){
+    for(let i=0;i<count;i++){
+      const p = new THREE.Mesh(
+        new THREE.BoxGeometry(0.12,0.12,0.12),
+        new THREE.MeshStandardMaterial({ color, roughness:1 })
+      );
+      p.position.copy(pos);
+      p.userData = {
+        vel: new THREE.Vector3(rand(-1,1), rand(0.2,1.5), rand(-1,1)).multiplyScalar(rand(2,6)),
+        life: rand(0.3, 0.8)
+      };
+      scene.add(p);
+      mobs.particles.push(p);
+    }
+  }
+
+  function shoot(now){
+    const w = currentWeapon();
+    if(player.reloading) return;
+    if(now - player.lastShot < (1 / w.fireRate)) return;
+
+    // ammo check
+    if(w.ammo !== Infinity && w.ammo <= 0){
+      // click seco: intentamos recargar
+      tryReload();
+      return;
+    }
+
+    player.lastShot = now;
+
+    // Consume ammo
+    if(w.ammo !== Infinity) w.ammo--;
+
+    // Dirección con yaw/pitch
+    const dir = new THREE.Vector3(
+      Math.sin(player.yaw) * Math.cos(player.pitch),
+      Math.sin(player.pitch),
+      Math.cos(player.yaw) * Math.cos(player.pitch)
+    ).normalize();
+
+    // Pequeño spread
+    function jitter(v, s){
+      v.x += rand(-s, s);
+      v.y += rand(-s, s);
+      v.z += rand(-s, s);
+      return v.normalize();
+    }
+
+    const start = player.pos.clone().add(new THREE.Vector3(0, 1.15, 0));
+
+    const pellets = w.pellets ?? 1;
+    for(let i=0;i<pellets;i++){
+      const d = jitter(dir.clone(), w.spread);
+      const b = new THREE.Mesh(
+        new THREE.BoxGeometry(0.12,0.12,0.12),
+        new THREE.MeshStandardMaterial({ color: 0xffee55, roughness: 0.6, emissive:0x332200 })
+      );
+      b.position.copy(start);
+      b.userData = {
+        vel: d.multiplyScalar(w.bulletSpeed),
+        life: 1.2,
+        dmg: w.damage,
+        from: "player"
+      };
+      scene.add(b);
+      mobs.bullets.push(b);
+    }
+
+    updateWeaponUI();
+  }
+
+  function shootEnemy(fromPos, targetPos, speed=28, dmg=6){
+    const dir = new THREE.Vector3().subVectors(targetPos, fromPos).normalize();
+    const b = new THREE.Mesh(
+      new THREE.BoxGeometry(0.13,0.13,0.13),
+      new THREE.MeshStandardMaterial({ color: 0xff6666, roughness: 0.8, emissive:0x330000 })
+    );
+    b.position.copy(fromPos);
+    b.userData = { vel: dir.multiplyScalar(speed), life: 1.3, dmg, from:"enemy" };
+    scene.add(b);
+    mobs.enemyBullets.push(b);
+  }
+
+  // =========================
+  // Bomba (destruye cubos cercanos + daño área a zombis)
+  // =========================
+  function doBomb(){
+    if(player.bombs <= 0) return;
+    player.bombs--;
+    UI.bombas.textContent = player.bombs;
+
+    const center = player.pos.clone();
+    const radius = 10.5;
+
+    spawnParticleBurst(center.clone().add(new THREE.Vector3(0,1,0)), 0xffaa55, 35);
+
+    // romper bloques destructibles
+    for(let i=world.blocks.length-1; i>=0; i--){
+      const bl = world.blocks[i];
+      if(bl.position.distanceTo(center) < radius){
+        scene.remove(bl);
+        world.blocks.splice(i,1);
+      }
+    }
+
+    // daño a zombis
+    for(let i=mobs.zombies.length-1; i>=0; i--){
+      const z = mobs.zombies[i];
+      const d = z.position.distanceTo(center);
+      if(d < radius){
+        z.userData.hp -= Math.floor(70 * (1 - d/radius));
+        spawnParticleBurst(z.position.clone(), 0x00ff00, 10);
+        if(z.userData.hp <= 0){
+          scene.remove(z);
+          mobs.zombies.splice(i,1);
+        }
+      }
+    }
+
+    // daño al camello (un poco)
+    if(boss.alive && boss.mesh){
+      const d = boss.mesh.position.distanceTo(center);
+      if(d < radius + 3){
+        boss.hp -= Math.floor(45 * (1 - Math.min(1, d/(radius+3))));
+        spawnParticleBurst(boss.mesh.position.clone().add(new THREE.Vector3(0,4,0)), 0xaad5ff, 18);
+      }
+    }
+  }
+
+  // =========================
+  // Recarga
+  // =========================
+  function tryReload(){
+    const w = currentWeapon();
+    if(w.ammo === Infinity) return;
+    if(player.reloading) return;
+    if(!w.reload) return;
+    if(w.ammo >= (w.ammoMax ?? 999)) return;
+    if((w.reserve ?? 0) <= 0) return;
+
+    player.reloading = true;
+    player.reloadEnd = performance.now()/1000 + w.reload;
+  }
+
+  function finishReload(){
+    const w = currentWeapon();
+    if(w.ammo === Infinity) return;
+    const max = w.ammoMax ?? 30;
+    const need = max - w.ammo;
+    const take = Math.min(need, w.reserve);
+    w.ammo += take;
+    w.reserve -= take;
+    player.reloading = false;
+    updateWeaponUI();
+  }
+
+  // =========================
+  // Aliados: se acercan al jugador
+  // =========================
+  function callAllies(){
+    for(const a of mobs.allies){
+      a.userData.boost = 2.0; // se acercan más rápido unos segundos
+      a.userData.boostT = 2.5;
+    }
+  }
+
+  // =========================
+  // Colisiones simples (suelo + edificios)
+  // =========================
+  function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+  function collideWithBox(pos, boxMesh, radius=0.55){
+    // AABB en el plano XZ, con altura del jugador aproximada
+    const b = new THREE.Box3().setFromObject(boxMesh);
+    // Si estamos "dentro" en XZ, empujamos fuera
+    const px = clamp(pos.x, b.min.x, b.max.x);
+    const pz = clamp(pos.z, b.min.z, b.max.z);
+    const dx = pos.x - px;
+    const dz = pos.z - pz;
+    const dist2 = dx*dx + dz*dz;
+    const r2 = radius*radius;
+    if(dist2 < r2){
+      const dist = Math.sqrt(dist2) || 0.0001;
+      const push = (radius - dist);
+      pos.x += (dx/dist) * push;
+      pos.z += (dz/dist) * push;
+    }
+  }
+
+  // =========================
+  // Game Loop
+  // =========================
+  let lastT = performance.now();
+  function loop(){
+    const now = performance.now();
+    const dt = Math.min(0.033, (now - lastT) / 1000);
+    lastT = now;
+
+    // UI
+    UI.vida.textContent = Math.max(0, Math.floor(player.hp));
+    UI.shield.textContent = Math.max(0, Math.floor(player.shield));
+    UI.zcount.textContent = mobs.zombies.length;
+    UI.acount.textContent = mobs.allies.length;
+    UI.boss.textContent = boss.alive ? "VIVO" : "DERROTADO";
+
+    // recarga
+    if(player.reloading && (now/1000) >= player.reloadEnd){
+      finishReload();
+    }
+
+    // movimiento jugador
+    const forward = new THREE.Vector3(Math.sin(player.yaw), 0, Math.cos(player.yaw)).normalize();
+    const right   = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
+
+    let move = new THREE.Vector3();
+    if(keys["w"]) move.add(forward);
+    if(keys["s"]) move.sub(forward);
+    if(keys["d"]) move.add(right);
+    if(keys["a"]) move.sub(right);
+    move.normalize();
+
+    const isSprint = keys["shift"];
+    const spd = player.speed * (isSprint ? player.sprintMul : 1.0);
+
+    player.vel.x = move.x * spd;
+    player.vel.z = move.z * spd;
+
+    // gravedad
+    player.vel.y -= 18.0 * dt;
+    if(keys[" "] && player.grounded){
+      player.vel.y = player.jump;
+      player.grounded = false;
+    }
+
+    // integrar
+    player.pos.addScaledVector(player.vel, dt);
+
+    // suelo
+    if(player.pos.y < 1.4){
+      player.pos.y = 1.4;
+      player.vel.y = 0;
+      player.grounded = true;
+    }
+
+    // colisiones con edificios
+    for(const b of world.buildings){
+      collideWithBox(player.pos, b, player.radius);
+    }
+
+    // cámara
+    camera.position.copy(player.pos).add(new THREE.Vector3(0, 0.55, 0));
+    camera.rotation.set(player.pitch, player.yaw, 0, "YXZ");
+
+    // disparo continuo
+    if(shooting) shoot(now/1000);
+
+    // actualizar helicópteros (rotor)
+    for(const p of world.props){
+      if(p.userData && p.userData.rotor){
+        p.userData.t += dt;
+        p.userData.rotor.rotation.y = p.userData.t * 10.0;
+        // leve flotación
+        const baseY = 6.4;
+        p.children[0].position.y = baseY + Math.sin(p.userData.t*1.3)*0.15;
+      }
+    }
+
+    // balas jugador
+    for(let i=mobs.bullets.length-1; i>=0; i--){
+      const b = mobs.bullets[i];
+      b.userData.life -= dt;
+      b.position.addScaledVector(b.userData.vel, dt);
+
+      // colisión con zombis
+      let hit = false;
+      for(let zi=mobs.zombies.length-1; zi>=0; zi--){
+        const z = mobs.zombies[zi];
+        if(b.position.distanceTo(z.position) < 1.2){
+          z.userData.hp -= b.userData.dmg;
+          spawnParticleBurst(z.position.clone(), 0x00ff00, 6);
+          hit = true;
+          if(z.userData.hp <= 0){
+            scene.remove(z);
+            mobs.zombies.splice(zi,1);
+          }
+          break;
+        }
+      }
+
+      // colisión con bloques destructibles
+      if(!hit){
+        for(let bi=world.blocks.length-1; bi>=0; bi--){
+          const bl = world.blocks[bi];
+          if(b.position.distanceTo(bl.position) < (bl.userData.size*0.65)){
+            bl.userData.hp -= b.userData.dmg;
+            spawnParticleBurst(bl.position.clone(), 0xffcc66, 6);
+            hit = true;
+            if(bl.userData.hp <= 0){
+              scene.remove(bl);
+              world.blocks.splice(bi,1);
+            }
+            break;
+          }
+        }
+      }
+
+      // colisión con boss camello
+      if(!hit && boss.alive && boss.mesh){
+        const bp = boss.mesh.position.clone().add(new THREE.Vector3(0,3.8,0));
+        if(b.position.distanceTo(bp) < 4.2){
+          boss.hp -= b.userData.dmg;
+          spawnParticleBurst(bp, 0xaad5ff, 8);
+          hit = true;
+          if(boss.hp <= 0){
+            boss.alive = false;
+            scene.remove(boss.mesh);
+          }
+        }
+      }
+
+      if(hit || b.userData.life <= 0){
+        scene.remove(b);
+        mobs.bullets.splice(i,1);
+      }
+    }
+
+    // balas enemigas
+    for(let i=mobs.enemyBullets.length-1; i>=0; i--){
+      const b = mobs.enemyBullets[i];
+      b.userData.life -= dt;
+      b.position.addScaledVector(b.userData.vel, dt);
+
+      // hit al jugador
+      const hitDist = b.position.distanceTo(player.pos.clone().add(new THREE.Vector3(0,1.0,0)));
+      if(hitDist < 1.0){
+        damagePlayer(b.userData.dmg);
+        spawnParticleBurst(player.pos.clone().add(new THREE.Vector3(0,1.0,0)), 0xff6666, 10);
+        scene.remove(b);
+        mobs.enemyBullets.splice(i,1);
+        continue;
+      }
+
+      if(b.userData.life <= 0){
+        scene.remove(b);
+        mobs.enemyBullets.splice(i,1);
+      }
+    }
+
+    // partículas
+    for(let i=mobs.particles.length-1; i>=0; i--){
+      const p = mobs.particles[i];
+      p.userData.life -= dt;
+      p.position.addScaledVector(p.userData.vel, dt);
+      p.userData.vel.y -= 10*dt;
+      if(p.userData.life <= 0){
+        scene.remove(p);
+        mobs.particles.splice(i,1);
+      }
+    }
+
+    // IA zombis: van al jugador y pegan
+    const playerTarget = player.pos.clone();
+    for(const z of mobs.zombies){
+      const dir = new THREE.Vector3().subVectors(playerTarget, z.position);
+      dir.y = 0;
+      const dist = dir.length();
+      dir.normalize();
+
+      // evitar edificios un poco (muy simple)
+      const nextPos = z.position.clone().addScaledVector(dir, z.userData.speed*dt);
+      for(const b of world.buildings){
+        const before = nextPos.clone();
+        collideWithBox(nextPos, b, 0.7);
+        // si lo empujó mucho, giramos un poco
+        if(before.distanceTo(nextPos) > 0.02){
+          dir.applyAxisAngle(new THREE.Vector3(0,1,0), 0.9);
+        }
+      }
+
+      z.position.addScaledVector(dir, z.userData.speed*dt);
+
+      // ataque
+      z.userData.cd -= dt;
+      if(dist < 1.35 && z.userData.cd <= 0){
+        z.userData.cd = 0.65;
+        damagePlayer(z.userData.atk);
+      }
+    }
+
+    // IA aliados: siguen al jugador y disparan a zombis cercanos
+    for(const a of mobs.allies){
+      const toP = new THREE.Vector3().subVectors(player.pos, a.position);
+      toP.y = 0;
+      const dist = toP.length();
+      toP.normalize();
+
+      // boost temporal por llamada
+      if(a.userData.boostT && a.userData.boostT > 0){
+        a.userData.boostT -= dt;
+      } else {
+        a.userData.boost = 1.0;
+      }
+
+      const speed = a.userData.speed * (a.userData.boost ?? 1.0);
+
+      if(dist > 3.2){
+        a.position.addScaledVector(toP, speed*dt);
+      } else if(dist < 1.6){
+        a.position.addScaledVector(toP, -speed*dt*0.5);
+      }
+
+      // disparar a zombi más cercano
+      a.userData.cd -= dt;
+      if(a.userData.cd <= 0 && mobs.zombies.length){
+        let best = null, bestD = 9999;
+        for(const z of mobs.zombies){
+          const d = a.position.distanceTo(z.position);
+          if(d < bestD){
+            bestD = d; best = z;
+          }
+        }
+        if(best && bestD < 28){
+          a.userData.cd = 0.18 + Math.random()*0.08;
+          const from = a.position.clone().add(new THREE.Vector3(0,1.2,0));
+          const to   = best.position.clone().add(new THREE.Vector3(0,1.0,0));
+          shootEnemy(from, to, 42, 7); // bala aliada (reutilizamos función con "enemiga", pero daño se maneja por hit al jugador)
+          // OJO: esa bala sería roja; para diferenciar, hacemos una bala azul extra:
+          const dir = new THREE.Vector3().subVectors(to, from).normalize();
+          const b = new THREE.Mesh(
+            new THREE.BoxGeometry(0.12,0.12,0.12),
+            new THREE.MeshStandardMaterial({ color: 0x66aaff, roughness: 0.7, emissive:0x112233 })
+          );
+          b.position.copy(from);
+          b.userData = { vel: dir.multiplyScalar(44), life: 1.0, dmg: 10, from:"ally" };
+          scene.add(b);
+          mobs.bullets.push(b);
+        }
+      }
+    }
+
+    // Boss camello: persigue + dispara + embiste
+    if(boss.alive && boss.mesh){
+      const camel = boss.mesh;
+      const camelPos = camel.position.clone();
+      const toP = new THREE.Vector3().subVectors(player.pos, camelPos);
+      toP.y = 0;
+      const dist = toP.length();
+      toP.normalize();
+
+      // mirar hacia el jugador
+      const targetYaw = Math.atan2(toP.x, toP.z);
+      camel.rotation.y = THREE.MathUtils.lerp(camel.rotation.y, targetYaw, dt*2.8);
+
+      // perseguir
+      const speed = camel.userData.speed * (dist>18 ? 1.35 : 1.0);
+      camel.position.addScaledVector(toP, speed*dt);
+
+      // disparos de mofletes
+      boss.cdShoot -= dt;
+      if(boss.cdShoot <= 0 && dist < 85){
+        boss.cdShoot = 0.18 + Math.random()*0.10;
+
+        const gunL = camel.userData.gunL.getWorldPosition(new THREE.Vector3());
+        const gunR = camel.userData.gunR.getWorldPosition(new THREE.Vector3());
+        const target = player.pos.clone().add(new THREE.Vector3(0,1.0,0));
+
+        shootEnemy(gunL, target, 34, 6);
+        shootEnemy(gunR, target, 34, 6);
+      }
+
+      // embestida: si está cerca, mete daño por choque y “corre a quien quiera”
+      boss.cdRam -= dt;
+      if(dist < 7.0 && boss.cdRam <= 0){
+        boss.cdRam = 1.2;
+        // impulso fuerte hacia el jugador
+        player.vel.addScaledVector(toP, 6.5);
+        damagePlayer(18);
+        spawnParticleBurst(player.pos.clone().add(new THREE.Vector3(0,1.0,0)), 0xffaa55, 18);
+      }
+    }
+
+    // Spawn extra de zombis a ratos
+    spawnTimer -= dt;
+    if(spawnTimer <= 0){
+      spawnTimer = 2.2 + Math.random()*1.2;
+      if(mobs.zombies.length < 55){
+        // aparece lejos del jugador
+        const ang = rand(0, Math.PI*2);
+        const r = rand(40, 95);
+        const x = player.pos.x + Math.sin(ang)*r;
+        const z = player.pos.z + Math.cos(ang)*r;
+        if(Math.abs(x) < 115 && Math.abs(z) < 115) makeZombie(x,z);
+      }
+    }
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(loop);
+  }
+
+  let spawnTimer = 1.0;
+
+  function damagePlayer(amount){
+    // escudo primero
+    if(player.shield > 0){
+      const use = Math.min(player.shield, amount);
+      player.shield -= use;
+      amount -= use;
+    }
+    if(amount > 0) player.hp -= amount;
+
+    if(player.hp <= 0){
+      // “respawn” simple
+      player.hp = 100;
+      player.shield = 25;
+      player.bombs = 3;
+      UI.bombas.textContent = player.bombs;
+      player.pos.set(0, 2, 0);
+
+      // reponer algo de munición
+      for(const w of player.weapons){
+        if(w.name==="Rifle"){ w.ammo = 30; w.reserve = 120; }
+        if(w.name==="Escopeta"){ w.ammo = 8; w.reserve = 40; }
+      }
+      updateWeaponUI();
+
+      // castigo: aparecen más zombis (porque sí 😈)
+      for(let i=0;i<6;i++) makeZombie(rand(-50,50), rand(-50,50));
+    }
+  }
+
+  // Resize
+  addEventListener("resize", ()=>{
+    camera.aspect = innerWidth/innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  });
+
+  // Iniciar
+  UI.bombas.textContent = player.bombs;
+  loop();
+  </script>
+</body>
+</html>

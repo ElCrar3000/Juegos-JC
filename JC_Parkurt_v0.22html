@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plataformas JC - Versión 2</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #d9d9d9;
+      font-family: Arial, Helvetica, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      flex-direction: column;
+      gap: 10px;
+    }
+    canvas {
+      border: 4px solid #111;
+      background: #e8e8e8;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      border-radius: 18px;
+    }
+    .info {
+      font-size: 14px;
+      color: #222;
+      text-align: center;
+      max-width: 980px;
+      line-height: 1.4;
+      padding: 0 12px 20px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game" width="960" height="640"></canvas>
+  <div class="info">
+    <strong>Controles:</strong> A/D mover, Q saltar, F cargar sprint, E agachado 1 bloque, W brazos arriba, S postura baja 1.5 bloques, Y ataque, U super, T técnica.<br>
+    Mantén Y/U/T y usa WASD para apuntar. Pantalla: 15 × 10 bloques. Prototipo centrado en físicas, alturas, energía y un enemigo patrullero.
+  </div>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    const TILE = 64;
+    const VIEW_W = 15;
+    const VIEW_H = 10;
+
+    const COLORS = {
+      bg: '#dcdcdc',
+      grid: '#cfcfcf',
+      solid: '#2f2f2f',
+      platform: '#707070',
+      ceiling: '#555555',
+      player: '#2f7df6',
+      crouch: '#1952ad',
+      crawl: '#0f3877',
+      enemy: '#e53935',
+      enemyEye: '#fff176',
+      healthGreenDark: '#5f9f20',
+      healthGreenLight: '#9bd93c',
+      healthYellow: '#ffd54f',
+      healthOrange: '#ff9800',
+      healthRed: '#f44336',
+      energy: '#9edff1',
+      energyBorder: '#198fd8',
+      uiBorder: '#111111',
+      text: '#111111',
+      attack: '#ff5a5a',
+      aim: '#ffa726'
+    };
+
+    const keys = {};
+    const justPressed = {};
+
+    window.addEventListener('keydown', (e) => {
+      const k = e.key.toLowerCase();
+      if (!keys[k]) justPressed[k] = true;
+      keys[k] = true;
+      if ([" ", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) e.preventDefault();
+    });
+    window.addEventListener('keyup', (e) => {
+      const k = e.key.toLowerCase();
+      keys[k] = false;
+    });
+
+    // 0 vacío, 1 sólido, 2 plataforma fina, 3 techo bajo
+    const map = [
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,2,2,2,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,2,2,2,2,0,0,0,0,0,0],
+      [0,1,1,1,1,1,0,0,0,0,0,0,0,0,0],
+      [0,3,3,3,3,3,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
+
+    const MODE = {
+      NORMAL: 'normal',
+      LOW: 'low',
+      ONE: 'one',
+      SUPER: 'super'
+    };
+
+    const player = {
+      x: 1.2 * TILE,
+      y: 7 * TILE,
+      w: TILE,
+      h: 2 * TILE,
+      vy: 0,
+      grounded: false,
+      facing: 1,
+      aimX: 1,
+      aimY: 0,
+      mode: MODE.NORMAL,
+      armsUp: false,
+      health: 100,
+      energy: 100,
+      energyLocked: false,
+      attackCooldown: 0,
+      hurtCooldown: 0,
+      sprintCharge: 0,
+      sprintCharging: false,
+      sprintBuffer: 0,
+      usingActionAim: false,
+      jumpHeld: false
+    };
+
+    const enemy = {
+      x: 11.7 * TILE,
+      y: 2 * TILE,
+      w: TILE,
+      h: TILE,
+      minX: 9.2 * TILE,
+      maxX: 12.8 * TILE,
+      dir: 1,
+      speed: 1.2,
+      health: 30,
+      alive: true,
+      vy: 0,
+      grounded: false
+    };
+
+    function resetOneFrameKeys() {
+      for (const k in justPressed) delete justPressed[k];
+    }
+
+    function getTile(tx, ty) {
+      if (ty < 0 || ty >= map.length || tx < 0 || tx >= map[0].length) return 0;
+      return map[ty][tx];
+    }
+
+    function rectIntersects(a, b) {
+      return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    function rectVsTiles(entity, includePlatforms = false) {
+      const left = Math.floor(entity.x / TILE);
+      const right = Math.floor((entity.x + entity.w - 1) / TILE);
+      const top = Math.floor(entity.y / TILE);
+      const bottom = Math.floor((entity.y + entity.h - 1) / TILE);
+      const hits = [];
+
+      for (let y = top; y <= bottom; y++) {
+        for (let x = left; x <= right; x++) {
+          const tile = getTile(x, y);
+          if (tile === 1 || tile === 3 || (includePlatforms && tile === 2)) {
+            hits.push({ x: x * TILE, y: y * TILE, w: TILE, h: TILE, tile });
+          }
+        }
+      }
+      return hits;
+    }
+
+    function canFit(x, y, w, h) {
+      return rectVsTiles({ x, y, w, h }, false).length === 0;
+    }
+
+    function setPlayerSize(newW, newH) {
+      const oldBottom = player.y + player.h;
+      const newY = oldBottom - newH;
+      if (canFit(player.x, newY, newW, newH)) {
+        player.w = newW;
+        player.h = newH;
+        player.y = newY;
+        return true;
+      }
+      return false;
+    }
+
+    function applyMode(mode) {
+      if (mode === MODE.NORMAL) {
+        if (setPlayerSize(TILE, 2 * TILE)) player.mode = MODE.NORMAL;
+      } else if (mode === MODE.LOW) {
+        if (setPlayerSize(TILE, 1.5 * TILE)) player.mode = MODE.LOW;
+      } else if (mode === MODE.ONE) {
+        if (setPlayerSize(TILE, TILE)) player.mode = MODE.ONE;
+      } else if (mode === MODE.SUPER) {
+        if (setPlayerSize(2 * TILE, TILE)) player.mode = MODE.SUPER;
+      }
+    }
+
+    function handlePostures() {
+      player.armsUp = !!keys['w'];
+
+      if (keys['e']) {
+        applyMode(MODE.ONE);
+        return;
+      }
+      if (keys['r']) {
+        applyMode(MODE.SUPER);
+        return;
+      }
+      if (keys['s']) {
+        applyMode(MODE.LOW);
+        return;
+      }
+      applyMode(MODE.NORMAL);
+    }
+
+    function getMoveInput() {
+      let x = 0;
+      let y = 0;
+      if (keys['a']) x -= 1;
+      if (keys['d']) x += 1;
+      if (keys['w']) y -= 1;
+      if (keys['s']) y += 1;
+      return { x, y };
+    }
+
+    function updateAim() {
+      const aimingAction = keys['y'] || keys['u'] || keys['t'];
+      player.usingActionAim = aimingAction;
+      const moveInput = getMoveInput();
+
+      if (aimingAction) {
+        if (moveInput.x !== 0 || moveInput.y !== 0) {
+          player.aimX = moveInput.x;
+          player.aimY = moveInput.y;
+          if (moveInput.x !== 0) player.facing = Math.sign(moveInput.x);
+        }
+      } else {
+        player.aimX = player.facing;
+        player.aimY = 0;
+      }
+    }
+
+    function getBaseSpeed() {
+      const normal = 4.0;
+      const bonus = player.energy === 100 ? Math.floor(normal * 0.3 * 10) / 10 : 0;
+      if (player.mode === MODE.LOW) return Math.max(1.0, normal - 0.5 + bonus);
+      if (player.mode === MODE.ONE) return normal + bonus;
+      if (player.mode === MODE.SUPER) return 1.0;
+      return normal + bonus;
+    }
+
+    function startSprintCharge() {
+      if (player.energyLocked || player.energy < 10) return;
+      player.sprintCharging = true;
+      player.sprintCharge = 0;
+    }
+
+    function releaseSprint() {
+      if (!player.sprintCharging) return;
+      player.sprintCharging = false;
+      if (player.sprintCharge >= 0.3 && !player.energyLocked && player.energy >= 10) {
+        player.energy -= 10;
+        player.sprintBuffer = Math.min(0.9, 0.3 + player.sprintCharge * 0.9);
+      }
+      player.sprintCharge = 0;
+      if (player.energy <= 0) {
+        player.energy = 0;
+        player.energyLocked = true;
+      }
+    }
+
+    function updateEnergy() {
+      const spending = player.sprintCharging || player.mode === MODE.ONE || player.mode === MODE.SUPER;
+
+      if (player.sprintCharging) {
+        player.sprintCharge += 1 / 60;
+        if (player.sprintCharge > 1.2) player.sprintCharge = 1.2;
+      }
+
+      if (player.mode === MODE.ONE && !player.energyLocked) {
+        player.energy -= 0.25;
+      }
+      if (player.mode === MODE.SUPER && !player.energyLocked) {
+        player.energy -= 0.12;
+      }
+
+      if (player.energy <= 0) {
+        player.energy = 0;
+        player.energyLocked = true;
+      }
+
+      if (player.energyLocked) {
+        if (spending) {
+          player.health -= 0.16;
+        } else {
+          player.energy += 0.55;
+          if (player.energy >= 100) {
+            player.energy = 100;
+            player.energyLocked = false;
+          }
+        }
+      } else {
+        if (!spending && player.energy < 100) {
+          player.energy += 0.20;
+          if (player.energy > 100) player.energy = 100;
+        }
+      }
+
+      if (player.health < 0) player.health = 0;
+    }
+
+    function getCurrentSpeed() {
+      let speed = getBaseSpeed();
+      if (player.energyLocked) speed *= 0.7;
+      if (player.sprintBuffer > 0) speed *= 1.9;
+      return speed;
+    }
+
+    function movePlayerHorizontal() {
+      let move = 0;
+      if (keys['a']) move -= 1;
+      if (keys['d']) move += 1;
+      if (move !== 0) player.facing = move;
+
+      const speed = getCurrentSpeed();
+      player.x += move * speed;
+
+      const hits = rectVsTiles(player, false);
+      for (const hit of hits) {
+        if (move > 0) player.x = hit.x - player.w;
+        if (move < 0) player.x = hit.x + hit.w;
+      }
+
+      if (player.sprintBuffer > 0) {
+        const dirX = player.facing;
+        player.x += dirX * 1.3;
+        const sprintHits = rectVsTiles(player, false);
+        for (const hit of sprintHits) {
+          if (dirX > 0) player.x = hit.x - player.w;
+          if (dirX < 0) player.x = hit.x + hit.w;
+          player.sprintBuffer = 0;
+        }
+      }
+    }
+
+    function jumpHeightBlocks() {
+      if (player.armsUp && player.mode === MODE.NORMAL) return 5;
+      if (player.sprintBuffer > 0) return 3;
+      if (player.mode === MODE.NORMAL) return 2;
+      return 1;
+    }
+
+    function blocksToJumpVelocity(blocks) {
+      if (blocks === 1) return 9.5;
+      if (blocks === 2) return 14.5;
+      if (blocks === 3) return 18.0;
+      if (blocks === 5) return 23.5;
+      return 14.5;
+    }
+
+    function movePlayerVertical() {
+      const jumpPressed = !!justPressed['q'];
+      if (jumpPressed && player.grounded) {
+        player.vy = -blocksToJumpVelocity(jumpHeightBlocks());
+        player.grounded = false;
+      }
+
+      player.vy += 0.85;
+      if (player.vy > 24) player.vy = 24;
+      player.y += player.vy;
+      player.grounded = false;
+
+      let hits = rectVsTiles(player, false);
+      for (const hit of hits) {
+        if (player.vy > 0) {
+          player.y = hit.y - player.h;
+          player.vy = 0;
+          player.grounded = true;
+        } else if (player.vy < 0) {
+          player.y = hit.y + hit.h;
+          player.vy = 0;
+        }
+      }
+
+      if (player.vy >= 0) {
+        const platformHits = rectVsTiles(player, true).filter(h => h.tile === 2);
+        for (const p of platformHits) {
+          const bottom = player.y + player.h;
+          const prevBottom = bottom - player.vy;
+          if (prevBottom <= p.y + 8 && bottom >= p.y + 8) {
+            player.y = p.y - player.h;
+            player.vy = 0;
+            player.grounded = true;
+          }
+        }
+      }
+    }
+
+    function updateCombat() {
+      if (player.attackCooldown > 0) player.attackCooldown--;
+      if (player.hurtCooldown > 0) player.hurtCooldown--;
+
+      if (justPressed['y'] && player.attackCooldown <= 0) {
+        player.attackCooldown = 18;
+        const ax = player.usingActionAim ? player.aimX : player.facing;
+        const ay = player.usingActionAim ? player.aimY : 0;
+        const attackBox = {
+          x: player.x + (ax >= 0 ? player.w : -36),
+          y: player.y + player.h * 0.35 + ay * 18,
+          w: 36,
+          h: Math.max(18, player.h * 0.35)
+        };
+        if (enemy.alive && rectIntersects(attackBox, enemy)) {
+          enemy.health -= 10;
+          enemy.x += (ax === 0 ? player.facing : Math.sign(ax)) * 18;
+          if (enemy.health <= 0) enemy.alive = false;
+        }
+      }
+
+      if (enemy.alive && rectIntersects(player, enemy) && player.hurtCooldown <= 0) {
+        player.health -= 8;
+        player.hurtCooldown = 40;
+        player.vy = -6;
+        player.x -= enemy.dir * 24;
+      }
+    }
+
+    function updateEnemy() {
+      if (!enemy.alive) return;
+
+      enemy.x += enemy.dir * enemy.speed;
+      if (enemy.x < enemy.minX) {
+        enemy.x = enemy.minX;
+        enemy.dir = 1;
+      }
+      if (enemy.x > enemy.maxX) {
+        enemy.x = enemy.maxX;
+        enemy.dir = -1;
+      }
+
+      enemy.vy += 0.85;
+      if (enemy.vy > 20) enemy.vy = 20;
+      enemy.y += enemy.vy;
+      enemy.grounded = false;
+
+      const hits = rectVsTiles(enemy, false);
+      for (const hit of hits) {
+        if (enemy.vy > 0) {
+          enemy.y = hit.y - enemy.h;
+          enemy.vy = 0;
+          enemy.grounded = true;
+        } else if (enemy.vy < 0) {
+          enemy.y = hit.y + hit.h;
+          enemy.vy = 0;
+        }
+      }
+
+      if (enemy.vy >= 0) {
+        const platformHits = rectVsTiles(enemy, true).filter(h => h.tile === 2);
+        for (const p of platformHits) {
+          const bottom = enemy.y + enemy.h;
+          const prevBottom = bottom - enemy.vy;
+          if (prevBottom <= p.y + 8 && bottom >= p.y + 8) {
+            enemy.y = p.y - enemy.h;
+            enemy.vy = 0;
+            enemy.grounded = true;
+          }
+        }
+      }
+    }
+
+    function clampPlayerToMap() {
+      if (player.x < 0) player.x = 0;
+      const maxX = map[0].length * TILE - player.w;
+      if (player.x > maxX) player.x = maxX;
+      if (player.y > canvas.height + 300 || player.health <= 0) resetGame();
+    }
+
+    function resetGame() {
+      player.x = 1.2 * TILE;
+      player.y = 7 * TILE;
+      player.w = TILE;
+      player.h = 2 * TILE;
+      player.vy = 0;
+      player.grounded = false;
+      player.facing = 1;
+      player.aimX = 1;
+      player.aimY = 0;
+      player.mode = MODE.NORMAL;
+      player.armsUp = false;
+      player.health = 100;
+      player.energy = 100;
+      player.energyLocked = false;
+      player.attackCooldown = 0;
+      player.hurtCooldown = 0;
+      player.sprintCharge = 0;
+      player.sprintCharging = false;
+      player.sprintBuffer = 0;
+      enemy.x = 11.7 * TILE;
+      enemy.y = 2 * TILE;
+      enemy.dir = 1;
+      enemy.health = 30;
+      enemy.alive = true;
+      enemy.vy = 0;
+    }
+
+    function update() {
+      if (justPressed['f']) startSprintCharge();
+      if (!keys['f']) releaseSprint();
+
+      handlePostures();
+      updateAim();
+      updateEnergy();
+      movePlayerHorizontal();
+      movePlayerVertical();
+      updateCombat();
+      updateEnemy();
+      clampPlayerToMap();
+
+      if (player.sprintBuffer > 0) player.sprintBuffer -= 1 / 60;
+      if (player.sprintBuffer < 0) player.sprintBuffer = 0;
+      resetOneFrameKeys();
+    }
+
+    function getHealthColor(value) {
+      if (value > 50) return COLORS.healthGreenLight;
+      if (value > 20) return COLORS.healthYellow;
+      if (value > 10) return COLORS.healthOrange;
+      return COLORS.healthRed;
+    }
+
+    function drawRoundedBar(x, y, w, h, fillPercent, fillColor, borderColor) {
+      ctx.save();
+      const radius = h / 2;
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + w - radius, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+      ctx.lineTo(x + w, y + h - radius);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+      ctx.lineTo(x + radius, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      ctx.clip();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = fillColor;
+      ctx.fillRect(x, y, Math.max(0, Math.min(1, fillPercent)) * w, h);
+      ctx.restore();
+    }
+
+    function drawHeart(x, y, size) {
+      ctx.save();
+      ctx.fillStyle = '#ff6b81';
+      ctx.strokeStyle = '#d81b60';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x, y + size * 0.3);
+      ctx.bezierCurveTo(x, y, x - size * 0.5, y, x - size * 0.5, y + size * 0.3);
+      ctx.bezierCurveTo(x - size * 0.5, y + size * 0.6, x, y + size * 0.8, x, y + size);
+      ctx.bezierCurveTo(x, y + size * 0.8, x + size * 0.5, y + size * 0.6, x + size * 0.5, y + size * 0.3);
+      ctx.bezierCurveTo(x + size * 0.5, y, x, y, x, y + size * 0.3);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawLightning(x, y, w, h) {
+      ctx.save();
+      ctx.fillStyle = '#ffde59';
+      ctx.strokeStyle = '#1b8ad8';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x + w * 0.55, y);
+      ctx.lineTo(x + w * 0.15, y + h * 0.45);
+      ctx.lineTo(x + w * 0.42, y + h * 0.45);
+      ctx.lineTo(x + w * 0.26, y + h);
+      ctx.lineTo(x + w * 0.82, y + h * 0.35);
+      ctx.lineTo(x + w * 0.52, y + h * 0.35);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawGrid() {
+      ctx.strokeStyle = COLORS.grid;
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= VIEW_W; x++) {
+        ctx.beginPath();
+        ctx.moveTo(x * TILE, 0);
+        ctx.lineTo(x * TILE, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= VIEW_H; y++) {
+        ctx.beginPath();
+        ctx.moveTo(0, y * TILE);
+        ctx.lineTo(canvas.width, y * TILE);
+        ctx.stroke();
+      }
+    }
+
+    function drawMap() {
+      for (let y = 0; y < map.length; y++) {
+        for (let x = 0; x < map[0].length; x++) {
+          const tile = map[y][x];
+          const px = x * TILE;
+          const py = y * TILE;
+          if (tile === 1) {
+            ctx.fillStyle = COLORS.solid;
+            ctx.fillRect(px, py, TILE, TILE);
+          } else if (tile === 2) {
+            ctx.fillStyle = COLORS.platform;
+            ctx.fillRect(px, py + TILE * 0.72, TILE, TILE * 0.18);
+          } else if (tile === 3) {
+            ctx.fillStyle = COLORS.ceiling;
+            ctx.fillRect(px, py, TILE, TILE * 0.25);
+          }
+        }
+      }
+    }
+
+    function drawPlayer() {
+      ctx.save();
+      if (player.mode === MODE.NORMAL) ctx.fillStyle = COLORS.player;
+      else if (player.mode === MODE.LOW) ctx.fillStyle = COLORS.crouch;
+      else ctx.fillStyle = COLORS.crawl;
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+
+      ctx.fillStyle = '#fff';
+      const eyeY = player.y + Math.min(22, player.h * 0.2);
+      const eye1X = player.x + Math.min(14, player.w * 0.25);
+      const eye2X = player.x + Math.max(player.w - 24, player.w * 0.65);
+      ctx.fillRect(eye1X, eyeY, 10, 10);
+      ctx.fillRect(eye2X, eyeY, 10, 10);
+
+      if (player.armsUp && player.mode === MODE.NORMAL) {
+        ctx.fillStyle = '#ffd54f';
+        ctx.fillRect(player.x + 6, player.y - 10, 10, 16);
+        ctx.fillRect(player.x + player.w - 16, player.y - 10, 10, 16);
+      }
+
+      if (player.attackCooldown > 12) {
+        ctx.fillStyle = COLORS.attack;
+        const ax = player.usingActionAim ? player.aimX : player.facing;
+        const ay = player.usingActionAim ? player.aimY : 0;
+        const attackX = player.x + (ax >= 0 ? player.w : -36);
+        const attackY = player.y + player.h * 0.35 + ay * 18;
+        ctx.fillRect(attackX, attackY, 36, Math.max(18, player.h * 0.35));
+      }
+
+      if (player.usingActionAim) {
+        ctx.strokeStyle = COLORS.aim;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(player.x + player.w / 2, player.y + player.h / 2);
+        ctx.lineTo(player.x + player.w / 2 + player.aimX * 34, player.y + player.h / 2 + player.aimY * 34);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawEnemy() {
+      if (!enemy.alive) return;
+      ctx.save();
+      ctx.fillStyle = COLORS.enemy;
+      ctx.fillRect(enemy.x, enemy.y, enemy.w, enemy.h);
+      ctx.fillStyle = COLORS.enemyEye;
+      ctx.fillRect(enemy.x + 14, enemy.y + 18, 12, 12);
+      ctx.fillRect(enemy.x + 38, enemy.y + 18, 12, 12);
+      ctx.restore();
+    }
+
+    function drawUI() {
+      drawHeart(62, 24, 38);
+      drawRoundedBar(90, 18, 185, 34, player.health / 100, getHealthColor(player.health), '#467500');
+      drawLightning(392, 16, 48, 54);
+      drawRoundedBar(442, 18, 185, 34, player.energy / 100, COLORS.energy, COLORS.energyBorder);
+
+      ctx.fillStyle = COLORS.text;
+      ctx.font = 'bold 54px Arial';
+      ctx.fillText(Math.ceil(player.energy), 505, 106);
+      ctx.font = 'bold 18px Arial';
+      ctx.fillText('VIDA', 150, 78);
+      ctx.fillText('ENERGÍA', 495, 78);
+
+      ctx.font = 'bold 16px Arial';
+      ctx.fillText('MODO: ' + player.mode.toUpperCase(), 700, 26);
+      ctx.fillText('SPRINT: ' + player.sprintCharge.toFixed(2) + 's', 700, 50);
+      if (player.energyLocked) ctx.fillText('ENERGÍA BLOQUEADA', 700, 74);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = COLORS.bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      drawGrid();
+      drawMap();
+      drawEnemy();
+      drawPlayer();
+      drawUI();
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
+</body>
+</html>

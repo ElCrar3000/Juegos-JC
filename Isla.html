@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Portal Abisal</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    overflow: hidden;
+    background: #08131d;
+    font-family: Arial, sans-serif;
+    color: white;
+  }
+
+  #game {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at top, #13304b 0%, #08131d 60%);
+  }
+
+  #hud {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .hudBox {
+    background: rgba(0,0,0,0.45);
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 14px;
+    padding: 10px 14px;
+    min-width: 220px;
+    backdrop-filter: blur(6px);
+  }
+
+  .mission {
+    color: #ffe08a;
+    font-weight: bold;
+  }
+
+  #map {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: grid;
+    grid-template-columns: repeat(3, 120px);
+    grid-template-rows: repeat(3, 120px);
+    gap: 6px;
+  }
+
+  .tile {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 3px solid rgba(255,255,255,0.08);
+  }
+
+  .sand {
+    background:
+      radial-gradient(circle at 30% 30%, #ffe8a8 0%, #d7b56d 70%);
+  }
+
+  .specialSand {
+    background:
+      radial-gradient(circle at center, #fff4a9 0%, #e4bb55 80%);
+    box-shadow: 0 0 20px rgba(255,230,120,0.5);
+  }
+
+  .water {
+    background:
+      linear-gradient(180deg, #2ab8ff 0%, #0a3c66 100%);
+    overflow: hidden;
+  }
+
+  .water::before {
+    content: "";
+    position: absolute;
+    width: 300%;
+    height: 300%;
+    left: -100%;
+    top: -100%;
+    background:
+      repeating-radial-gradient(circle,
+      rgba(255,255,255,0.12) 0px,
+      rgba(255,255,255,0.12) 4px,
+      transparent 4px,
+      transparent 16px);
+    animation: waterMove 12s linear infinite;
+  }
+
+  @keyframes waterMove {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .tree {
+    position: absolute;
+    width: 40px;
+    height: 80px;
+    background: #714e2b;
+    left: 40px;
+    top: 28px;
+    border-radius: 10px;
+  }
+
+  .tree::before {
+    content: "";
+    position: absolute;
+    width: 100px;
+    height: 60px;
+    background: #38c172;
+    left: -30px;
+    top: -25px;
+    border-radius: 50%;
+    box-shadow:
+      -15px 10px #41d67f,
+      15px 10px #2eb367;
+  }
+
+  .coconut {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: #4b2b18;
+    border-radius: 50%;
+    top: 24px;
+    left: 20px;
+    box-shadow:
+      18px 4px #4b2b18,
+      36px 0px #4b2b18;
+  }
+
+  .plant {
+    position: absolute;
+    left: 50px;
+    top: 52px;
+    width: 14px;
+    height: 40px;
+    background: #4caf50;
+    border-radius: 10px;
+  }
+
+  .plant::before,
+  .plant::after {
+    content: "";
+    position: absolute;
+    width: 28px;
+    height: 12px;
+    background: #65d56a;
+    border-radius: 50%;
+  }
+
+  .plant::before {
+    left: -22px;
+    top: 10px;
+    transform: rotate(-25deg);
+  }
+
+  .plant::after {
+    left: 8px;
+    top: 16px;
+    transform: rotate(25deg);
+  }
+
+  #player {
+    position: absolute;
+    width: 34px;
+    height: 52px;
+    background: linear-gradient(180deg, #e4e4e4 0%, #6f6f6f 100%);
+    border-radius: 14px;
+    bottom: 28px;
+    right: 36px;
+    z-index: 5;
+    transition: transform 0.15s;
+  }
+
+  #player::before {
+    content: "";
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    background: #ffd8b0;
+    border-radius: 50%;
+    left: 4px;
+    top: -18px;
+  }
+
+  #portal {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background:
+      radial-gradient(circle,
+      rgba(120,255,255,0.9) 0%,
+      rgba(61,135,255,0.7) 30%,
+      rgba(131,0,255,0.3) 60%,
+      transparent 75%);
+    animation: portalPulse 2s infinite alternate;
+    filter: blur(1px);
+    pointer-events: none;
+  }
+
+  @keyframes portalPulse {
+    from {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 0.8;
+    }
+    to {
+      transform: translate(-50%, -50%) scale(1.15);
+      opacity: 1;
+    }
+  }
+
+  #spark {
+    position: absolute;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle,
+      #c5ffff 0%,
+      #79d9ff 30%,
+      #267fff 70%);
+    box-shadow:
+      0 0 30px #49c2ff,
+      0 0 60px #49c2ff;
+    right: 20px;
+    top: 18px;
+    animation: floatSpark 2s infinite ease-in-out;
+  }
+
+  @keyframes floatSpark {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+  }
+
+  #missionPopup {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.6);
+    padding: 14px 24px;
+    border-radius: 16px;
+    border: 2px solid rgba(255,255,255,0.12);
+    backdrop-filter: blur(5px);
+    font-size: 18px;
+  }
+
+  #inventory {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    display: flex;
+    gap: 12px;
+  }
+
+  .slot {
+    width: 90px;
+    height: 90px;
+    background: rgba(0,0,0,0.45);
+    border-radius: 16px;
+    border: 2px solid rgba(255,255,255,0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+  }
+
+  #oxygenBar {
+    width: 180px;
+    height: 18px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  #oxygenFill {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #5ce1ff, #00aaff);
+  }
+
+  #digUI {
+    position: absolute;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 340px;
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+
+  #digBar {
+    width: 100%;
+    height: 24px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.15);
+  }
+
+  #digFill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg,#ffe08a,#ffb700);
+  }
+
+  .controls {
+    opacity: 0.75;
+    font-size: 14px;
+  }
+
+</style>
+</head>
+<body>
+
+<div id="game">
+
+  <div id="hud">
+    <div class="hudBox">
+      <div class="mission">MISIÓN:</div>
+      Consigue 5 de arena para crear una piedra.
+
+      <div id="oxygenBar">
+        <div id="oxygenFill"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="inventory">
+    <div class="slot">VACÍO</div>
+    <div class="slot">VACÍO</div>
+  </div>
+
+  <div id="map">
+
+    <div class="tile sand"></div>
+
+    <div class="tile sand"></div>
+
+    <div class="tile sand">
+      <div class="tree"></div>
+      <div class="coconut"></div>
+    </div>
+
+    <div class="tile sand">
+      <div class="plant"></div>
+    </div>
+
+    <div class="tile sand"></div>
+
+    <div class="tile water"></div>
+
+    <div class="tile sand"></div>
+
+    <div class="tile specialSand"></div>
+
+    <div class="tile sand" style="position:relative;">
+      <div id="portal"></div>
+      <div id="spark"></div>
+      <div id="player"></div>
+    </div>
+
+  </div>
+
+  <div id="digUI">
+    <div>PULSA ESPACIO PARA CONSEGUIR ARENA</div>
+
+    <div id="digBar">
+      <div id="digFill"></div>
+    </div>
+
+    <div class="controls">ESPACIO = +5</div>
+  </div>
+
+  <div id="missionPopup">
+    Pulsa <b>E</b> cerca del agua para bucear.
+  </div>
+
+</div>
+
+<script>
+
+let digging = false;
+let dig = 0;
+
+const digUI = document.getElementById('digUI');
+const digFill = document.getElementById('digFill');
+
+window.addEventListener('keydown', e => {
+
+  if(e.key.toLowerCase() === 'e') {
+    digging = !digging;
+    digUI.style.display = digging ? 'flex' : 'none';
+  }
+
+  if(e.code === 'Space' && digging) {
+    dig += 5;
+
+    if(dig > 100) dig = 100;
+
+    digFill.style.width = dig + '%';
+
+    if(dig >= 100) {
+      dig = 0;
+
+      setTimeout(() => {
+        alert('¡Has conseguido 1 de arena!');
+      }, 100);
+    }
+  }
+});
+
+setInterval(() => {
+  if(digging && dig > 0) {
+    dig -= 1;
+    if(dig < 0) dig = 0;
+    digFill.style.width = dig + '%';
+  }
+}, 1000);
+
+</script>
+
+</body>
+</html>

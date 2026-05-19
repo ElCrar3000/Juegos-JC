@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Boss Test</title>
+<style>
+  body { background:#111; color:white; text-align:center; }
+  #boss { font-size:24px; margin:20px; }
+</style>
+</head>
+<body>
+
+<h1>COCOFANTO ELEFANTO</h1>
+<div id="boss">Vida: 1000</div>
+<button onclick="attack()">Atacar</button>
+
+<script>
+let maxVida = 1000;
+let vida = 1000;
+let fase = 1;
+let attacking = false;
+
+function update() {
+  document.getElementById("boss").innerText = "Vida: " + Math.floor(vida) + " | Fase: " + fase;
+}
+
+// Ataque del jugador
+function attack() {
+  vida -= 20;
+  checkFase();
+  update();
+}
+
+// Fases
+function checkFase() {
+  let porcentaje = (vida / maxVida) * 100;
+
+  if (porcentaje <= 75 && fase === 1) fase = 2;
+  if (porcentaje <= 35 && fase === 2) fase = 3;
+  if (porcentaje <= 15 && fase === 3) fase = 4;
+  if (porcentaje <= 5 && fase === 4) fase = 5;
+}
+
+// Ataque automático boss
+setInterval(() => {
+  let velocidad = [2000,1500,800,400,200]; // ms por fase
+  let daño = [5,8,12,18,25];
+
+  vida -= daño[fase-1] * 0.2; // presión constante
+  update();
+
+}, 500);
+
+// Curación lluvia (fase 2)
+setInterval(() => {
+  if (fase === 2) {
+    vida += (maxVida - vida) * 0.005;
+  }
+}, 1000);
+
+update();
+</script>
+
+</body>
+</html>

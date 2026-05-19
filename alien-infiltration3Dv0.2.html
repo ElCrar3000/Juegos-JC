@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Infiltración 3D - Prototipo Base</title>
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #05080d;
+      font-family: Inter, Arial, sans-serif;
+      color: #eaf2ff;
+    }
+
+    #game {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #hud {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      width: 360px;
+      max-width: calc(100vw - 28px);
+      background: rgba(10, 17, 28, 0.88);
+      border: 1px solid rgba(125, 180, 255, 0.22);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      padding: 14px;
+      z-index: 20;
+    }
+
+    #hud h1 {
+      margin: 0 0 10px;
+      font-size: 20px;
+      line-height: 1.1;
+    }
+
+    #hud .sub {
+      font-size: 12px;
+      color: #aebed3;
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: #91a6c2;
+      margin-bottom: 4px;
+      font-weight: 700;
+    }
+
+    .value {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    #targetBox {
+      margin-top: 8px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      min-height: 92px;
+    }
+
+    #targetName {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    #targetInfo {
+      font-size: 12px;
+      color: #b7c6da;
+      line-height: 1.45;
+      white-space: pre-line;
+    }
+
+    #controls {
+      position: fixed;
+      right: 14px;
+      top: 14px;
+      width: 340px;
+      max-width: calc(100vw - 28px);
+      background: rgba(10, 17, 28, 0.88);
+      border: 1px solid rgba(125, 180, 255, 0.22);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      padding: 14px;
+      z-index: 20;
+    }
+
+    #controls h2 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+
+    #controls p {
+      margin: 6px 0;
+      font-size: 12px;
+      color: #b7c6da;
+      line-height: 1.45;
+    }
+
+    #logs {
+      position: fixed;
+      left: 14px;
+      bottom: 14px;
+      width: 540px;
+      max-width: calc(100vw - 28px);
+      max-height: 220px;
+      overflow: auto;
+      background: rgba(10, 17, 28, 0.88);
+      border: 1px solid rgba(125, 180, 255, 0.22);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      padding: 12px;
+      z-index: 20;
+    }
+
+    .log {
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      border-left: 3px solid #72c5ff;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #eaf2ff;
+      margin-bottom: 8px;
+    }
+
+    .log.warn { border-left-color: #ffc857; }
+    .log.bad { border-left-color: #ff6b6b; }
+    .log.good { border-left-color: #41d98b; }
+    .log.violet { border-left-color: #a184ff; }
+
+    #crosshair {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 18px;
+      height: 18px;
+      pointer-events: none;
+      z-index: 15;
+    }
+
+    #crosshair::before,
+    #crosshair::after {
+      content: "";
+      position: absolute;
+      background: rgba(255,255,255,0.85);
+      border-radius: 99px;
+    }
+
+    #crosshair::before {
+      width: 18px;
+      height: 2px;
+      top: 8px;
+      left: 0;
+    }
+
+    #crosshair::after {
+      width: 2px;
+      height: 18px;
+      top: 0;
+      left: 8px;
+    }
+
+    #hint {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: rgba(10,17,28,0.9);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #eaf2ff;
+      z-index: 20;
+    }
+
+    @media (max-width: 900px) {
+      #hud, #controls, #logs {
+        width: calc(100vw - 28px);
+      }
+      #controls {
+        top: auto;
+        right: auto;
+        left: 14px;
+        bottom: 246px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="hud">
+    <h1>INFILTRACIÓN 3D</h1>
+    <div class="sub">Prototipo base: muévete por la ciudad, escanea un huésped, entra por el oído y controla su cuerpo. Libertad básica, consecuencias inmediatas.</div>
+    <div class="row">
+      <div class="card">
+        <div class="label">Forma actual</div>
+        <div class="value" id="bodyValue">Alien libre</div>
+      </div>
+      <div class="card">
+        <div class="label">Sincronía</div>
+        <div class="value" id="syncValue">0%</div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="card">
+        <div class="label">Energía</div>
+        <div class="value" id="energyValue">100</div>
+      </div>
+      <div class="card">
+        <div class="label">Sospecha global</div>
+        <div class="value" id="suspicionValue">0</div>
+      </div>
+    </div>
+    <div id="targetBox">
+      <div id="targetName">Sin objetivo</div>
+      <div id="targetInfo">Acércate a un NPC y apúntalo con la cámara.</div>
+    </div>
+  </div>
+
+  <div id="controls">
+    <h2>Controles</h2>
+    <p><strong>WASD</strong> mover</p>
+    <p><strong>Ratón</strong> mirar</p>
+    <p><strong>Shift</strong> correr</p>
+    <p><strong>E</strong> escanear objetivo</p>
+    <p><strong>R</strong> poseer objetivo escaneado</p>
+    <p><strong>F</strong> acción social simple</p>
+    <p><strong>Q</strong> abandonar intento de interacción</p>
+    <p><strong>Clic</strong> bloquear ratón dentro del juego</p>
+  </div>
+
+  <div id="logs"></div>
+  <div id="crosshair"></div>
+  <div id="hint">Haz clic en la pantalla para activar la cámara</div>
+
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+
+    const canvas = document.getElementById('game');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a1018);
+    scene.fog = new THREE.Fog(0x0a1018, 30, 170);
+
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 300);
+    camera.position.set(0, 1.6, 8);
+
+    const clock = new THREE.Clock();
+    const raycaster = new THREE.Raycaster();
+
+    const state = {
+      body: 'alien',
+      hostId: null,
+      sync: 0,
+      energy: 100,
+      suspicion: 0,
+      stability: 84,
+      media: 22,
+      military: 14,
+      money: 90,
+      currentTargetId: null,
+      yaw: 0,
+      pitch: 0,
+      pointerLocked: false,
+      socialCooldown: 0,
+      wasMovingFast: false,
+      time: 8,
+      minuteAccumulator: 0,
+      missionIndex: 0,
+      missions: [
+        {
+          id: 'scan_any',
+          title: 'Escanea a alguien útil',
+          desc: 'Necesitas recuerdos y rutinas antes de liarla.',
+          done: false,
+          check: () => npcs.some(n => n.scanned)
+        },
+        {
+          id: 'possess_any',
+          title: 'Consigue un huésped',
+          desc: 'Sin cuerpo funcional solo eres un bicho con ganas de problemas.',
+          done: false,
+          check: () => !!state.hostId
+        },
+        {
+          id: 'social_action',
+          title: 'Actúa como humano',
+          desc: 'Usa F al menos una vez dentro de un huésped.',
+          done: false,
+          check: () => missionFlags.didSocialAction
+        },
+        {
+          id: 'survive',
+          title: 'Mantén la ciudad utilizable',
+          desc: 'No dejes que la estabilidad caiga por debajo de 40.',
+          done: false,
+          check: () => state.stability >= 40 && state.time >= 12
+        }
+      ]
+    };
+
+    const missionFlags = {
+      didSocialAction: false,
+    };
+
+    const keys = {
+      KeyW: false,
+      KeyA: false,
+      KeyS: false,
+      KeyD: false,
+      ShiftLeft: false,
+      ShiftRight: false,
+    };
+
+    const hud = {
+      body: document.getElementById('bodyValue'),
+      sync: document.getElementById('syncValue'),
+      energy: document.getElementById('energyValue'),
+      suspicion: document.getElementById('suspicionValue'),
+      targetName: document.getElementById('targetName'),
+      targetInfo: document.getElementById('targetInfo'),
+      logs: document.getElementById('logs'),
+      hint: document.getElementById('hint'),
+    };
+
+    const hudPanel = document.getElementById('hud');
+    const extraHtml = document.createElement('div');
+    extraHtml.innerHTML = `
+      <div class="row" style="margin-top:8px;">
+        <div class="card">
+          <div class="label">Estabilidad</div>
+          <div class="value" id="stabilityValue">84</div>
+        </div>
+        <div class="card">
+          <div class="label">Dinero</div>
+          <div class="value" id="moneyValue">90</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="card">
+          <div class="label">Medios</div>
+          <div class="value" id="mediaValue">22</div>
+        </div>
+        <div class="card">
+          <div class="label">Militar</div>
+          <div class="value" id="militaryValue">14</div>
+        </div>
+      </div>
+      <div id="missionBox" style="margin-top:8px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#91a6c2;font-weight:700;margin-bottom:6px;">Objetivo actual</div>
+        <div id="missionTitle" style="font-size:16px;font-weight:800;margin-bottom:4px;">Escanea a alguien útil</div>
+        <div id="missionDesc" style="font-size:12px;color:#b7c6da;line-height:1.45;">Necesitas recuerdos y rutinas antes de liarla.</div>
+      </div>
+    `;
+    hudPanel.appendChild(extraHtml);
+
+    const extraRefs = {
+      stability: document.getElementById('stabilityValue'),
+      money: document.getElementById('moneyValue'),
+      media: document.getElementById('mediaValue'),
+      military: document.getElementById('militaryValue'),
+      missionTitle: document.getElementById('missionTitle'),
+      missionDesc: document.getElementById('missionDesc'),
+    };
+
+    function addLog(text, type = '') {
+      const div = document.createElement('div');
+      div.className = `log ${type}`.trim();
+      div.textContent = `[${String(Math.floor(state.time)).padStart(2, '0')}:00] ${text}`;
+      hud.logs.prepend(div);
+      while (hud.logs.children.length > 16) {
+        hud.logs.removeChild(hud.logs.lastChild);
+      }
+    }
+
+    function clamp(v, min, max) {
+      return Math.max(min, Math.min(max, v));
+    }
+
+    function rand(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function pick(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    const playerRoot = new THREE.Object3D();
+    playerRoot.position.set(0, 0, 14);
+    scene.add(playerRoot);
+
+    const world = new THREE.Group();
+    scene.add(world);
+
+    const ambient = new THREE.HemisphereLight(0x88aaff, 0x202020, 1.15);
+    scene.add(ambient);
+
+    const sun = new THREE.DirectionalLight(0xffffff, 1.3);
+    sun.position.set(20, 30, 12);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.camera.near = 0.5;
+    sun.shadow.camera.far = 160;
+    sun.shadow.camera.left = -60;
+    sun.shadow.camera.right = 60;
+    sun.shadow.camera.top = 60;
+    sun.shadow.camera.bottom = -60;
+    scene.add(sun);
+
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(260, 260),
+      new THREE.MeshStandardMaterial({ color: 0x11171f })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    function makeRoad(x, z, w, h, color = 0x252d37) {
+      const road = new THREE.Mesh(
+        new THREE.BoxGeometry(w, 0.08, h),
+        new THREE.MeshStandardMaterial({ color })
+      );
+      road.position.set(x, 0.04, z);
+      road.receiveShadow = true;
+      world.add(road);
+      return road;
+    }
+
+    function makeBuilding(x, z, w, h, d, color, emissive = 0x000000) {
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
+        new THREE.MeshStandardMaterial({ color, emissive, roughness: 0.85, metalness: 0.08 })
+      );
+      mesh.position.set(x, h / 2, z);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      world.add(mesh);
+      return mesh;
+    }
+
+    function makeLamp(x, z) {
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.09, 0.12, 4.8, 10),
+        new THREE.MeshStandardMaterial({ color: 0x4c5560 })
+      );
+      pole.position.set(x, 2.4, z);
+      pole.castShadow = true;
+      world.add(pole);
+
+      const bulb = new THREE.Mesh(
+        new THREE.SphereGeometry(0.18, 14, 14),
+        new THREE.MeshStandardMaterial({ color: 0xfff0c7, emissive: 0xffc760, emissiveIntensity: 0.5 })
+      );
+      bulb.position.set(x, 4.8, z);
+      world.add(bulb);
+    }
+
+    function makeTree(x, z) {
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.22, 0.28, 1.6, 8),
+        new THREE.MeshStandardMaterial({ color: 0x593b24 })
+      );
+      trunk.position.set(x, 0.8, z);
+      trunk.castShadow = true;
+      world.add(trunk);
+
+      const crown = new THREE.Mesh(
+        new THREE.SphereGeometry(1.1, 16, 16),
+        new THREE.MeshStandardMaterial({ color: 0x254d2c })
+      );
+      crown.position.set(x, 2.1, z);
+      crown.castShadow = true;
+      world.add(crown);
+    }
+
+    function makeBench(x, z, rot = 0) {
+      const g = new THREE.Group();
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.12, 0.38), new THREE.MeshStandardMaterial({ color: 0x6d4f33 }));
+      seat.position.set(0, 0.55, 0);
+      const back = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.5, 0.12), new THREE.MeshStandardMaterial({ color: 0x6d4f33 }));
+      back.position.set(0, 0.82, -0.13);
+      const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.55, 0.08), new THREE.MeshStandardMaterial({ color: 0x3a3f46 }));
+      const leg2 = leg1.clone();
+      const leg3 = leg1.clone();
+      const leg4 = leg1.clone();
+      leg1.position.set(-0.55, 0.27, -0.12);
+      leg2.position.set(0.55, 0.27, -0.12);
+      leg3.position.set(-0.55, 0.27, 0.12);
+      leg4.position.set(0.55, 0.27, 0.12);
+      g.add(seat, back, leg1, leg2, leg3, leg4);
+      g.position.set(x, 0, z);
+      g.rotation.y = rot;
+      g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      world.add(g);
+    }
+
+    function makeCar(x, z, color = 0xaa3333, rot = 0) {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.7, 1.2), new THREE.MeshStandardMaterial({ color }));
+      body.position.y = 0.55;
+      const top = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.5, 1), new THREE.MeshStandardMaterial({ color: 0x222833 }));
+      top.position.set(0, 1, 0);
+      g.add(body, top);
+      [[-0.75,0.25,-0.55],[0.75,0.25,-0.55],[-0.75,0.25,0.55],[0.75,0.25,0.55]].forEach(([px,py,pz]) => {
+        const w = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.23, 0.18, 16), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+        w.rotation.z = Math.PI / 2;
+        w.position.set(px, py, pz);
+        g.add(w);
+      });
+      g.position.set(x, 0, z);
+      g.rotation.y = rot;
+      g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      world.add(g);
+    }
+
+    makeRoad(0, 0, 10, 190);
+    makeRoad(0, 0, 190, 10);
+    makeRoad(-42, 0, 10, 150);
+    makeRoad(42, 0, 10, 150);
+    makeRoad(0, -42, 150, 10);
+    makeRoad(0, 42, 150, 10);
+
+    makeBuilding(-18, -18, 16, 14, 16, 0x2a3440);
+    makeBuilding(20, -20, 18, 18, 20, 0x3b2f42);
+    makeBuilding(-22, 22, 20, 10, 18, 0x2f4237);
+    makeBuilding(22, 20, 20, 22, 18, 0x42453a);
+    makeBuilding(0, -34, 22, 16, 16, 0x2d3f52, 0x081018);
+    makeBuilding(0, 35, 26, 20, 16, 0x47373b, 0x12090b);
+    makeBuilding(-54, -25, 18, 18, 18, 0x38435a);
+    makeBuilding(-54, 26, 16, 14, 16, 0x43393b);
+    makeBuilding(55, -24, 20, 20, 18, 0x3a4a38);
+    makeBuilding(56, 26, 18, 16, 16, 0x4a4031);
+    makeBuilding(0, 62, 24, 22, 18, 0x2c3444);
+    makeBuilding(0, -62, 24, 18, 18, 0x453439);
+
+    for (let i = -84; i <= 84; i += 12) {
+      makeLamp(-6, i);
+      makeLamp(6, i);
+      if (Math.abs(i) > 10) {
+        makeLamp(-48, i);
+        makeLamp(-36, i);
+        makeLamp(36, i);
+        makeLamp(48, i);
+      }
+      if (i !== 0) {
+        makeLamp(i, -6);
+        makeLamp(i, 6);
+      }
+    }
+
+    for (let i = -64; i <= 64; i += 16) {
+      makeTree(-14, i);
+      makeTree(14, i + 6);
+      makeTree(i + 4, -14);
+      makeTree(i - 4, 14);
+      makeTree(-62, i + 3);
+      makeTree(62, i - 5);
+    }
+
+    makeBench(-12, 12, Math.PI / 2);
+    makeBench(12, -12, -Math.PI / 2);
+    makeBench(-50, 10, 0);
+    makeBench(50, -8, Math.PI);
+
+    makeCar(-25, -4, 0xaa3333, Math.PI / 2);
+    makeCar(28, 4, 0x3366aa, -Math.PI / 2);
+    makeCar(-4, 26, 0x888833, Math.PI);
+    makeCar(4, -26, 0x884488, 0);
+
+    const npcGroup = new THREE.Group();
+    scene.add(npcGroup);
+
+    function createNpcMesh(colorBody = 0x6fb7ff, colorHead = 0xe6c8a0) {
+      const root = new THREE.Group();
+
+      const body = new THREE.Mesh(
+        new THREE.CapsuleGeometry(0.42, 1.1, 6, 12),
+        new THREE.MeshStandardMaterial({ color: colorBody })
+      );
+      body.castShadow = true;
+      body.position.y = 1.1;
+      root.add(body);
+
+      const head = new THREE.Mesh(
+        new THREE.SphereGeometry(0.34, 16, 16),
+        new THREE.MeshStandardMaterial({ color: colorHead })
+      );
+      head.castShadow = true;
+      head.position.y = 2.05;
+      root.add(head);
+
+      const ear = new THREE.Mesh(
+        new THREE.SphereGeometry(0.06, 8, 8),
+        new THREE.MeshStandardMaterial({ color: 0xf1d2b8 })
+      );
+      ear.scale.set(0.7, 1, 0.6);
+      ear.position.set(0.33, 2.02, 0);
+      root.add(ear);
+
+      const marker = new THREE.Mesh(
+        new THREE.TorusGeometry(0.52, 0.04, 8, 20),
+        new THREE.MeshBasicMaterial({ color: 0x72c5ff })
+      );
+      marker.rotation.x = Math.PI / 2;
+      marker.position.y = 0.05;
+      marker.visible = false;
+      root.add(marker);
+
+      root.userData.marker = marker;
+      return root;
+    }
+
+    const npcs = [
+      {
+        id: 'journalist',
+        name: 'Clara Vidal',
+        role: 'Periodista',
+        info: 'Busca un gran reportaje. Acceso a medios y rumores. Mucha exposición.',
+        scannedInfo: 'Memorias: café a las 09:00, fuente en Gobierno, odia la censura. Riesgo: muchos ojos encima.',
+        suspicion: 6,
+        resistance: 42,
+        scanned: false,
+        actionGood: 'Filtras una noticia menor y pareces creíble.',
+        actionBad: 'Dices algo fuera de personaje y un colega frunce el ceño.',
+        mesh: createNpcMesh(0x49a6ff, 0xedc6a1),
+        walkCenter: new THREE.Vector3(-8, 0, -12),
+        walkRadius: 6,
+        walkSpeed: 0.55,
+        angle: 0,
+      },
+      {
+        id: 'politician',
+        name: 'Héctor Salas',
+        role: 'Político',
+        info: 'Poder enorme, vigilancia enorme. Error suyo = temblor de ciudad.',
+        scannedInfo: 'Memorias: reuniones secretas, miedo a escándalos, desconfianza militar. Poder brutal.',
+        suspicion: 8,
+        resistance: 60,
+        scanned: false,
+        actionGood: 'Firmas una orden menor y ganas apariencia de control.',
+        actionBad: 'Tu gesto no encaja. Un escolta se queda demasiado atento.',
+        mesh: createNpcMesh(0xffc34c, 0xe8c3a0),
+        walkCenter: new THREE.Vector3(10, 0, 10),
+        walkRadius: 5,
+        walkSpeed: 0.4,
+        angle: Math.PI / 2,
+      },
+      {
+        id: 'military',
+        name: 'Lucio Barrera',
+        role: 'Militar',
+        info: 'Fuerza, acceso y protocolos. Su cerebro no es una pensión barata.',
+        scannedInfo: 'Memorias: odia periodistas, caja fuerte con órdenes, disciplina extrema.',
+        suspicion: 5,
+        resistance: 68,
+        scanned: false,
+        actionGood: 'Das una orden rutinaria y pareces sólido.',
+        actionBad: 'Un subordinado detecta un matiz raro en tu tono.',
+        mesh: createNpcMesh(0xd96b6b, 0xe7c39f),
+        walkCenter: new THREE.Vector3(48, 0, 28),
+        walkRadius: 6,
+        walkSpeed: 0.48,
+        angle: 1.8,
+      },
+      {
+        id: 'business',
+        name: 'Elena Montalban',
+        role: 'Empresaria',
+        info: 'Dinero, contactos y doble contabilidad. Muy útil, muy peligrosa.',
+        scannedInfo: 'Memorias: chófer variable, auditorías temidas, sobornos discretos.',
+        suspicion: 7,
+        resistance: 51,
+        scanned: false,
+        actionGood: 'Mueves dinero sin levantar mucho polvo.',
+        actionBad: 'Un empleado nota que hoy estás demasiado rara.',
+        mesh: createNpcMesh(0x6bd98e, 0xe8c6a2),
+        walkCenter: new THREE.Vector3(-48, 0, -22),
+        walkRadius: 7,
+        walkSpeed: 0.38,
+        angle: 2.4,
+      },
+      {
+        id: 'police',
+        name: 'Ivan Roldan',
+        role: 'Policia',
+        info: 'Observador, cansado y peligroso para ti si piensa demasiado.',
+        scannedInfo: 'Memorias: matrículas a mano, sospechas del puerto, ética incómoda.',
+        suspicion: 4,
+        resistance: 57,
+        scanned: false,
+        actionGood: 'Mantienes el turno sin llamar demasiado la atención.',
+        actionBad: 'Tu mirada tarda un segundo de más y canta bastante.',
+        mesh: createNpcMesh(0x8f85ff, 0xe7c29f),
+        walkCenter: new THREE.Vector3(44, 0, -26),
+        walkRadius: 5,
+        walkSpeed: 0.44,
+        angle: 0.7,
+      },
+      {
+        id: 'civilian',
+        name: 'Noa Ferrer',
+        role: 'Civil',
+        info: 'Poco poder, mucha discreción. A veces lo humilde es lo más útil.',
+        scannedInfo: 'Memorias: chats vecinales, rumores tempranos, conoce medio barrio.',
+        suspicion: 2,
+        resistance: 28,
+        scanned: false,
+        actionGood: 'Pasas desapercibido entre la gente normal.',
+        actionBad: 'Una vecina nota que hoy estás muy rara.',
+        mesh: createNpcMesh(0xc9d4e4, 0xe9c8a3),
+        walkCenter: new THREE.Vector3(-54, 0, 26),
+        walkRadius: 4,
+        walkSpeed: 0.36,
+        angle: 5.1,
+      }
+    ];
+
+    npcs.forEach((npc) => {
+      npc.mesh.position.copy(npc.walkCenter);
+      npc.mesh.position.y = 0;
+      npc.mesh.userData.npcId = npc.id;
+      npcGroup.add(npc.mesh);
+    });
+
+    function getNpcById(id) {
+      return npcs.find((n) => n.id === id) || null;
+    }
+
+    function getCurrentMission() {
+      return state.missions[state.missionIndex] || null;
+    }
+
+    function checkMissions() {
+      const mission = getCurrentMission();
+      if (!mission || mission.done) return;
+      if (mission.check()) {
+        mission.done = true;
+        addLog(`Objetivo completado: ${mission.title}.`, 'good');
+        state.money = clamp(state.money + 15, 0, 9999);
+        state.missionIndex = Math.min(state.missionIndex + 1, state.missions.length);
+      }
+    }
+
+    function updateMissionHud() {
+      const mission = getCurrentMission();
+      if (!mission) {
+        extraRefs.missionTitle.textContent = 'Sin objetivo inmediato';
+        extraRefs.missionDesc.textContent = 'Ahora toca improvisar sin romper demasiado la ciudad.';
+        return;
+      }
+      extraRefs.missionTitle.textContent = mission.title;
+      extraRefs.missionDesc.textContent = mission.desc;
+    }
+
+    function updateHudTarget() {
+      const target = getNpcById(state.currentTargetId);
+      if (!target) {
+        hud.targetName.textContent = 'Sin objetivo';
+        hud.targetInfo.textContent = 'Acércate a un NPC y apúntalo con la cámara.';
+        return;
+      }
+
+      hud.targetName.textContent = `${target.name} · ${target.role}`;
+      hud.targetInfo.textContent = target.scanned
+        ? `${target.scannedInfo}
+Sospecha personal: ${Math.round(target.suspicion)}`
+        : `${target.info}
+Sospecha personal: ${Math.round(target.suspicion)}`;
+    }
+
+    function updateHudStats() {
+      const host = state.hostId ? getNpcById(state.hostId) : null;
+      hud.body.textContent = host ? host.name : 'Alien libre';
+      hud.sync.textContent = `${Math.round(state.sync)}%`;
+      hud.energy.textContent = `${Math.round(state.energy)}`;
+      hud.suspicion.textContent = `${Math.round(state.suspicion)}`;
+      extraRefs.stability.textContent = `${Math.round(state.stability)}`;
+      extraRefs.money.textContent = `${Math.round(state.money)}`;
+      extraRefs.media.textContent = `${Math.round(state.media)}`;
+      extraRefs.military.textContent = `${Math.round(state.military)}`;
+      updateHudTarget();
+      updateMissionHud();
+    }
+
+    function updateHint() {
+      if (!state.pointerLocked) {
+        hud.hint.textContent = 'Haz clic para activar la cámara';
+        return;
+      }
+      const target = getNpcById(state.currentTargetId);
+      if (!target) {
+        hud.hint.textContent = state.hostId
+          ? 'Eres el huésped. F para actuar, G para acción fuerte.'
+          : 'Muévete con WASD y apunta a un NPC';
+        return;
+      }
+      if (!target.scanned) {
+        hud.hint.textContent = `Pulsa E para escanear a ${target.name}`;
+      } else if (!state.hostId) {
+        hud.hint.textContent = `Pulsa R para entrar por el oído de ${target.name}`;
+      } else if (state.hostId === target.id) {
+        hud.hint.textContent = `Ya estás dentro de ${target.name}`;
+      } else {
+        hud.hint.textContent = 'Ya tienes huésped. Aquí no se cambia de cuerpo como de camisa.';
+      }
+    }
+
+    addLog('La ciudad ya no es una calle tonta. Ahora hay más actores, más riesgo y más formas de meter la pata.', 'violet');
+    addLog('Escanear bien, elegir huésped y mantener la estabilidad será bastante más importante.', 'good');
+
+    const alienVisual = new THREE.Mesh(
+      new THREE.SphereGeometry(0.18, 16, 16),
+      new THREE.MeshStandardMaterial({ color: 0x7f6cff, emissive: 0x6044ff, emissiveIntensity: 1.2 })
+    );
+    alienVisual.castShadow = true;
+    scene.add(alienVisual);
+
+    function playerSpeed() {
+      const base = state.hostId ? 5.6 : 3.25;
+      const sprint = (keys.ShiftLeft || keys.ShiftRight) ? 1.65 : 1;
+      return base * sprint;
+    }
+
+    function updatePlayer(dt) {
+      const forward = new THREE.Vector3(Math.sin(state.yaw), 0, Math.cos(state.yaw));
+      const right = new THREE.Vector3(Math.cos(state.yaw), 0, -Math.sin(state.yaw));
+      const move = new THREE.Vector3();
+
+      if (keys.KeyW) move.add(forward);
+      if (keys.KeyS) move.sub(forward);
+      if (keys.KeyD) move.add(right);
+      if (keys.KeyA) move.sub(right);
+
+      const moving = move.lengthSq() > 0;
+      if (moving) move.normalize();
+
+      const speed = playerSpeed();
+      playerRoot.position.addScaledVector(move, speed * dt);
+      playerRoot.position.x = clamp(playerRoot.position.x, -90, 90);
+      playerRoot.position.z = clamp(playerRoot.position.z, -90, 90);
+
+      if (state.hostId) {
+        state.sync = clamp(state.sync + (moving ? 3.8 : 1.8) * dt, 0, 100);
+        state.energy = clamp(state.energy - (moving ? 1.25 : 0.45) * dt, 0, 100);
+        if ((keys.ShiftLeft || keys.ShiftRight) && moving) {
+          state.suspicion = clamp(state.suspicion + 1.8 * dt, 0, 100);
+          state.stability = clamp(state.stability - 0.28 * dt, 0, 100);
+        }
+      } else {
+        state.energy = clamp(state.energy - (moving ? 0.15 : -0.55) * dt, 0, 100);
+      }
+
+      const fast = moving && (keys.ShiftLeft || keys.ShiftRight);
+      if (state.hostId && fast && !state.wasMovingFast) {
+        addLog('Tu huésped empieza a moverse demasiado tenso. Eso no ayuda a parecer normal.', 'warn');
+      }
+      state.wasMovingFast = fast;
+    }
+
+    function updateCamera() {
+      camera.rotation.order = 'YXZ';
+      camera.rotation.y = state.yaw;
+      camera.rotation.x = state.pitch;
+      camera.position.copy(playerRoot.position).add(new THREE.Vector3(0, state.hostId ? 1.62 : 0.65, 0));
+
+      if (!state.hostId) {
+        const bob = Math.sin(performance.now() * 0.004) * 0.02;
+        camera.position.y += bob;
+      }
+
+      alienVisual.visible = !state.hostId;
+      if (!state.hostId) {
+        alienVisual.position.copy(playerRoot.position).add(new THREE.Vector3(0, 0.24, 0));
+      }
+    }
+
+    function updateNpcs(dt) {
+      npcs.forEach((npc) => {
+        if (state.hostId === npc.id) {
+          npc.mesh.visible = false;
+          return;
+        }
+        npc.mesh.visible = true;
+        npc.angle += npc.walkSpeed * dt;
+        const wobble = Math.sin(npc.angle * 1.7) * 0.2;
+        npc.mesh.position.x = npc.walkCenter.x + Math.cos(npc.angle) * npc.walkRadius;
+        npc.mesh.position.z = npc.walkCenter.z + Math.sin(npc.angle) * npc.walkRadius;
+        npc.mesh.position.y = 0;
+        npc.mesh.rotation.y = -npc.angle + wobble;
+      });
+    }
+
+    function updateTargeting() {
+      raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+      const meshes = npcs.filter(n => state.hostId !== n.id).map(n => n.mesh);
+      const hits = raycaster.intersectObjects(meshes, true);
+
+      let targetId = null;
+      let nearestDistance = Infinity;
+
+      if (hits.length) {
+        for (const hit of hits) {
+          let obj = hit.object;
+          while (obj && !obj.userData.npcId && obj.parent) obj = obj.parent;
+          if (obj && obj.userData.npcId) {
+            const npc = getNpcById(obj.userData.npcId);
+            if (!npc) continue;
+            const d = npc.mesh.position.distanceTo(playerRoot.position);
+            if (d < 7.6 && d < nearestDistance) {
+              targetId = npc.id;
+              nearestDistance = d;
+            }
+          }
+        }
+      }
+
+      state.currentTargetId = targetId;
+      npcs.forEach(npc => {
+        npc.mesh.userData.marker.visible = npc.id === state.currentTargetId;
+        if (npc.id === state.currentTargetId) {
+          npc.mesh.userData.marker.material.color.set(npc.scanned ? 0x9c7cff : 0x72c5ff);
+        }
+      });
+
+      updateHudTarget();
+      updateHint();
+    }
+
+    function scanTarget() {
+      const npc = getNpcById(state.currentTargetId);
+      if (!npc) {
+        addLog('No estás apuntando a nadie.', 'warn');
+        return;
+      }
+      if (npc.scanned) {
+        addLog(`Ya has escaneado a ${npc.name}. No hace falta insistir tanto.`, 'warn');
+        return;
+      }
+      if (state.energy < 15) {
+        addLog('Te falta energía para un escaneo neurológico profundo.', 'bad');
+        return;
+      }
+
+      state.energy = clamp(state.energy - 15, 0, 100);
+      npc.scanned = true;
+      state.suspicion = clamp(state.suspicion + 2, 0, 100);
+      addLog(`Has escaneado a ${npc.name}. Ahora entiendes mejor sus grietas y su rutina.`, 'violet');
+      checkMissions();
+      updateHudStats();
+      updateHint();
+    }
+
+    function possessTarget() {
+      const npc = getNpcById(state.currentTargetId);
+      if (!npc) {
+        addLog('No hay huésped válido delante.', 'warn');
+        return;
+      }
+      if (state.hostId) {
+        addLog('Ya estás dentro de un huésped. No puedes teletransportarte entre cerebros.', 'bad');
+        return;
+      }
+      if (!npc.scanned) {
+        addLog(`Entrar en ${npc.name} sin escaneo previo sería una chapuza criminal.`, 'bad');
+        state.suspicion = clamp(state.suspicion + 6, 0, 100);
+        updateHudStats();
+        return;
+      }
+      if (state.energy < 28) {
+        addLog('Te falta energía para instalarte dentro del cerebro del huésped.', 'bad');
+        return;
+      }
+
+      state.energy = clamp(state.energy - 28, 0, 100);
+      state.hostId = npc.id;
+      state.body = npc.id;
+      state.sync = 58 - npc.resistance * 0.35;
+      state.suspicion = clamp(state.suspicion + 8, 0, 100);
+      playerRoot.position.copy(npc.mesh.position);
+
+      addLog(`Te has introducido por el oído de ${npc.name} y te has anclado a su cerebro. Ya sois un problema compartido.`, 'violet');
+      addLog(`Controlas casi todo el cuerpo, pero la mente residual de ${npc.name} sigue viva.`, 'warn');
+      checkMissions();
+      updateHudStats();
+      updateHint();
+    }
+
+    function socialAction() {
+      if (!state.hostId) {
+        addLog('Como alien libre apenas puedes hacer vida social sin delatarte. Primero consigue un cuerpo.', 'warn');
+        return;
+      }
+      if (state.socialCooldown > 0) {
+        addLog('Vas demasiado rápido. Incluso los humanos torpes disimulan mejor.', 'warn');
+        return;
+      }
+
+      const host = getNpcById(state.hostId);
+      if (!host) return;
+      missionFlags.didSocialAction = true;
+
+      const roll = Math.random();
+      if (roll < 0.22) {
+        state.sync = clamp(state.sync - 8, 0, 100);
+        state.suspicion = clamp(state.suspicion + 10, 0, 100);
+        host.suspicion = clamp(host.suspicion + 7, 0, 100);
+        addLog(`${host.actionBad}`, 'bad');
+      } else if (roll < 0.62) {
+        state.sync = clamp(state.sync + 4, 0, 100);
+        state.suspicion = clamp(state.suspicion + 2, 0, 100);
+        state.money = clamp(state.money + 4, 0, 9999);
+        addLog(`Actúas de forma suficientemente humana dentro de ${host.name}.`, 'good');
+      } else {
+        state.sync = clamp(state.sync + 7, 0, 100);
+        state.energy = clamp(state.energy - 4, 0, 100);
+        state.money = clamp(state.money + 8, 0, 9999);
+        addLog(`${host.actionGood}`, 'good');
+      }
+
+      state.socialCooldown = 1.25;
+      checkMissions();
+      updateHudStats();
+    }
+
+    function strongRoleAction() {
+      if (!state.hostId) {
+        addLog('Sin huésped no puedes ejecutar una acción fuerte creíble.', 'warn');
+        return;
+      }
+      if (state.socialCooldown > 0.4) {
+        addLog('Todavía estás demasiado expuesto para otra maniobra fuerte.', 'warn');
+        return;
+      }
+
+      const host = getNpcById(state.hostId);
+      if (!host) return;
+
+      if (host.role === 'Periodista') {
+        state.media = clamp(state.media + 10, 0, 100);
+        state.stability = clamp(state.stability - 6, 0, 100);
+        state.suspicion = clamp(state.suspicion + 7, 0, 100);
+        state.money = clamp(state.money + 18, 0, 9999);
+        addLog('Publicas una bomba mediática. Ganas impacto, pero la ciudad se agita.', 'warn');
+      } else if (host.role === 'Político') {
+        state.stability = clamp(state.stability + 6, 0, 100);
+        state.military = clamp(state.military + 4, 0, 100);
+        state.suspicion = clamp(state.suspicion + 8, 0, 100);
+        addLog('Apruebas una medida dura. Orden aparente arriba, tensión real debajo.', 'warn');
+      } else if (host.role === 'Militar') {
+        state.military = clamp(state.military + 10, 0, 100);
+        state.stability = clamp(state.stability - 3, 0, 100);
+        state.suspicion = clamp(state.suspicion + 9, 0, 100);
+        addLog('Despliegas presión militar. La ciudad no se rompe del todo, pero cruje.', 'warn');
+      } else if (host.role === 'Empresaria') {
+        state.money = clamp(state.money + 30, 0, 9999);
+        state.stability = clamp(state.stability - 4, 0, 100);
+        state.suspicion = clamp(state.suspicion + 6, 0, 100);
+        addLog('Mueves dinero y favores. Muy rentable, bastante sucio.', 'violet');
+      } else if (host.role === 'Policia') {
+        state.stability = clamp(state.stability + 4, 0, 100);
+        state.suspicion = clamp(state.suspicion + 5, 0, 100);
+        state.media = clamp(state.media + 2, 0, 100);
+        addLog('Aprietas una investigación local. La calle se calma un poco.', 'good');
+      } else {
+        state.stability = clamp(state.stability + 1, 0, 100);
+        state.suspicion = clamp(state.suspicion + 2, 0, 100);
+        addLog('Te mezclas con la vida normal. Poco poder, mucha discreción.', 'good');
+      }
+
+      state.socialCooldown = 1.2;
+      updateHudStats();
+    }
+
+    function restAction() {
+      if (state.hostId) {
+        state.energy = clamp(state.energy + 5, 0, 100);
+        state.suspicion = clamp(state.suspicion - 3, 0, 100);
+        state.sync = clamp(state.sync + 2, 0, 100);
+        addLog('Te mantienes prudente dentro del huésped. Bajas ruido y recuperas margen.', 'good');
+      } else {
+        state.energy = clamp(state.energy + 7, 0, 100);
+        addLog('Como alien libre te ocultas y recuperas parte de la energía.', 'good');
+      }
+      updateHudStats();
+    }
+
+    function cancelAction() {
+      addLog('Cortas la interacción y te mantienes prudente. Bastante sensato por una vez.', 'good');
+    }
+
+    function attemptExitPenalty() {
+      if (!state.hostId) return;
+      const host = getNpcById(state.hostId);
+      if (!host) return;
+      addLog(`No puedes salir limpiamente de ${host.name}. Eso le agujerearía el cerebro y lo mataría.`, 'bad');
+      state.suspicion = clamp(state.suspicion + 3, 0, 100);
+      updateHudStats();
+    }
+
+    function randomCityEvent() {
+      const events = [
+        () => {
+          state.media = clamp(state.media + 4, 0, 100);
+          state.stability = clamp(state.stability - 2, 0, 100);
+          addLog('Un rumor corre por la ciudad más rápido de lo razonable.', 'warn');
+        },
+        () => {
+          state.stability = clamp(state.stability + 2, 0, 100);
+          addLog('Durante un rato la ciudad parece normal. Milagro administrativo.', 'good');
+        },
+        () => {
+          state.military = clamp(state.military + 3, 0, 100);
+          addLog('Se comenta un aumento discreto de vigilancia en zonas sensibles.', 'warn');
+        },
+        () => {
+          state.money = clamp(state.money + 6, 0, 9999);
+          addLog('Un pequeño negocio te deja margen económico inesperado.', 'good');
+        },
+      ];
+      pick(events)();
+    }
+
+    function updateTimeAndWorld(dt) {
+      state.minuteAccumulator += dt;
+      if (state.minuteAccumulator >= 8) {
+        state.minuteAccumulator = 0;
+        state.time += 1;
+        if (state.time >= 24) state.time = 0;
+        if (Math.random() < 0.55) randomCityEvent();
+      }
+
+      if (state.media > 75) {
+        state.stability = clamp(state.stability - 0.5 * dt, 0, 100);
+      }
+      if (state.military > 70) {
+        state.stability = clamp(state.stability - 0.35 * dt, 0, 100);
+        state.suspicion = clamp(state.suspicion + 0.2 * dt, 0, 100);
+      }
+      if (state.stability < 35 && Math.random() < 0.003) {
+        addLog('La ciudad empieza a parecerse demasiado a un sitio donde no conviene vivir.', 'bad');
+      }
+    }
+
+    function updateBiology(dt) {
+      if (!state.hostId) return;
+
+      state.energy = clamp(state.energy - 0.35 * dt, 0, 100);
+      if (state.sync < 35) {
+        state.suspicion = clamp(state.suspicion + 2.4 * dt, 0, 100);
+      }
+      if (state.energy < 18) {
+        state.sync = clamp(state.sync - 4.2 * dt, 0, 100);
+      }
+
+      if (Math.random() < 0.0045) {
+        const host = getNpcById(state.hostId);
+        if (host) {
+          state.sync = clamp(state.sync - rand(3, 7), 0, 100);
+          state.suspicion = clamp(state.suspicion + rand(2, 5), 0, 100);
+          addLog(`Un recuerdo intrusivo de ${host.name} te atraviesa la mente y pierdes finura.`, 'warn');
+        }
+      }
+
+      if (state.sync <= 5) {
+        addLog('Tu control neurológico está al borde del colapso.', 'bad');
+      }
+      if (state.energy <= 5) {
+        addLog('Te estás quedando sin energía. Muy mala idea dentro de un cerebro ajeno.', 'bad');
+      }
+    }
+
+    function checkEndStates() {
+      if (state.suspicion >= 100) {
+        addLog('La sospecha global ha explotado. Ya no eres una anomalía sutil, eres un problema.', 'bad');
+        state.suspicion = 95;
+      }
+      if (state.stability <= 0) {
+        addLog('La ciudad ha colapsado. Mucha libertad, pocas luces.', 'bad');
+        state.stability = 0;
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code in keys) keys[e.code] = true;
+      if (e.code === 'KeyE') scanTarget();
+      if (e.code === 'KeyR') possessTarget();
+      if (e.code === 'KeyF') socialAction();
+      if (e.code === 'KeyG') strongRoleAction();
+      if (e.code === 'KeyQ') cancelAction();
+      if (e.code === 'KeyT') restAction();
+      if (e.code === 'KeyX') attemptExitPenalty();
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (e.code in keys) keys[e.code] = false;
+    });
+
+    canvas.addEventListener('click', () => {
+      canvas.requestPointerLock();
+    });
+
+    document.addEventListener('pointerlockchange', () => {
+      state.pointerLocked = document.pointerLockElement === canvas;
+      updateHint();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!state.pointerLocked) return;
+      const sens = 0.0022;
+      state.yaw -= e.movementX * sens;
+      state.pitch -= e.movementY * sens;
+      state.pitch = clamp(state.pitch, -1.35, 1.35);
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    function animate() {
+      const dt = Math.min(clock.getDelta(), 0.033);
+      state.socialCooldown = Math.max(0, state.socialCooldown - dt);
+
+      updatePlayer(dt);
+      updateCamera();
+      updateNpcs(dt);
+      updateTargeting();
+      updateBiology(dt);
+      updateTimeAndWorld(dt);
+      checkMissions();
+      checkEndStates();
+      updateHudStats();
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    updateHudStats();
+    updateHint();
+    animate();
+  </script>
+</body>
+</html>

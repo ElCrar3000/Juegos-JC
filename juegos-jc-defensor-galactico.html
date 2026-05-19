@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juegos JC - Aventura Espacial: El Defensor Galáctico</title>
+<meta name="description" content="Juega gratis en Juegos JC. Aventura espacial adictiva con 50 niveles, logros, power-ups y sistema de combos. ¡Diviértete horas!">
+<meta name="keywords" content="juegos jc, juegos online, juegos gratis, aventura espacial, juegos navegador, juegos html5">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+
+body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: linear-gradient(135deg, #0a0e27 0%, #1a1a3e 50%, #0f0f23 100%);
+    color: #fff;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.brand-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(90deg, #ff006e 0%, #8338ec 50%, #3a86ff 100%);
+    padding: 8px 20px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 14px;
+    letter-spacing: 2px;
+    box-shadow: 0 2px 20px rgba(131, 56, 236, 0.5);
+    z-index: 1000;
+}
+
+.brand-header a {
+    color: #fff;
+    text-decoration: none;
+}
+
+#game-container {
+    position: relative;
+    width: 900px;
+    height: 600px;
+    max-width: 95vw;
+    max-height: 80vh;
+    margin-top: 50px;
+    border: 3px solid #8338ec;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 0 50px rgba(131, 56, 236, 0.6);
+}
+
+#canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at center, #1a0033 0%, #000000 100%);
+}
+
+.hud {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.hud-item {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid #8338ec;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.hud-item.score { color: #ffbe0b; }
+.hud-item.lives { color: #ff006e; }
+.hud-item.level { color: #3a86ff; }
+.hud-item.combo { color: #06ffa5; }
+
+.menu-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.menu-overlay.hidden { display: none; }
+
+.menu-title {
+    font-size: 48px;
+    font-weight: bold;
+    background: linear-gradient(90deg, #ff006e, #8338ec, #3a86ff, #06ffa5);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 10px;
+    text-align: center;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.menu-subtitle {
+    font-size: 16px;
+    color: #aaa;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.menu-btn {
+    background: linear-gradient(135deg, #8338ec, #3a86ff);
+    color: #fff;
+    border: none;
+    padding: 14px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 30px;
+    cursor: pointer;
+    margin: 8px;
+    min-width: 220px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(131, 56, 236, 0.5);
+}
+
+.menu-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(131, 56, 236, 0.8);
+}
+
+.menu-btn.secondary {
+    background: linear-gradient(135deg, #ff006e, #ffbe0b);
+}
+
+.menu-btn.share {
+    background: linear-gradient(135deg, #06ffa5, #3a86ff);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 20px 0;
+    max-width: 500px;
+    width: 100%;
+}
+
+.stat-card {
+    background: rgba(131, 56, 236, 0.2);
+    border: 1px solid #8338ec;
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 11px;
+    color: #aaa;
+    text-transform: uppercase;
+}
+
+.stat-value {
+    font-size: 22px;
+    font-weight: bold;
+    color: #ffbe0b;
+    margin-top: 5px;
+}
+
+.achievements-panel {
+    max-width: 600px;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    margin: 15px 0;
+}
+
+.achievement {
+    display: flex;
+    align-items: center;
+    background: rgba(0,0,0,0.5);
+    border-left: 4px solid #555;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 6px;
+    opacity: 0.5;
+}
+
+.achievement.unlocked {
+    border-left-color: #06ffa5;
+    opacity: 1;
+    background: rgba(6, 255, 165, 0.1);
+}
+
+.achievement-icon {
+    font-size: 28px;
+    margin-right: 12px;
+}
+
+.achievement-info { flex: 1; text-align: left; }
+.achievement-name { font-weight: bold; font-size: 14px; }
+.achievement-desc { font-size: 11px; color: #aaa; }
+
+.controls-hint {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.7);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: #aaa;
+    z-index: 10;
+}
+
+.power-up-bar {
+    position: absolute;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+}
+
+.power-slot {
+    width: 50px;
+    height: 50px;
+    background: rgba(0,0,0,0.7);
+    border: 2px solid #555;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    position: relative;
+}
+
+.power-slot.active {
+    border-color: #ffbe0b;
+    box-shadow: 0 0 15px #ffbe0b;
+}
+
+.power-count {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    background: #ff006e;
+    color: #fff;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+.notification {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #ffbe0b, #ff006e);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-weight: bold;
+    z-index: 50;
+    animation: slideDown 0.5s;
+    box-shadow: 0 4px 20px rgba(255, 0, 110, 0.6);
+}
+
+@keyframes slideDown {
+    from { transform: translate(-50%, -50px); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+.leaderboard {
+    max-width: 400px;
+    width: 100%;
+    background: rgba(0,0,0,0.5);
+    border-radius: 10px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.leaderboard-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    border-bottom: 1px solid #333;
+}
+
+.leaderboard-rank {
+    color: #ffbe0b;
+    font-weight: bold;
+    width: 30px;
+}
+
+.leaderboard-name { flex: 1; text-align: left; }
+.leaderboard-score { color: #06ffa5; font-weight: bold; }
+
+.story-text {
+    max-width: 500px;
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #ddd;
+    margin: 15px 0;
+    font-style: italic;
+}
+
+.tab-container {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.tab-btn {
+    background: rgba(131, 56, 236, 0.2);
+    color: #fff;
+    border: 1px solid #555;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, #8338ec, #3a86ff);
+    border-color: #8338ec;
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; width: 100%; }
+
+.cta-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(90deg, #ff006e, #ffbe0b);
+    text-align: center;
+    padding: 6px;
+    font-size: 13px;
+    font-weight: bold;
+    z-index: 999;
+}
+
+@media (max-width: 600px) {
+    .menu-title { font-size: 32px; }
+    #game-container { max-height: 70vh; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="brand-header">
+    🎮 <a href="#">JUEGOS JC</a> - EL MEJOR PORTAL DE JUEGOS GRATIS 🎮
+</div>
+
+<div id="game-container">
+    <canvas id="canvas" width="900" height="600"></canvas>
+
+    <div class="hud">
+        <div class="hud-item score">⭐ <span id="score">0</span></div>
+        <div class="hud-item combo">🔥 x<span id="combo">1</span></div>
+        <div class="hud-item level">📍 Nivel <span id="level">1</span></div>
+        <div class="hud-item lives">❤️ <span id="lives">3</span></div>
+    </div>
+
+    <div class="power-up-bar" id="powerBar">
+        <div class="power-slot" id="power-shield" title="Escudo (Q)">🛡️<span class="power-count" id="count-shield">0</span></div>
+        <div class="power-slot" id="power-bomb" title="Bomba (W)">💣<span class="power-count" id="count-bomb">0</span></div>
+        <div class="power-slot" id="power-laser" title="Láser (E)">⚡<span class="power-count" id="count-laser">0</span></div>
+        <div class="power-slot" id="power-freeze" title="Congelar (R)">❄️<span class="power-count" id="count-freeze">0</span></div>
+    </div>
+
+    <div class="controls-hint">
+        ⬅️➡️ Mover | ESPACIO Disparar | Q/W/E/R Power-ups | P Pausa
+    </div>
+
+    <!-- MAIN MENU -->
+    <div class="menu-overlay" id="mainMenu">
+        <div class="menu-title">DEFENSOR GALÁCTICO</div>
+        <div class="menu-subtitle">Una producción exclusiva de JUEGOS JC</div>
+
+        <div class="story-text">
+            🌌 Año 3024. La Tierra está bajo asedio. Eres el último piloto de la flota galáctica.
+            Defiende el planeta a través de 50 niveles, derrota a 10 jefes legendarios
+            y conviértete en LEYENDA. ¿Tienes lo necesario?
+        </div>
+
+        <button class="menu-btn" onclick="startGame()">🚀 JUGAR AHORA</button>
+        <button class="menu-btn secondary" onclick="showTab('achievements')">🏆 LOGROS</button>
+        <button class="menu-btn secondary" onclick="showTab('leaderboard')">📊 RANKING</button>
+        <button class="menu-btn secondary" onclick="showTab('shop')">🛒 TIENDA</button>
+        <button class="menu-btn share" onclick="shareGame()">📱 INVITAR AMIGOS (+500 monedas)</button>
+
+        <div class="stats-grid" style="margin-top: 25px;">
+            <div class="stat-card">
+                <div class="stat-label">Mejor Puntaje</div>
+                <div class="stat-value" id="bestScore">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Partidas Jugadas</div>
+                <div class="stat-value" id="gamesPlayed">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Monedas 💰</div>
+                <div class="stat-value" id="coins">0</div>
+            </div>
+        </div>
+
+        <div style="font-size: 11px; color: #666; margin-top: 20px;">
+            Más juegos gratis en <strong>JuegosJC.com</strong> | Comparte y gana recompensas
+        </div>
+    </div>
+
+    <!-- ACHIEVEMENTS PANEL -->
+    <div class="menu-overlay hidden" id="achievementsPanel">
+        <div class="menu-title" style="font-size: 32px;">🏆 LOGROS</div>
+        <div class="achievements-panel" id="achievementList"></div>
+        <button class="menu-btn" onclick="backToMenu()">⬅️ VOLVER</button>
+    </div>
+
+    <!-- LEADERBOARD -->
+    <div class="menu-overlay hidden" id="leaderboardPanel">
+        <div class="menu-title" style="font-size: 32px;">📊 RANKING TOP 10</div>
+        <div class="leaderboard" id="leaderboardList"></div>
+        <p style="color:#aaa; font-size:12px;">¡Llega al TOP para destacar en Juegos JC!</p>
+        <button class="menu-btn" onclick="backToMenu()">⬅️ VOLVER</button>
+    </div>
+
+    <!-- SHOP -->
+    <div class="menu-overlay hidden" id="shopPanel">
+        <div class="menu-title" style="font-size: 32px;">🛒 TIENDA</div>
+        <p style="color:#ffbe0b;">Monedas: <span id="shopCoins">0</span> 💰</p>
+        <div class="stats-grid" style="max-width: 600px;">
+            <div class="stat-card" onclick="buyItem('shield', 50)" style="cursor:pointer;">
+                <div style="font-size:30px;">🛡️</div>
+                <div class="stat-label">Escudo x3</div>
+                <div class="stat-value" style="color:#06ffa5;">50 💰</div>
+            </div>
+            <div class="stat-card" onclick="buyItem('bomb', 75)" style="cursor:pointer;">
+                <div style="font-size:30px;">💣</div>
+                <div class="stat-label">Bomba x3</div>
+                <div class="stat-value" style="color:#06ffa5;">75 💰</div>
+            </div>
+            <div class="stat-card" onclick="buyItem('laser', 100)" style="cursor:pointer;">
+                <div style="font-size:30px;">⚡</div>
+                <div class="stat-label">Láser x3</div>
+                <div class="stat-value" style="color:#06ffa5;">100 💰</div>
+            </div>
+            <div class="stat-card" onclick="buyItem('freeze', 80)" style="cursor:pointer;">
+                <div style="font-size:30px;">❄️</div>
+                <div class="stat-label">Congelar x3</div>
+                <div class="stat-value" style="color:#06ffa5;">80 💰</div>
+            </div>
+            <div class="stat-card" onclick="buyItem('life', 200)" style="cursor:pointer;">
+                <div style="font-size:30px;">❤️</div>
+                <div class="stat-label">Vida Extra</div>
+                <div class="stat-value" style="color:#06ffa5;">200 💰</div>
+            </div>
+            <div class="stat-card" onclick="buyItem('multiplier', 300)" style="cursor:pointer;">
+                <div style="font-size:30px;">✨</div>
+                <div class="stat-label">x2 Puntos (1 partida)</div>
+                <div class="stat-value" style="color:#06ffa5;">300 💰</div>
+            </div>
+        </div>
+        <button class="menu-btn" onclick="backToMenu()">⬅️ VOLVER</button>
+    </div>
+
+    <!-- GAME OVER -->
+    <div class="menu-overlay hidden" id="gameOverPanel">
+        <div class="menu-title" style="font-size: 38px; color: #ff006e;">💀 GAME OVER</div>
+        <div class="stats-grid" style="max-width: 500px;">
+            <div class="stat-card">
+                <div class="stat-label">Puntaje Final</div>
+                <div class="stat-value" id="finalScore">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Nivel Alcanzado</div>
+                <div class="stat-value" id="finalLevel">1</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Monedas Ganadas</div>
+                <div class="stat-value" id="finalCoins">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Enemigos Vencidos</div>
+                <div class="stat-value" id="finalKills">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Combo Máximo</div>
+                <div class="stat-value" id="finalCombo">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Tiempo Jugado</div>
+                <div class="stat-value" id="finalTime">0s</div>
+            </div>
+        </div>
+        <p id="newRecordMsg" style="display:none; color:#ffbe0b; font-size:20px; font-weight:bold; margin: 10px 0;">🎉 ¡NUEVO RÉCORD PERSONAL! 🎉</p>
+        <button class="menu-btn" onclick="startGame()">🔄 JUGAR DE NUEVO</button>
+        <button class="menu-btn share" onclick="shareScore()">📱 COMPARTIR PUNTAJE</button>
+        <button class="menu-btn secondary" onclick="backToMenu()">🏠 MENÚ PRINCIPAL</button>
+        <p style="color:#aaa; font-size:13px; margin-top:15px;">💡 Tip: Visita <strong>Juegos JC</strong> para más juegos gratis</p>
+    </div>
+
+    <!-- PAUSE -->
+    <div class="menu-overlay hidden" id="pausePanel">
+        <div class="menu-title" style="font-size: 36px;">⏸️ PAUSA</div>
+        <button class="menu-btn" onclick="resumeGame()">▶️ CONTINUAR</button>
+        <button class="menu-btn secondary" onclick="backToMenu()">🏠 MENÚ</button>
+    </div>
+
+    <!-- LEVEL COMPLETE -->
+    <div class="menu-overlay hidden" id="levelCompletePanel">
+        <div class="menu-title" style="font-size: 36px; color: #06ffa5;">✨ NIVEL COMPLETADO ✨</div>
+        <div style="font-size: 24px; margin: 20px 0;">Nivel <span id="completedLevel">1</span> superado</div>
+        <div class="stats-grid" style="max-width: 400px;">
+            <div class="stat-card">
+                <div class="stat-label">Bonus</div>
+                <div class="stat-value" id="levelBonus">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Monedas</div>
+                <div class="stat-value" id="levelCoins">0</div>
+            </div>
+        </div>
+        <button class="menu-btn" onclick="nextLevel()">🚀 SIGUIENTE NIVEL</button>
+    </div>
+</div>
+
+<div class="cta-banner">
+    ⭐ ¿Te gustó? ¡Descubre más en JUEGOS JC! Cientos de juegos gratis te esperan ⭐
+</div>
+
+<script>
+// =============================================
+// JUEGOS JC - DEFENSOR GALÁCTICO
+// Juego HTML5 completo con sistema de progresión
+// =============================================
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// Estado del juego
+const game = {
+    state: 'menu', // menu, playing, paused, gameover, levelcomplete
+    score: 0,
+    lives: 3,
+    level: 1,
+    combo: 1,
+    maxCombo: 1,
+    kills: 0,
+    coins: 0,
+    sessionCoins: 0,
+    startTime: 0,
+    multiplier: 1,
+    powerups: { shield: 0, bomb: 0, laser: 0, freeze: 0 },
+    activeShield: 0,
+    freezeTimer: 0,
+    laserTimer: 0,
+    comboTimer: 0
+};
+
+// Persistencia local
+const saveData = {
+    bestScore: 0,
+    gamesPlayed: 0,
+    totalCoins: 0,
+    totalKills: 0,
+    achievements: {},
+    leaderboard: []
+};
+
+// Cargar guardado
+function loadSave() {
+    try {
+        const saved = JSON.parse(localStorage.getItem('juegosjc_galactico') || '{}');
+        Object.assign(saveData, saved);
+    } catch(e) {}
+    updateMenuStats();
+}
+
+function saveProgress() {
+    try {
+        localStorage.setItem('juegosjc_galactico', JSON.stringify(saveData));
+    } catch(e) {}
+}
+
+// Player
+const player = {
+    x: 450, y: 520, width: 50, height: 50,
+    speed: 7, color: '#3a86ff', invincible: 0
+};
+
+// Arrays de entidades
+let bullets = [];
+let enemies = [];
+let particles = [];
+let powerups = [];
+let stars = [];
+let bossActive = false;
+let boss = null;
+let floatingTexts = [];
+
+// Generar estrellas de fondo
+for (let i = 0; i < 150; i++) {
+    stars.push({
+        x: Math.random() * 900,
+        y: Math.random() * 600,
+        size: Math.random() * 2,
+        speed: Math.random() * 0.5 + 0.1,
+        brightness: Math.random()
+    });
+}
+
+// Sistema de logros
+const achievements = [
+    { id: 'first_kill', icon: '🎯', name: 'Primera Sangre', desc: 'Derrota tu primer enemigo', check: () => game.kills >= 1 },
+    { id: 'kill_10', icon: '🔫', name: 'Cazador', desc: 'Derrota 10 enemigos', check: () => game.kills >= 10 },
+    { id: 'kill_100', icon: '💀', name: 'Asesino', desc: 'Derrota 100 enemigos', check: () => saveData.totalKills >= 100 },
+    { id: 'kill_500', icon: '☠️', name: 'Exterminador', desc: 'Derrota 500 enemigos', check: () => saveData.totalKills >= 500 },
+    { id: 'kill_1000', icon: '👹', name: 'Leyenda de Guerra', desc: 'Derrota 1000 enemigos', check: () => saveData.totalKills >= 1000 },
+    { id: 'level_5', icon: '⭐', name: 'Novato', desc: 'Alcanza el nivel 5', check: () => game.level >= 5 },
+    { id: 'level_10', icon: '🌟', name: 'Veterano', desc: 'Alcanza el nivel 10', check: () => game.level >= 10 },
+    { id: 'level_25', icon: '🏅', name: 'Élite', desc: 'Alcanza el nivel 25', check: () => game.level >= 25 },
+    { id: 'level_50', icon: '👑', name: 'Maestro Galáctico', desc: 'Completa el nivel 50', check: () => game.level >= 50 },
+    { id: 'combo_10', icon: '🔥', name: 'En llamas', desc: 'Logra un combo x10', check: () => game.maxCombo >= 10 },
+    { id: 'combo_25', icon: '💥', name: 'Imparable', desc: 'Logra un combo x25', check: () => game.maxCombo >= 25 },
+    { id: 'combo_50', icon: '⚡', name: 'Dios de la Guerra', desc: 'Logra un combo x50', check: () => game.maxCombo >= 50 },
+    { id: 'score_1k', icon: '💯', name: 'Mil puntos', desc: 'Alcanza 1,000 puntos', check: () => game.score >= 1000 },
+    { id: 'score_10k', icon: '💎', name: 'Diez mil', desc: 'Alcanza 10,000 puntos', check: () => game.score >= 10000 },
+    { id: 'score_100k', icon: '🏆', name: 'Cien mil', desc: 'Alcanza 100,000 puntos', check: () => game.score >= 100000 },
+    { id: 'games_10', icon: '🎮', name: 'Aficionado', desc: 'Juega 10 partidas', check: () => saveData.gamesPlayed >= 10 },
+    { id: 'games_50', icon: '🕹️', name: 'Adicto', desc: 'Juega 50 partidas', check: () => saveData.gamesPlayed >= 50 },
+    { id: 'games_100', icon: '🎯', name: 'Profesional', desc: 'Juega 100 partidas', check: () => saveData.gamesPlayed >= 100 },
+    { id: 'no_damage', icon: '🛡️', name: 'Intocable', desc: 'Completa un nivel sin daño', check: () => false },
+    { id: 'boss_killed', icon: '⚔️', name: 'Matagigantes', desc: 'Derrota a tu primer jefe', check: () => false },
+    { id: 'rich', icon: '💰', name: 'Rico', desc: 'Acumula 1000 monedas', check: () => saveData.totalCoins >= 1000 },
+    { id: 'share', icon: '📱', name: 'Embajador JC', desc: 'Comparte el juego', check: () => false }
+];
+
+// Tipos de enemigos
+const enemyTypes = [
+    { name: 'Escarabajo', color: '#ff006e', hp: 1, speed: 2, points: 10, size: 30, shoots: false },
+    { name: 'Cazador', color: '#8338ec', hp: 2, speed: 3, points: 25, size: 35, shoots: true, fireRate: 120 },
+    { name: 'Tanque', color: '#fb5607', hp: 5, speed: 1, points: 50, size: 45, shoots: true, fireRate: 90 },
+    { name: 'Veloz', color: '#06ffa5', hp: 1, speed: 5, points: 30, size: 25, shoots: false },
+    { name: 'Bombero', color: '#ffbe0b', hp: 3, speed: 2, points: 40, size: 40, shoots: true, fireRate: 60 },
+    { name: 'Élite', color: '#e63946', hp: 8, speed: 2.5, points: 100, size: 50, shoots: true, fireRate: 45 }
+];
+
+// Crear enemigo
+function spawnEnemy() {
+    const tier = Math.min(Math.floor(game.level / 5), enemyTypes.length - 1);
+    const typeIndex = Math.min(Math.floor(Math.random() * (tier + 2)), enemyTypes.length - 1);
+    const type = enemyTypes[typeIndex];
+    
+    enemies.push({
+        x: Math.random() * 820 + 40,
+        y: -50,
+        width: type.size,
+        height: type.size,
+        hp: type.hp + Math.floor(game.level / 10),
+        maxHp: type.hp + Math.floor(game.level / 10),
+        speed: type.speed * (1 + game.level * 0.03),
+        color: type.color,
+        points: type.points,
+        shoots: type.shoots,
+        fireRate: type.fireRate || 0,
+        fireTimer: Math.random() * 100,
+        wobble: Math.random() * Math.PI * 2,
+        name: type.name
+    });
+}
+
+// Spawn de jefe
+function spawnBoss() {
+    bossActive = true;
+    boss = {
+        x: 450,
+        y: -100,
+        width: 120,
+        height: 120,
+        hp: 50 + game.level * 10,
+        maxHp: 50 + game.level * 10,
+        speed: 1.5,
+        color: '#ff0066',
+        points: 1000 * game.level,
+        fireTimer: 0,
+        phase: 1,
+        direction: 1,
+        pattern: 0,
+        patternTimer: 0
+    };
+    showNotification('⚠️ ¡JEFE LEGENDARIO APARECE! ⚠️');
+}
+
+// Disparar
+function shoot() {
+    if (game.laserTimer > 0) {
+        bullets.push({
+            x: player.x + player.width/2 - 2,
+            y: player.y,
+            width: 4, height: 600,
+            speed: 0,
+            color: '#06ffa5',
+            damage: 10,
+            type: 'laser',
+            life: 5
+        });
+    } else {
+        bullets.push({
+            x: player.x + player.width/2 - 3,
+            y: player.y,
+            width: 6, height: 15,
+            speed: 10,
+            color: '#ffbe0b',
+            damage: 1,
+            type: 'normal'
+        });
+    }
+}
+
+// Crear partículas explosión
+function createExplosion(x, y, color, count = 15) {
+    for (let i = 0; i < count; i++) {
+        particles.push({
+            x: x, y: y,
+            vx: (Math.random() - 0.5) * 8,
+            vy: (Math.random() - 0.5) * 8,
+            life: 30,
+            color: color,
+            size: Math.random() * 4 + 2
+        });
+    }
+}
+
+// Texto flotante
+function addFloatingText(x, y, text, color = '#ffbe0b') {
+    floatingTexts.push({ x, y, text, color, life: 60, vy: -2 });
+}
+
+// Soltar power-up aleatorio
+function maybeDropPowerup(x, y) {
+    if (Math.random() < 0.08) {
+        const types = ['shield', 'bomb', 'laser', 'freeze', 'coin', 'life'];
+        const weights = [3, 3, 2, 3, 8, 1];
+        let total = weights.reduce((a,b) => a+b, 0);
+        let r = Math.random() * total;
+        let type = 'coin';
+        for (let i = 0; i < types.length; i++) {
+            r -= weights[i];
+            if (r <= 0) { type = types[i]; break; }
+        }
+        powerups.push({
+            x: x, y: y,
+            width: 25, height: 25,
+            type: type,
+            speed: 2,
+            angle: 0
+        });
+    }
+}
+
+// Controles
+const keys = {};
+document.addEventListener('keydown', (e) => {
+    keys[e.key.toLowerCase()] = true;
+    if (e.key === ' ') e.preventDefault();
+    
+    if (game.state === 'playing') {
+        if (e.key === ' ') shoot();
+        if (e.key.toLowerCase() === 'p') pauseGame();
+        if (e.key.toLowerCase() === 'q') usePowerup('shield');
+        if (e.key.toLowerCase() === 'w') usePowerup('bomb');
+        if (e.key.toLowerCase() === 'e') usePowerup('laser');
+        if (e.key.toLowerCase() === 'r') usePowerup('freeze');
+    }
+});
+document.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+// Touch / Mouse
+let mouseX = 450;
+canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = (e.clientX - rect.left) * (900 / rect.width);
+});
+canvas.addEventListener('click', () => { if (game.state === 'playing') shoot(); });
+canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    mouseX = (e.touches[0].clientX - rect.left) * (900 / rect.width);
+});
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (game.state === 'playing') shoot();
+});
+
+// Usar power-up
+function usePowerup(type) {
+    if (game.powerups[type] <= 0) return;
+    game.powerups[type]--;
+    
+    if (type === 'shield') {
+        game.activeShield = 300;
+        showNotification('🛡️ Escudo activado');
+    } else if (type === 'bomb') {
+        enemies.forEach(e => {
+            game.score += e.points * game.multiplier;
+            game.kills++;
+            saveData.totalKills++;
+            createExplosion(e.x + e.width/2, e.y + e.height/2, e.color, 20);
+        });
+        enemies = [];
+        showNotification('💣 ¡BOOOOM!');
+    } else if (type === 'laser') {
+        game.laserTimer = 180;
+        showNotification('⚡ Modo Láser');
+    } else if (type === 'freeze') {
+        game.freezeTimer = 240;
+        showNotification('❄️ Tiempo congelado');
+    }
+    updateHUD();
+}
+
+// Bucle principal
+let spawnTimer = 0;
+let lastTime = 0;
+function gameLoop(timestamp) {
+    requestAnimationFrame(gameLoop);
+    
+    // Fondo estrellado siempre animado
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, 900, 600);
+    drawStars();
+    
+    if (game.state !== 'playing') return;
+    
+    update();
+    draw();
+}
+
+function update() {
+    // Actualizar temporizadores
+    if (game.activeShield > 0) game.activeShield--;
+    if (game.laserTimer > 0) game.laserTimer--;
+    if (game.freezeTimer > 0) game.freezeTimer--;
+    if (game.comboTimer > 0) game.comboTimer--;
+    else if (game.combo > 1) game.combo = 1;
+    if (player.invincible > 0) player.invincible--;
+    
+    // Movimiento jugador
+    if (keys['arrowleft'] || keys['a']) player.x -= player.speed;
+    if (keys['arrowright'] || keys['d']) player.x += player.speed;
+    if (keys['arrowup'] || keys['w']) player.y -= player.speed * 0.7;
+    if (keys['arrowdown'] || keys['s']) player.y += player.speed * 0.7;
+    
+    // Seguir mouse (suave)
+    const mouseDiff = mouseX - (player.x + player.width/2);
+    if (Math.abs(mouseDiff) > 5) {
+        player.x += Math.sign(mouseDiff) * Math.min(Math.abs(mouseDiff) * 0.15, player.speed);
+    }
+    
+    player.x = Math.max(0, Math.min(850, player.x));
+    player.y = Math.max(300, Math.min(550, player.y));
+    
+    // Spawn enemigos
+    spawnTimer++;
+    const spawnRate = Math.max(20, 80 - game.level * 2);
+    if (!bossActive && spawnTimer > spawnRate) {
+        spawnTimer = 0;
+        spawnEnemy();
+    }
+    
+    // Cada 5 niveles aparece un jefe
+    if (!bossActive && game.kills > 0 && game.kills % (15 + game.level * 2) === 0 && game.level % 5 === 0) {
+        spawnBoss();
+    }
+    
+    // Actualizar enemigos
+    enemies.forEach((e, i) => {
+        if (game.freezeTimer <= 0) {
+            e.y += e.speed;
+            e.wobble += 0.05;
+            e.x += Math.sin(e.wobble) * 0.5;
+        }
+        
+        // Disparo enemigo
+        if (e.shoots && game.freezeTimer <= 0) {
+            e.fireTimer++;
+            if (e.fireTimer >= e.fireRate) {
+                e.fireTimer = 0;
+                bullets.push({
+                    x: e.x + e.width/2 - 3,
+                    y: e.y + e.height,
+                    width: 6, height: 12,
+                    speed: -5,
+                    color: '#ff006e',
+                    damage: 1,
+                    type: 'enemy'
+                });
+            }
+        }
+        
+        // Salió de pantalla
+        if (e.y > 600) {
+            enemies.splice(i, 1);
+            game.combo = 1;
+        }
+        
+        // Colisión con jugador
+        if (player.invincible <= 0 && collides(e, player)) {
+            if (game.activeShield > 0) {
+                createExplosion(e.x + e.width/2, e.y + e.height/2, e.color);
+                enemies.splice(i, 1);
+            } else {
+                damagePlayer();
+                createExplosion(e.x + e.width/2, e.y + e.height/2, e.color);
+                enemies.splice(i, 1);
+            }
+        }
+    });
+    
+    // Actualizar jefe
+    if (boss) {
+        if (boss.y < 100) boss.y += boss.speed;
+        else {
+            boss.x += boss.direction * boss.speed * 2;
+            if (boss.x < 50 || boss.x > 730) boss.direction *= -1;
+            
+            boss.fireTimer++;
+            boss.patternTimer++;
+            
+            // Patrones de disparo
+            const fireDelay = Math.max(15, 40 - boss.phase * 5);
+            if (boss.fireTimer >= fireDelay) {
+                boss.fireTimer = 0;
+                
+                if (boss.pattern === 0) {
+                    // Disparo recto
+                    bullets.push({
+                        x: boss.x + boss.width/2 - 4,
+                        y: boss.y + boss.height,
+                        width: 8, height: 16,
+                        speed: -6, color: '#ff0066', damage: 1, type: 'enemy'
+                    });
+                } else if (boss.pattern === 1) {
+                    // Tres disparos
+                    for (let a = -1; a <= 1; a++) {
+                        bullets.push({
+                            x: boss.x + boss.width/2 - 4,
+                            y: boss.y + boss.height,
+                            width: 8, height: 16,
+                            speed: -6, vx: a * 2,
+                            color: '#ff0066', damage: 1, type: 'enemy'
+                        });
+                    }
+                } else {
+                    // Disparo en abanico
+                    for (let a = -2; a <= 2; a++) {
+                        bullets.push({
+                            x: boss.x + boss.width/2 - 4,
+                            y: boss.y + boss.height,
+                            width: 8, height: 16,
+                            speed: -5, vx: a * 1.5,
+                            color: '#ff0066', damage: 1, type: 'enemy'
+                        });
+                    }
+                }
+            }
+            
+            if (boss.patternTimer > 180) {
+                boss.patternTimer = 0;
+                boss.pattern = (boss.pattern + 1) % 3;
+            }
+            
+            // Cambio de fase
+            if (boss.hp < boss.maxHp * 0.5 && boss.phase === 1) {
+                boss.phase = 2;
+                boss.speed *= 1.5;
+                showNotification('💢 ¡JEFE ENFURECIDO!');
+            }
+        }
+        
+        // Colisión con jugador
+        if (player.invincible <= 0 && collides(boss, player)) {
+            if (game.activeShield <= 0) damagePlayer();
+        }
+    }
+    
+    // Actualizar balas
+    bullets.forEach((b, i) => {
+        if (b.type === 'laser') {
+            b.life--;
+            if (b.life <= 0) bullets.splice(i, 1);
+        } else {
+            b.y -= b.speed;
+            if (b.vx) b.x += b.vx;
+            if (b.y < -20 || b.y > 620 || b.x < -20 || b.x > 920) {
+                bullets.splice(i, 1);
+                return;
+            }
+        }
+        
+        // Colisión bala enemiga vs jugador
+        if (b.type === 'enemy' && player.invincible <= 0 && collides(b, player)) {
+            bullets.splice(i, 1);
+            if (game.activeShield <= 0) damagePlayer();
+            return;
+        }
+        
+        // Colisión bala jugador vs enemigos
+        if (b.type !== 'enemy') {
+            enemies.forEach((e, j) => {
+                if (collides(b, e)) {
+                    e.hp -= b.damage;
+                    if (b.type !== 'laser') bullets.splice(i, 1);
+                    
+                    if (e.hp <= 0) {
+                        const points = e.points * game.combo * game.multiplier;
+                        game.score += points;
+                        game.kills++;
+                        saveData.totalKills++;
+                        game.combo = Math.min(game.combo + 1, 99);
+                        game.maxCombo = Math.max(game.maxCombo, game.combo);
+                        game.comboTimer = 120;
+                        addFloatingText(e.x + e.width/2, e.y, '+' + points, '#06ffa5');
+                        createExplosion(e.x + e.width/2, e.y + e.height/2, e.color);
+                        maybeDropPowerup(e.x + e.width/2, e.y + e.height/2);
+                        enemies.splice(j, 1);
+                    }
+                }
+            });
+            
+            // Colisión con jefe
+            if (boss && collides(b, boss)) {
+                boss.hp -= b.damage;
+                if (b.type !== 'laser') bullets.splice(i, 1);
+                createExplosion(b.x, b.y, '#ffbe0b', 3);
+                
+                if (boss.hp <= 0) {
+                    const points = boss.points * game.multiplier;
+                    game.score += points;
+                    game.kills++;
+                    saveData.totalKills++;
+                    addFloatingText(boss.x + boss.width/2, boss.y, '+' + points, '#ffbe0b');
+                    createExplosion(boss.x + boss.width/2, boss.y + boss.height/2, '#ff0066', 50);
+                    
+                    // Soltar muchos power-ups
+                    for (let k = 0; k < 5; k++) {
+                        powerups.push({
+                            x: boss.x + Math.random() * boss.width,
+                            y: boss.y + Math.random() * boss.height,
+                            width: 25, height: 25,
+                            type: ['shield','bomb','laser','freeze','coin','coin','life'][Math.floor(Math.random()*7)],
+                            speed: 2, angle: 0
+                        });
+                    }
+                    
+                    saveData.achievements.boss_killed = true;
+                    showAchievement('boss_killed');
+                    boss = null;
+                    bossActive = false;
+                    completeLevel();
+                }
+            }
+        }
+    });
+    
+    // Actualizar power-ups
+    powerups.forEach((p, i) => {
+        p.y += p.speed;
+        p.angle += 0.05;
+        if (p.y > 600) powerups.splice(i, 1);
+        else if (collides(p, player)) {
+            collectPowerup(p);
+            powerups.splice(i, 1);
+        }
+    });
+    
+    // Actualizar partículas
+    particles.forEach((p, i) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+        p.vy += 0.1;
+        if (p.life <= 0) particles.splice(i, 1);
+    });
+    
+    // Textos flotantes
+    floatingTexts.forEach((t, i) => {
+        t.y += t.vy;
+        t.life--;
+        if (t.life <= 0) floatingTexts.splice(i, 1);
+    });
+    
+    // Estrellas
+    stars.forEach(s => {
+        s.y += s.speed * 2;
+        if (s.y > 600) { s.y = 0; s.x = Math.random() * 900; }
+    });
+    
+    // Progresión de nivel
+    if (game.kills > 0 && game.kills % (10 + game.level * 2) === 0 && !bossActive) {
+        if (game.level % 5 !== 0 || boss) {
+            // nada, solo en múltiplos de 5 sale jefe
+        }
+    }
+    
+    // Subir nivel automáticamente por puntaje
+    const levelThreshold = game.level * 500;
+    if (game.score >= levelThreshold && !bossActive) {
+        // No subir aquí, se sube tras completar oleada
+    }
+    
+    checkAchievements();
+    updateHUD();
+}
+
+function collectPowerup(p) {
+    if (p.type === 'coin') {
+        const amount = 5 * game.multiplier;
+        game.sessionCoins += amount;
+        saveData.totalCoins += amount;
+        addFloatingText(p.x, p.y, '+' + amount + ' 💰', '#ffbe0b');
+    } else if (p.type === 'life') {
+        game.lives = Math.min(game.lives + 1, 9);
+        addFloatingText(p.x, p.y, '+1 ❤️', '#ff006e');
+    } else {
+        game.powerups[p.type] = Math.min(game.powerups[p.type] + 1, 9);
+        addFloatingText(p.x, p.y, '+1 ' + getPowerupIcon(p.type), '#06ffa5');
+    }
+}
+
+function getPowerupIcon(type) {
+    return { shield: '🛡️', bomb: '💣', laser: '⚡', freeze: '❄️', coin: '💰', life: '❤️' }[type];
+}
+
+function damagePlayer() {
+    game.lives--;
+    player.invincible = 90;
+    game.combo = 1;
+    createExplosion(player.x + player.width/2, player.y + player.height/2, '#3a86ff', 25);
+    showNotification('💔 ¡Daño recibido!');
+    if (game.lives <= 0) endGame();
+}
+
+function collides(a, b) {
+    return a.x < b.x + b.width &&
+           a.x + a.width > b.x &&
+           a.y < b.y + b.height &&
+           a.y + a.height > b.y;
+}
+
+// DIBUJO
+function draw() {
+    // Power-ups
+    powerups.forEach(p => {
+        ctx.save();
+        ctx.translate(p.x + p.width/2, p.y + p.height/2);
+        ctx.rotate(p.angle);
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(getPowerupIcon(p.type), 0, 0);
+        ctx.restore();
+    });
+    
+    // Enemigos
+    enemies.forEach(e => {
+        // Cuerpo
+        ctx.fillStyle = game.freezeTimer > 0 ? '#88ccff' : e.color;
+        ctx.beginPath();
+        ctx.moveTo(e.x + e.width/2, e.y);
+        ctx.lineTo(e.x + e.width, e.y + e.height/2);
+        ctx.lineTo(e.x + e.width/2, e.y + e.height);
+        ctx.lineTo(e.x, e.y + e.height/2);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Ojos
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(e.x + e.width*0.3, e.y + e.height*0.4, 3, 0, Math.PI*2);
+        ctx.arc(e.x + e.width*0.7, e.y + e.height*0.4, 3, 0, Math.PI*2);
+        ctx.fill();
+        
+        // Barra HP si tiene más de 1
+        if (e.maxHp > 1) {
+            ctx.fillStyle = '#333';
+            ctx.fillRect(e.x, e.y - 8, e.width, 4);
+            ctx.fillStyle = '#06ffa5';
+            ctx.fillRect(e.x, e.y - 8, e.width * (e.hp / e.maxHp), 4);
+        }
+    });
+    
+    // Jefe
+    if (boss) {
+        // Cuerpo jefe
+        ctx.fillStyle = boss.phase === 2 ? '#ff0033' : '#ff0066';
+        ctx.beginPath();
+        ctx.arc(boss.x + boss.width/2, boss.y + boss.height/2, boss.width/2, 0, Math.PI*2);
+        ctx.fill();
+        
+        // Detalles
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(boss.x + boss.width*0.35, boss.y + boss.height*0.4, 8, 0, Math.PI*2);
+        ctx.arc(boss.x + boss.width*0.65, boss.y + boss.height*0.4, 8, 0, Math.PI*2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(boss.x + boss.width*0.35, boss.y + boss.height*0.4, 4, 0, Math.PI*2);
+        ctx.arc(boss.x + boss.width*0.65, boss.y + boss.height*0.4, 4, 0, Math.PI*2);
+        ctx.fill();
+        
+        // Barra HP grande
+        ctx.fillStyle = '#330000';
+        ctx.fillRect(50, 50, 800, 15);
+        ctx.fillStyle = '#ff0066';
+        ctx.fillRect(50, 50, 800 * (boss.hp / boss.maxHp), 15);
+        ctx.strokeStyle = '#fff';
+        ctx.strokeRect(50, 50, 800, 15);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('JEFE - ' + Math.ceil(boss.hp) + ' / ' + boss.maxHp + ' HP', 450, 62);
+    }
+    
+    // Balas
+    bullets.forEach(b => {
+        if (b.type === 'laser') {
+            ctx.fillStyle = '#06ffa5';
+            ctx.globalAlpha = 0.7;
+            ctx.fillRect(b.x - 3, 0, b.width + 6, b.y);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(b.x, 0, b.width, b.y);
+            ctx.globalAlpha = 1;
+        } else {
+            ctx.fillStyle = b.color;
+            ctx.fillRect(b.x, b.y, b.width, b.height);
+            // Glow
+            ctx.fillStyle = b.color;
+            ctx.globalAlpha = 0.3;
+            ctx.fillRect(b.x - 2, b.y - 2, b.width + 4, b.height + 4);
+            ctx.globalAlpha = 1;
+        }
+    });
+    
+    // Partículas
+    particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life / 30;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    });
+    
+    // Textos flotantes
+    floatingTexts.forEach(t => {
+        ctx.fillStyle = t.color;
+        ctx.globalAlpha = t.life / 60;
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(t.text, t.x, t.y);
+        ctx.globalAlpha = 1;
+    });
+    
+    // Jugador
+    if (player.invincible <= 0 || Math.floor(player.invincible / 5) % 2 === 0) {
+        // Nave
+        ctx.fillStyle = '#3a86ff';
+        ctx.beginPath();
+        ctx.moveTo(player.x + player.width/2, player.y);
+        ctx.lineTo(player.x + player.width, player.y + player.height);
+        ctx.lineTo(player.x + player.width*0.7, player.y + player.height*0.7);
+        ctx.lineTo(player.x + player.width*0.3, player.y + player.height*0.7);
+        ctx.lineTo(player.x, player.y + player.height);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Detalles nave
+        ctx.fillStyle = '#06ffa5';
+        ctx.fillRect(player.x + player.width*0.4, player.y + player.height*0.3, player.width*0.2, player.height*0.3);
+        
+        // Propulsor
+        ctx.fillStyle = '#ffbe0b';
+        ctx.beginPath();
+        ctx.moveTo(player.x + player.width*0.35, player.y + player.height*0.7);
+        ctx.lineTo(player.x + player.width*0.5, player.y + player.height + Math.random()*10);
+        ctx.lineTo(player.x + player.width*0.65, player.y + player.height*0.7);
+        ctx.closePath();
+        ctx.fill();
+    }
+    
+    // Escudo
+    if (game.activeShield > 0) {
+        ctx.strokeStyle = '#06ffa5';
+        ctx.lineWidth = 3;
+        ctx.globalAlpha = 0.6 + Math.sin(Date.now() / 100) * 0.3;
+        ctx.beginPath();
+        ctx.arc(player.x + player.width/2, player.y + player.height/2, 40, 0, Math.PI*2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+    }
+    
+    // Efecto freeze
+    if (game.freezeTimer > 0) {
+        ctx.fillStyle = 'rgba(100, 200, 255, 0.1)';
+        ctx.fillRect(0, 0, 900, 600);
+    }
+}
+
+function drawStars() {
+    stars.forEach(s => {
+        ctx.fillStyle = `rgba(255, 255, 255, ${s.brightness})`;
+        ctx.fillRect(s.x, s.y, s.size, s.size);
+    });
+}
+
+// HUD
+function updateHUD() {
+    document.getElementById('score').textContent = Math.floor(game.score).toLocaleString();
+    document.getElementById('lives').textContent = game.lives;
+    document.getElementById('level').textContent = game.level;
+    document.getElementById('combo').textContent = game.combo;
+    
+    ['shield','bomb','laser','freeze'].forEach(type => {
+        document.getElementById('count-' + type).textContent = game.powerups[type];
+        const slot = document.getElementById('power-' + type);
+        if (game.powerups[type] > 0) slot.classList.add('active');
+        else slot.classList.remove('active');
+    });
+}
+
+// Estadísticas menú
+function updateMenuStats() {
+    document.getElementById('bestScore').textContent = saveData.bestScore.toLocaleString();
+    document.getElementById('gamesPlayed').textContent = saveData.gamesPlayed;
+    document.getElementById('coins').textContent = saveData.totalCoins;
+    document.getElementById('shopCoins').textContent = saveData.totalCoins;
+}
+
+// LOGROS
+function checkAchievements() {
+    achievements.forEach(a => {
+        if (!saveData.achievements[a.id] && a.check()) {
+            saveData.achievements[a.id] = true;
+            showAchievement(a.id);
+            saveData.totalCoins += 25;
+            saveProgress();
+        }
+    });
+}
+
+function showAchievement(id) {
+    const a = achievements.find(x => x.id === id);
+    if (a) showNotification(`🏆 LOGRO: ${a.icon} ${a.name} (+25 💰)`);
+}
+
+function renderAchievements() {
+    const list = document.getElementById('achievementList');
+    list.innerHTML = achievements.map(a => `
+        <div class="achievement ${saveData.achievements[a.id] ? 'unlocked' : ''}">
+            <div class="achievement-icon">${a.icon}</div>
+            <div class="achievement-info">
+                <div class="achievement-name">${a.name} ${saveData.achievements[a.id] ? '✅' : '🔒'}</div>
+                <div class="achievement-desc">${a.desc}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderLeaderboard() {
+    const fake = [
+        { name: 'JC_MASTER', score: 250000 },
+        { name: 'GalacticPro', score: 187000 },
+        { name: 'SpaceKing', score: 142000 },
+        { name: 'StarHunter', score: 98500 },
+        { name: 'NebulaQueen', score: 76200 }
+    ];
+    
+    const personalBest = { name: 'TÚ', score: saveData.bestScore };
+    const combined = [...fake, personalBest, ...(saveData.leaderboard || [])]
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+    
+    const list = document.getElementById('leaderboardList');
+    list.innerHTML = combined.map((entry, i) => `
+        <div class="leaderboard-row">
+            <span class="leaderboard-rank">#${i+1}</span>
+            <span class="leaderboard-name">${entry.name === 'TÚ' ? '👤 ' + entry.name : entry.name}</span>
+            <span class="leaderboard-score">${entry.score.toLocaleString()}</span>
+        </div>
+    `).join('');
+}
+
+// Notificaciones
+function showNotification(text) {
+    const existing = document.querySelector('.notification');
+    if (existing) existing.remove();
+    
+    const notif = document.createElement('div');
+    notif.className = 'notification';
+    notif.textContent = text;
+    document.getElementById('game-container').appendChild(notif);
+    setTimeout(() => notif.remove(), 2500);
+}
+
+// FLUJO DEL JUEGO
+function startGame() {
+    document.querySelectorAll('.menu-overlay').forEach(m => m.classList.add('hidden'));
+    game.state = 'playing';
+    game.score = 0;
+    game.lives = 3;
+    game.level = 1;
+    game.combo = 1;
+    game.maxCombo = 1;
+    game.kills = 0;
+    game.sessionCoins = 0;
+    game.startTime = Date.now();
+    game.activeShield = 0;
+    game.freezeTimer = 0;
+    game.laserTimer = 0;
+    enemies = [];
+    bullets = [];
+    particles = [];
+    powerups = [];
+    floatingTexts = [];
+    boss = null;
+    bossActive = false;
+    player.x = 425;
+    player.y = 500;
+    saveData.gamesPlayed++;
+    saveProgress();
+    updateHUD();
+}
+
+function pauseGame() {
+    if (game.state === 'playing') {
+        game.state = 'paused';
+        document.getElementById('pausePanel').classList.remove('hidden');
+    }
+}
+
+function resumeGame() {
+    game.state = 'playing';
+    document.getElementById('pausePanel').classList.add('hidden');
+}
+
+function completeLevel() {
+    game.state = 'levelcomplete';
+    const bonus = game.level * 500 + game.lives * 200;
+    const levelCoins = game.level * 10;
+    game.score += bonus;
+    game.sessionCoins += levelCoins;
+    saveData.totalCoins += levelCoins;
+    
+    document.getElementById('completedLevel').textContent = game.level;
+    document.getElementById('levelBonus').textContent = bonus.toLocaleString();
+    document.getElementById('levelCoins').textContent = levelCoins;
+    document.getElementById('levelCompletePanel').classList.remove('hidden');
+    saveProgress();
+}
+
+function nextLevel() {
+    game.level++;
+    if (game.level > 50) game.level = 50;
+    document.getElementById('levelCompletePanel').classList.add('hidden');
+    game.state = 'playing';
+    enemies = [];
+    bullets = [];
+    
+    // Recompensa de nivel
+    if (game.level % 3 === 0) {
+        game.powerups.bomb++;
+        showNotification('🎁 Recompensa: +1 💣');
+    }
+    if (game.level % 5 === 0) {
+        game.lives++;
+        showNotification('🎁 Recompensa: +1 ❤️');
+    }
+}
+
+function endGame() {
+    game.state = 'gameover';
+    const timeSec = Math.floor((Date.now() - game.startTime) / 1000);
+    
+    let isNewRecord = false;
+    if (game.score > saveData.bestScore) {
+        saveData.bestScore = game.score;
+        isNewRecord = true;
+        saveData.leaderboard = saveData.leaderboard || [];
+        saveData.leaderboard.push({ name: 'TÚ', score: game.score, date: Date.now() });
+        saveData.leaderboard.sort((a,b) => b.score - a.score);
+        saveData.leaderboard = saveData.leaderboard.slice(0, 10);
+    }
+    
+    document.getElementById('finalScore').textContent = Math.floor(game.score).toLocaleString();
+    document.getElementById('finalLevel').textContent = game.level;
+    document.getElementById('finalCoins').textContent = game.sessionCoins;
+    document.getElementById('finalKills').textContent = game.kills;
+    document.getElementById('finalCombo').textContent = 'x' + game.maxCombo;
+    document.getElementById('finalTime').textContent = timeSec + 's';
+    document.getElementById('newRecordMsg').style.display = isNewRecord ? 'block' : 'none';
+    document.getElementById('gameOverPanel').classList.remove('hidden');
+    
+    saveProgress();
+    updateMenuStats();
+}
+
+function backToMenu() {
+    game.state = 'menu';
+    document.querySelectorAll('.menu-overlay').forEach(m => m.classList.add('hidden'));
+    document.getElementById('mainMenu').classList.remove('hidden');
+    updateMenuStats();
+}
+
+function showTab(tab) {
+    document.getElementById('mainMenu').classList.add('hidden');
+    if (tab === 'achievements') {
+        document.getElementById('achievementsPanel').classList.remove('hidden');
+        renderAchievements();
+    } else if (tab === 'leaderboard') {
+        document.getElementById('leaderboardPanel').classList.remove('hidden');
+        renderLeaderboard();
+    } else if (tab === 'shop') {
+        document.getElementById('shopPanel').classList.remove('hidden');
+        updateMenuStats();
+    }
+}
+
+// TIENDA
+function buyItem(item, cost) {
+    if (saveData.totalCoins < cost) {
+        showNotification('❌ Monedas insuficientes');
+        return;
+    }
+    saveData.totalCoins -= cost;
+    if (item === 'life') {
+        game.lives = Math.min(game.lives + 1, 9);
+    } else if (item === 'multiplier') {
+        game.multiplier = 2;
+        showNotification('✨ x2 puntos activado para tu próxima partida');
+    } else {
+        game.powerups[item] = (game.powerups[item] || 0) + 3;
+    }
+    saveProgress();
+    updateMenuStats();
+    showNotification('✅ Comprado: ' + item);
+}
+
+// COMPARTIR (viralidad)
+function shareGame() {
+    const text = '🎮 ¡Estoy jugando DEFENSOR GALÁCTICO en Juegos JC! Un juego espacial adictivo con 50 niveles. ¡Pruébalo gratis!';
+    const url = window.location.href;
+    
+    if (navigator.share) {
+        navigator.share({ title: 'Juegos JC', text: text, url: url })
+            .then(() => {
+                if (!saveData.achievements.share) {
+                    saveData.achievements.share = true;
+                    saveData.totalCoins += 500;
+                    saveProgress();
+                    showNotification('🎁 ¡Gracias! +500 monedas');
+                    updateMenuStats();
+                }
+            })
+            .catch(() => {});
+    } else {
+        navigator.clipboard.writeText(text + ' ' + url);
+        if (!saveData.achievements.share) {
+            saveData.achievements.share = true;
+            saveData.totalCoins += 500;
+            saveProgress();
+            showNotification('🎁 Enlace copiado +500 monedas');
+            updateMenuStats();
+        } else {
+            showNotification('📋 Enlace copiado al portapapeles');
+        }
+    }
+}
+
+function shareScore() {
+    const text = `🏆 ¡Acabo de conseguir ${Math.floor(game.score).toLocaleString()} puntos en DEFENSOR GALÁCTICO de Juegos JC! ¿Puedes superarme?`;
+    const url = window.location.href;
+    
+    if (navigator.share) {
+        navigator.share({ title: 'Mi récord en Juegos JC', text: text, url: url });
+    } else {
+        navigator.clipboard.writeText(text + ' ' + url);
+        showNotification('📋 Puntaje copiado');
+    }
+}
+
+// INICIAR
+loadSave();
+requestAnimationFrame(gameLoop);
+</script>
+
+</body>
+</html>

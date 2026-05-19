@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Circle Brawl - Chispa (Demo básica)</title>
+  <style>
+    :root{
+      --bg:#0b0f1a;
+      --panel:rgba(255,255,255,.08);
+      --panel2:rgba(255,255,255,.12);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.68);
+      --good:#a7ff9e;
+      --warn:#ffd48a;
+      --bad:#ff8a8a;
+      --electric:#ffe600;
+      --electric2:#ff9f1a;
+      --ice:#7fd0ff;
+      --ice2:#d9f3ff;
+    }
+    html,body{height:100%; margin:0; background:radial-gradient(1200px 800px at 60% 20%, #141b35 0%, var(--bg) 55%, #070a12 100%); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Arial,sans-serif;}
+    .wrap{display:flex; flex-direction:column; height:100%;}
+    header{
+      display:flex; gap:12px; align-items:center; justify-content:space-between;
+      padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.08);
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+    }
+    header .left{display:flex; flex-direction:column; gap:2px}
+    header .title{font-weight:800; letter-spacing:.2px}
+    header .sub{font-size:12px; color:var(--muted)}
+    header .right{display:flex; gap:10px; align-items:center}
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+      background:rgba(0,0,0,.22);
+      font-size:12px;
+    }
+    .kbd{
+      padding:2px 7px; border-radius:7px; border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.06);
+      font-weight:700; font-size:12px;
+    }
+    main{flex:1; display:grid; place-items:center; padding:10px;}
+    canvas{
+      width:min(980px, 96vw);
+      height:min(560px, 66vh);
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.12);
+      background:radial-gradient(900px 600px at 45% 35%, rgba(120,140,255,.13), rgba(0,0,0,0) 65%),
+                 radial-gradient(900px 600px at 70% 65%, rgba(255,230,0,.08), rgba(0,0,0,0) 60%),
+                 rgba(0,0,0,.26);
+      box-shadow: 0 20px 60px rgba(0,0,0,.45);
+    }
+    footer{
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+      padding:10px 14px; border-top:1px solid rgba(255,255,255,.08);
+      background:linear-gradient(0deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      font-size:12px; color:var(--muted);
+    }
+    .bars{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .bar{
+      width:240px; height:12px; border-radius:999px; overflow:hidden;
+      background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
+    }
+    .fill{height:100%; width:50%; background:linear-gradient(90deg, rgba(255,255,255,.20), rgba(255,255,255,.12));}
+    .hp .fill{background:linear-gradient(90deg, rgba(167,255,158,.85), rgba(167,255,158,.25));}
+    .super .fill{background:linear-gradient(90deg, rgba(255,230,0,.90), rgba(255,159,26,.35));}
+    .status{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .tag{
+      padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.22); color:var(--text);
+    }
+    .tag b{color:#fff}
+    .btn{
+      cursor:pointer;
+      padding:8px 10px; border-radius:10px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      font-weight:700;
+    }
+    .btn:hover{background:rgba(255,255,255,.09)}
+    .btn:active{transform:translateY(1px)}
+    .help{max-width:980px; width:min(980px, 96vw); margin:10px auto 0; font-size:12px; color:var(--muted); line-height:1.35}
+    .help b{color:rgba(255,255,255,.88)}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="left">
+      <div class="title">Circle Brawl — Demo básica (Solo Chispa)</div>
+      <div class="sub">Técnica + Super | Enemigos “Reina Glacial” simples que te persiguen y disparan</div>
+    </div>
+    <div class="right">
+      <div class="pill"><span class="kbd">WASD</span> mover</div>
+      <div class="pill"><span class="kbd">ESPACIO</span> técnica</div>
+      <div class="pill"><span class="kbd">Q</span> super</div>
+      <button class="btn" id="btnRestart" title="Reiniciar">Reiniciar</button>
+    </div>
+  </header>
+
+  <main>
+    <canvas id="game" width="980" height="560"></canvas>
+  </main>
+
+  <footer>
+    <div class="bars">
+      <div class="tag">❤️ Vida: <b id="hpText">100</b></div>
+      <div class="bar hp" aria-label="Vida"><div class="fill" id="hpFill"></div></div>
+
+      <div class="tag">⚡ Super: <b id="superText">0%</b></div>
+      <div class="bar super" aria-label="Super"><div class="fill" id="superFill"></div></div>
+    </div>
+
+    <div class="status">
+      <div class="tag">🏆 Puntos: <b id="scoreText">0</b></div>
+      <div class="tag">👑 Enemigos: <b id="enemyText">0</b></div>
+      <div class="tag">⏱️ Tiempo: <b id="timeText">0.0</b>s</div>
+      <div class="tag" id="buffTag" style="display:none;">⚡ SUPER ACTIVA</div>
+    </div>
+  </footer>
+
+  <div class="help">
+    <b>Objetivo:</b> aguanta lo máximo y sube puntos. <b>Técnica</b> = 2 puñetazos en área corta (daño + empuje) y carga la <b>Super</b>. <b>Super</b> = velocidad x3 durante 3s (no deja estela aquí, es demo).
+    <br><b>Tip:</b> pega y muévete — si te quedas quieto, las bolitas de hielo te hacen papilla.
+  </div>
+</div>
+
+<script>
+(() => {
+  // ====== Utilidades ======
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const len = (x, y) => Math.hypot(x, y);
+  const norm = (x, y) => {
+    const l = Math.hypot(x, y) || 1;
+    return { x: x / l, y: y / l };
+  };
+  const rand = (a, b) => a + Math.random() * (b - a);
+
+  // ====== Canvas ======
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+
+  // ====== UI ======
+  const hpText = document.getElementById("hpText");
+  const hpFill = document.getElementById("hpFill");
+  const superText = document.getElementById("superText");
+  const superFill = document.getElementById("superFill");
+  const scoreText = document.getElementById("scoreText");
+  const enemyText = document.getElementById("enemyText");
+  const timeText = document.getElementById("timeText");
+  const buffTag = document.getElementById("buffTag");
+
+  document.getElementById("btnRestart").addEventListener("click", () => restart());
+
+  // ====== Controles (teclado) ======
+  const keys = new Set();
+  window.addEventListener("keydown", (e) => {
+    const k = e.key.toLowerCase();
+    if (["w","a","s","d"," ","q"].includes(k)) e.preventDefault();
+    keys.add(k);
+    if (k === " ") tryTechnique();
+    if (k === "q") trySuper();
+  });
+  window.addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
+
+  // ====== Estado del juego ======
+  let t0 = performance.now();
+  let last = performance.now();
+  let elapsed = 0;
+  let score = 0;
+  let gameOver = false;
+
+  // ====== Jugador: Chispa ======
+  const player = {
+    x: canvas.width * 0.5,
+    y: canvas.height * 0.55,
+    r: 18,
+    vx: 0,
+    vy: 0,
+    hp: 100,
+    hpMax: 100,
+    // movimiento
+    speed: 220,
+    // técnica
+    techCooldown: 0,
+    techCDMax: 0.45, // técnica rápida
+    // super
+    superCharge: 0,  // 0..100
+    superActive: 0,
+    superDuration: 3.0,
+    superSpeedMult: 3.0,
+    invuln: 0,
+  };
+
+  // ====== Enemigos (Reina Glacial simple) ======
+  const enemies = [];
+  const projectiles = []; // hielo disparado por enemigos
+  const particles = [];
+
+  let spawnTimer = 0;
+  let spawnEvery = 1.5; // baja con el tiempo
+
+  function spawnEnemy() {
+    // spawn desde bordes
+    const side = Math.floor(rand(0, 4));
+    let x, y;
+    if (side === 0) { x = -30; y = rand(0, canvas.height); }
+    if (side === 1) { x = canvas.width + 30; y = rand(0, canvas.height); }
+    if (side === 2) { x = rand(0, canvas.width); y = -30; }
+    if (side === 3) { x = rand(0, canvas.width); y = canvas.height + 30; }
+
+    enemies.push({
+      x, y,
+      r: rand(16, 20),
+      hp: 40,
+      hpMax: 40,
+      speed: rand(70, 95),
+      shootCD: rand(0.8, 1.6),
+      shootTimer: rand(0.2, 0.8),
+      slow: 0, // ralentización
+      frozen: 0,
+      knockX: 0,
+      knockY: 0,
+    });
+  }
+
+  function spawnIceShot(fromX, fromY, toX, toY) {
+    const d = norm(toX - fromX, toY - fromY);
+    const spd = 230;
+    projectiles.push({
+      x: fromX,
+      y: fromY,
+      vx: d.x * spd,
+      vy: d.y * spd,
+      r: 6,
+      life: 3.2,
+      dmg: 8,
+      slow: 0.35, // 35% slow
+      slowTime: 1.6,
+    });
+  }
+
+  // ====== VFX ======
+  function puff(x, y, n, baseSpd, colorA, colorB) {
+    for (let i = 0; i < n; i++) {
+      const ang = rand(0, Math.PI * 2);
+      const sp = baseSpd * rand(0.35, 1.0);
+      particles.push({
+        x, y,
+        vx: Math.cos(ang) * sp,
+        vy: Math.sin(ang) * sp,
+        r: rand(2, 5),
+        life: rand(0.25, 0.6),
+        a: 1,
+        c1: colorA,
+        c2: colorB,
+      });
+    }
+  }
+
+  // ====== Técnica de Chispa ======
+  function tryTechnique() {
+    if (gameOver) return;
+    if (player.techCooldown > 0) return;
+
+    player.techCooldown = player.techCDMax;
+
+    // Área de golpe: un círculo delante basado en dirección de movimiento (si no, hacia arriba)
+    let dirX = 0, dirY = -1;
+    const moving = len(player.vx, player.vy) > 1;
+    if (moving) {
+      const d = norm(player.vx, player.vy);
+      dirX = d.x; dirY = d.y;
+    }
+
+    const hitX = player.x + dirX * 26;
+    const hitY = player.y + dirY * 26;
+    const hitR = 34;
+
+    // 2 "puñetazos": mismo golpe, pero doble tick de daño pequeño (se siente como 2 hits)
+    const hits = 2;
+    const dmgPerHit = 10;
+
+    // VFX
+    puff(hitX, hitY, 18, 240, "rgba(255,230,0,.9)", "rgba(255,159,26,.3)");
+    // Enemigos afectados
+    for (let h = 0; h < hits; h++) {
+      for (const e of enemies) {
+        if (e.hp <= 0) continue;
+        const d = len(e.x - hitX, e.y - hitY);
+        if (d <= hitR + e.r) {
+          e.hp -= dmgPerHit;
+          // Empuje (knockback)
+          const push = norm(e.x - player.x, e.y - player.y);
+          e.knockX += push.x * 130;
+          e.knockY += push.y * 130;
+
+          // Cargar super por daño hecho
+          player.superCharge = clamp(player.superCharge + 6, 0, 100);
+          score += 2;
+        }
+      }
+    }
+  }
+
+  // ====== Super de Chispa ======
+  function trySuper() {
+    if (gameOver) return;
+    if (player.superCharge < 100) return;
+    if (player.superActive > 0) return;
+
+    player.superCharge = 0;
+    player.superActive = player.superDuration;
+    puff(player.x, player.y, 28, 320, "rgba(255,230,0,.95)", "rgba(255,159,26,.35)");
+  }
+
+  // ====== Daño al jugador ======
+  function hurtPlayer(dmg) {
+    if (player.invuln > 0) return;
+    player.hp = Math.max(0, player.hp - dmg);
+    player.invuln = 0.18;
+    puff(player.x, player.y, 10, 220, "rgba(255,255,255,.9)", "rgba(255,0,0,.15)");
+    if (player.hp <= 0) {
+      gameOver = true;
+    }
+  }
+
+  // ====== Reinicio ======
+  function restart() {
+    enemies.length = 0;
+    projectiles.length = 0;
+    particles.length = 0;
+
+    player.x = canvas.width * 0.5;
+    player.y = canvas.height * 0.55;
+    player.vx = 0; player.vy = 0;
+    player.hp = player.hpMax;
+    player.superCharge = 0;
+    player.superActive = 0;
+    player.techCooldown = 0;
+    player.invuln = 0;
+
+    elapsed = 0;
+    score = 0;
+    spawnTimer = 0;
+    spawnEvery = 1.5;
+    gameOver = false;
+    t0 = performance.now();
+    last = performance.now();
+
+    // arranque con 3 enemigos
+    for (let i = 0; i < 3; i++) spawnEnemy();
+  }
+
+  // ====== Loop ======
+  function step(now) {
+    const dt = Math.min(0.033, (now - last) / 1000);
+    last = now;
+    if (!gameOver) elapsed = (now - t0) / 1000;
+
+    update(dt);
+    draw();
+
+    requestAnimationFrame(step);
+  }
+
+  function update(dt) {
+    // Timers
+    player.techCooldown = Math.max(0, player.techCooldown - dt);
+    player.invuln = Math.max(0, player.invuln - dt);
+    if (player.superActive > 0) player.superActive = Math.max(0, player.superActive - dt);
+
+    // Dificultad: spawnea más rápido con el tiempo
+    if (!gameOver) {
+      spawnEvery = clamp(1.5 - elapsed * 0.015, 0.55, 1.5);
+      spawnTimer -= dt;
+      if (spawnTimer <= 0) {
+        spawnTimer = spawnEvery;
+        spawnEnemy();
+      }
+    }
+
+    // Movimiento jugador
+    let ax = 0, ay = 0;
+    if (keys.has("w")) ay -= 1;
+    if (keys.has("s")) ay += 1;
+    if (keys.has("a")) ax -= 1;
+    if (keys.has("d")) ax += 1;
+
+    const d = norm(ax, ay);
+    const hasMove = (ax !== 0 || ay !== 0);
+
+    const speedMult = player.superActive > 0 ? player.superSpeedMult : 1;
+    const targetSpd = player.speed * speedMult;
+
+    // Aceleración suave
+    const accel = 14;
+    const friction = 10;
+
+    const tvx = hasMove ? d.x * targetSpd : 0;
+    const tvy = hasMove ? d.y * targetSpd : 0;
+
+    player.vx += (tvx - player.vx) * (hasMove ? accel : friction) * dt;
+    player.vy += (tvy - player.vy) * (hasMove ? accel : friction) * dt;
+
+    player.x += player.vx * dt;
+    player.y += player.vy * dt;
+
+    // Limites
+    player.x = clamp(player.x, player.r + 6, canvas.width - player.r - 6);
+    player.y = clamp(player.y, player.r + 6, canvas.height - player.r - 6);
+
+    // Enemigos
+    for (const e of enemies) {
+      if (e.hp <= 0) continue;
+
+      // decaimiento empuje
+      e.knockX *= Math.pow(0.001, dt);
+      e.knockY *= Math.pow(0.001, dt);
+
+      e.slow = Math.max(0, e.slow - dt);
+      e.frozen = Math.max(0, e.frozen - dt);
+
+      // seguir al jugador
+      const toP = norm(player.x - e.x, player.y - e.y);
+      const slowMult = e.slow > 0 ? 0.6 : 1;
+      const frozenMult = e.frozen > 0 ? 0.05 : 1;
+
+      const sp = e.speed * slowMult * frozenMult;
+
+      e.x += (toP.x * sp + e.knockX) * dt;
+      e.y += (toP.y * sp + e.knockY) * dt;
+
+      // colisión con jugador (daño por contacto)
+      const dpp = len(player.x - e.x, player.y - e.y);
+      if (!gameOver && dpp < player.r + e.r) {
+        hurtPlayer(10);
+        // pequeño empuje de separación
+        const sep = norm(player.x - e.x, player.y - e.y);
+        player.x += sep.x * 8;
+        player.y += sep.y * 8;
+      }
+
+      // disparo de hielo
+      if (!gameOver) {
+        e.shootTimer -= dt;
+        if (e.shootTimer <= 0) {
+          e.shootTimer = e.shootCD;
+          // dispara si está a distancia media
+          const dist = len(player.x - e.x, player.y - e.y);
+          if (dist < 520) {
+            spawnIceShot(e.x, e.y, player.x, player.y);
+          }
+        }
+      }
+    }
+
+    // Projectiles
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+      const p = projectiles[i];
+      p.life -= dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+
+      // colisión con jugador
+      if (!gameOver) {
+        const dpl = len(p.x - player.x, p.y - player.y);
+        if (dpl < p.r + player.r) {
+          hurtPlayer(p.dmg);
+          // slow "ligero" al jugador (en demo lo simulamos bajando speed temporalmente con una penalización)
+          // para mantenerlo simple, le damos un empujoncito y listo:
+          const push = norm(player.x - p.x, player.y - p.y);
+          player.x += push.x * 10;
+          player.y += push.y * 10;
+
+          puff(p.x, p.y, 12, 240, "rgba(127,208,255,.9)", "rgba(217,243,255,.25)");
+          projectiles.splice(i, 1);
+          continue;
+        }
+      }
+
+      // fuera o muerto
+      if (p.life <= 0 || p.x < -60 || p.x > canvas.width + 60 || p.y < -60 || p.y > canvas.height + 60) {
+        projectiles.splice(i, 1);
+      }
+    }
+
+    // Partículas
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const pa = particles[i];
+      pa.life -= dt;
+      pa.x += pa.vx * dt;
+      pa.y += pa.vy * dt;
+      pa.vx *= Math.pow(0.05, dt);
+      pa.vy *= Math.pow(0.05, dt);
+      pa.a = clamp(pa.life * 2.2, 0, 1);
+      if (pa.life <= 0) particles.splice(i, 1);
+    }
+
+    // Limpieza enemigos muertos + puntuación
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const e = enemies[i];
+      if (e.hp <= 0) {
+        puff(e.x, e.y, 20, 260, "rgba(127,208,255,.85)", "rgba(255,255,255,.15)");
+        score += 20;
+        enemies.splice(i, 1);
+      }
+    }
+
+    // UI
+    hpText.textContent = String(player.hp | 0);
+    hpFill.style.width = `${(player.hp / player.hpMax) * 100}%`;
+
+    superText.textContent = `${Math.round(player.superCharge)}%`;
+    superFill.style.width = `${player.superCharge}%`;
+
+    scoreText.textContent = String(score | 0);
+    enemyText.textContent = String(enemies.length);
+    timeText.textContent = elapsed.toFixed(1);
+
+    buffTag.style.display = player.superActive > 0 ? "inline-flex" : "none";
+  }
+
+  function drawGrid() {
+    // grid suave
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(255,255,255,.20)";
+    const step = 40;
+    for (let x = 0; x <= canvas.width; x += step) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= canvas.height; y += step) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawCircle(x, y, r, fill, stroke, lw=2) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI*2);
+    ctx.fillStyle = fill;
+    ctx.fill();
+    if (stroke) {
+      ctx.lineWidth = lw;
+      ctx.strokeStyle = stroke;
+      ctx.stroke();
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    drawGrid();
+
+    // Proyectiles (hielo)
+    for (const p of projectiles) {
+      const grad = ctx.createRadialGradient(p.x - 2, p.y - 2, 1, p.x, p.y, p.r + 8);
+      grad.addColorStop(0, "rgba(217,243,255,.95)");
+      grad.addColorStop(1, "rgba(127,208,255,.08)");
+      drawCircle(p.x, p.y, p.r, "rgba(127,208,255,.95)", "rgba(217,243,255,.65)", 2);
+      ctx.save();
+      ctx.globalAlpha = 0.6;
+      drawCircle(p.x, p.y, p.r + 10, grad, null, 0);
+      ctx.restore();
+    }
+
+    // Enemigos (Reina Glacial simple)
+    for (const e of enemies) {
+      const hpPct = e.hp / e.hpMax;
+      const bodyGrad = ctx.createRadialGradient(e.x - 6, e.y - 6, 3, e.x, e.y, e.r + 18);
+      bodyGrad.addColorStop(0, "rgba(217,243,255,.95)");
+      bodyGrad.addColorStop(1, "rgba(127,208,255,.18)");
+
+      // cuerpo
+      drawCircle(e.x, e.y, e.r, "rgba(127,208,255,.92)", "rgba(217,243,255,.55)", 2);
+      ctx.save();
+      ctx.globalAlpha = 0.85;
+      drawCircle(e.x, e.y, e.r + 12, bodyGrad, null, 0);
+      ctx.restore();
+
+      // corona "cristal" simple
+      ctx.save();
+      ctx.translate(e.x, e.y - e.r - 2);
+      ctx.globalAlpha = 0.85;
+      ctx.fillStyle = "rgba(217,243,255,.85)";
+      ctx.strokeStyle = "rgba(127,208,255,.65)";
+      ctx.lineWidth = 1.5;
+      for (let i = 0; i < 5; i++) {
+        const ang = (-Math.PI/2) + (i - 2) * 0.34;
+        const px = Math.cos(ang) * 10;
+        const py = Math.sin(ang) * 10;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(px, py);
+        ctx.lineTo(px * 0.6, py * 0.6 - 6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // barra vida mini
+      const w = 34, h = 5;
+      ctx.save();
+      ctx.globalAlpha = 0.75;
+      ctx.fillStyle = "rgba(0,0,0,.35)";
+      ctx.fillRect(e.x - w/2, e.y + e.r + 10, w, h);
+      ctx.fillStyle = `rgba(167,255,158,${0.35 + 0.55*hpPct})`;
+      ctx.fillRect(e.x - w/2, e.y + e.r + 10, w * hpPct, h);
+      ctx.restore();
+
+      // estado (congelado/slow)
+      if (e.frozen > 0) {
+        ctx.save();
+        ctx.globalAlpha = 0.55;
+        drawCircle(e.x, e.y, e.r + 6, "rgba(217,243,255,.18)", "rgba(217,243,255,.55)", 2);
+        ctx.restore();
+      } else if (e.slow > 0) {
+        ctx.save();
+        ctx.globalAlpha = 0.45;
+        drawCircle(e.x, e.y, e.r + 5, "rgba(127,208,255,.14)", "rgba(127,208,255,.45)", 2);
+        ctx.restore();
+      }
+    }
+
+    // Partículas
+    for (const pa of particles) {
+      ctx.save();
+      ctx.globalAlpha = pa.a;
+      const g = ctx.createRadialGradient(pa.x, pa.y, 1, pa.x, pa.y, pa.r * 3);
+      g.addColorStop(0, pa.c1);
+      g.addColorStop(1, pa.c2);
+      drawCircle(pa.x, pa.y, pa.r, g, null, 0);
+      ctx.restore();
+    }
+
+    // Jugador (Chispa)
+    // aura en super
+    if (player.superActive > 0) {
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      const aura = ctx.createRadialGradient(player.x, player.y, 6, player.x, player.y, player.r + 34);
+      aura.addColorStop(0, "rgba(255,230,0,.55)");
+      aura.addColorStop(1, "rgba(255,159,26,0)");
+      drawCircle(player.x, player.y, player.r + 34, aura, null, 0);
+      ctx.restore();
+    }
+
+    // cuerpo
+    const bodyGrad = ctx.createRadialGradient(player.x - 6, player.y - 6, 3, player.x, player.y, player.r + 18);
+    bodyGrad.addColorStop(0, "rgba(255,230,0,.95)");
+    bodyGrad.addColorStop(1, "rgba(255,159,26,.18)");
+    drawCircle(player.x, player.y, player.r, "rgba(255,230,0,.95)", "rgba(255,159,26,.85)", 3);
+    ctx.save();
+    ctx.globalAlpha = 0.8;
+    drawCircle(player.x, player.y, player.r + 12, bodyGrad, null, 0);
+    ctx.restore();
+
+    // ojos en forma "rayo" simples
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.fillStyle = "rgba(255,159,26,.95)";
+    ctx.globalAlpha = 0.95;
+    // ojo izq
+    ctx.beginPath();
+    ctx.moveTo(-6, -4);
+    ctx.lineTo(-1, -8);
+    ctx.lineTo(-2, -2);
+    ctx.lineTo(-8, 1);
+    ctx.closePath();
+    ctx.fill();
+    // ojo der
+    ctx.beginPath();
+    ctx.moveTo(6, -4);
+    ctx.lineTo(1, -8);
+    ctx.lineTo(2, -2);
+    ctx.lineTo(8, 1);
+    ctx.closePath();
+    ctx.fill();
+    // sonrisa maliciosa
+    ctx.strokeStyle = "rgba(255,159,26,.9)";
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.arc(0, 3, 8, 0.2*Math.PI, 0.8*Math.PI);
+    ctx.stroke();
+    ctx.restore();
+
+    // Overlay Game Over
+    if (gameOver) {
+      ctx.save();
+      ctx.fillStyle = "rgba(0,0,0,.55)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "rgba(255,255,255,.94)";
+      ctx.font = "800 44px system-ui,Segoe UI,Roboto";
+      ctx.textAlign = "center";
+      ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2 - 28);
+      ctx.font = "600 18px system-ui,Segoe UI,Roboto";
+      ctx.fillStyle = "rgba(255,255,255,.78)";
+      ctx.fillText(`Puntos: ${score}  —  Tiempo: ${elapsed.toFixed(1)}s`, canvas.width/2, canvas.height/2 + 10);
+      ctx.fillText("Pulsa Reiniciar (arriba) o recarga la página", canvas.width/2, canvas.height/2 + 38);
+      ctx.restore();
+    }
+  }
+
+  // ====== Start ======
+  restart();
+  requestAnimationFrame(step);
+})();
+</script>
+</body>
+</html>

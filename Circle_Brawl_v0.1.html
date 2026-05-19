@@ -1,0 +1,882 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Circle Brawl (3 héroes)</title>
+  <style>
+    :root{
+      --bg:#0b0f16; --panel:#101a2a; --panel2:#0f1726;
+      --text:#e7eefc; --muted:#9fb1d1; --line:#1f2a40;
+      --accent:#4ea6ff; --good:#37d67a; --warn:#ffd166; --bad:#ff4d6d;
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; background:radial-gradient(1200px 600px at 50% 0%, #15213a 0%, var(--bg) 55%);
+      color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      overflow:hidden;
+    }
+    .hud{
+      position:fixed; inset:14px 14px auto 14px;
+      display:flex; gap:12px; align-items:stretch; pointer-events:none;
+    }
+    .panel{
+      pointer-events:auto;
+      background:linear-gradient(180deg, rgba(16,26,42,.92), rgba(15,23,38,.86));
+      border:1px solid var(--line); border-radius:var(--radius);
+      padding:12px 12px; box-shadow:0 12px 40px rgba(0,0,0,.35);
+      backdrop-filter: blur(8px);
+    }
+    .panel h1{font-size:14px; margin:0 0 8px 0; color:var(--muted); font-weight:650; letter-spacing:.2px}
+    .row{display:flex; gap:10px; align-items:center}
+    .btn{
+      all:unset; cursor:pointer; padding:8px 10px; border-radius:12px;
+      border:1px solid var(--line); background:rgba(255,255,255,.04);
+      font-size:13px; color:var(--text);
+    }
+    .btn:hover{border-color:#2b3c5c}
+    .btn.primary{border-color:rgba(78,166,255,.5); background:rgba(78,166,255,.12)}
+    .tiny{font-size:12px; color:var(--muted); line-height:1.25}
+    .bar{
+      width:240px; height:10px; border-radius:999px;
+      background:rgba(255,255,255,.06); border:1px solid var(--line);
+      overflow:hidden;
+    }
+    .bar > i{display:block; height:100%; width:50%; background:linear-gradient(90deg, var(--good), #8cffc1)}
+    .bar.bad > i{background:linear-gradient(90deg, var(--bad), #ff89a3)}
+    .kpis{display:flex; gap:10px; flex-wrap:wrap; margin-top:8px}
+    .kpi{padding:6px 8px; border-radius:12px; border:1px solid var(--line); background:rgba(255,255,255,.03); font-size:12px; color:var(--muted)}
+    canvas{display:block; width:100vw; height:100vh}
+    .help{
+      position:fixed; right:14px; top:14px; width:320px;
+    }
+    .help code{background:rgba(255,255,255,.06); padding:2px 6px; border-radius:8px; border:1px solid var(--line)}
+    .toast{
+      position:fixed; left:50%; bottom:16px; transform:translateX(-50%);
+      background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.10);
+      padding:10px 12px; border-radius:14px; color:var(--text);
+      font-size:13px; opacity:0; transition:.25s; pointer-events:none;
+      max-width:min(720px, calc(100vw - 24px));
+      text-align:center;
+    }
+    .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px)}
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <div class="hud">
+    <div class="panel" style="min-width:280px">
+      <h1>Circle Brawl</h1>
+      <div class="row" style="gap:8px; flex-wrap:wrap">
+        <button class="btn" id="pickIris">Iris</button>
+        <button class="btn" id="pickChispa">Chispa</button>
+        <button class="btn" id="pickSun">Star Sun</button>
+        <button class="btn primary" id="restart">Reiniciar</button>
+      </div>
+
+      <div style="margin-top:10px">
+        <div class="tiny">Vida</div>
+        <div class="bar bad" title="Vida"><i id="hpFill"></i></div>
+      </div>
+
+      <div style="margin-top:10px">
+        <div class="tiny">Super (carga por daño)</div>
+        <div class="bar" title="Super"><i id="superFill"></i></div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi">KOs: <b id="kos">0</b></div>
+        <div class="kpi">Muertes: <b id="deaths">0</b></div>
+        <div class="kpi">Héroe: <b id="heroName">Iris</b></div>
+      </div>
+
+      <div class="tiny" style="margin-top:10px">
+        Si no cargan imágenes: revisa que existan <code>iris.png</code>, <code>chispa.png</code>, <code>starsun.png</code> en la misma carpeta.
+      </div>
+    </div>
+
+    <div class="panel help">
+      <h1>Controles</h1>
+      <div class="tiny">
+        Mover: <code>WASD</code> · Apuntar: ratón · Disparo: <code>Click</code><br/>
+        Super: <code>Space</code> · Especial: <code>E</code> · Dash: <code>Shift</code><br/><br/>
+        <b>Iris</b>: nube arcoíris (deja estela) + Super cruz + Escudo corazón.<br/>
+        <b>Chispa</b>: puñetazos (corto) + Super “estela paralizante” + látigo roba-velocidad.<br/>
+        <b>Star Sun</b>: polvo estelar (cegar) + Super giro + salto estelar.
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  // ====== Setup ======
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+  function resize(){
+    canvas.width = Math.floor(innerWidth * DPR);
+    canvas.height = Math.floor(innerHeight * DPR);
+  }
+  addEventListener('resize', resize); resize();
+
+  const ui = {
+    hpFill: document.getElementById('hpFill'),
+    superFill: document.getElementById('superFill'),
+    kos: document.getElementById('kos'),
+    deaths: document.getElementById('deaths'),
+    heroName: document.getElementById('heroName'),
+    toast: document.getElementById('toast'),
+  };
+
+  function toast(msg){
+    ui.toast.textContent = msg;
+    ui.toast.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=>ui.toast.classList.remove('show'), 1300);
+  }
+
+  // ====== Assets ======
+  function loadImg(src){
+    const img = new Image();
+    img.src = src;
+    return img;
+  }
+  const IMG = {
+    iris: loadImg('iris.png'),
+    chispa: loadImg('chispa.png'),
+    sun: loadImg('starsun.png'),
+  };
+
+  // ====== World ======
+  const W = {
+    w: 2200, h: 1400,
+    walls: [],
+  };
+
+  // Simple map blocks
+  function makeWalls(){
+    W.walls = [];
+    const blocks = [
+      {x: 900, y: 540, w: 380, h: 120},
+      {x: 450, y: 920, w: 220, h: 240},
+      {x: 1550, y: 860, w: 240, h: 260},
+      {x: 1200, y: 1050, w: 420, h: 120},
+      {x: 820, y: 250, w: 260, h: 160},
+      {x: 1450, y: 260, w: 260, h: 160},
+    ];
+    W.walls.push(...blocks);
+  }
+  makeWalls();
+
+  const rnd = (a,b)=>a+Math.random()*(b-a);
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const len=(x,y)=>Math.hypot(x,y);
+  const norm=(x,y)=>{ const l=Math.hypot(x,y)||1; return {x:x/l,y:y/l}; };
+  const now = ()=>performance.now()/1000;
+
+  // ====== Entities ======
+  const bullets = [];
+  const effects = []; // particles / trails
+  const bots = [];
+
+  function circleRectCollide(cx, cy, r, rx, ry, rw, rh){
+    const px = clamp(cx, rx, rx+rw);
+    const py = clamp(cy, ry, ry+rh);
+    const dx = cx - px, dy = cy - py;
+    return (dx*dx + dy*dy) <= r*r;
+  }
+
+  function resolveCircleWalls(ent){
+    for (const b of W.walls){
+      if (!circleRectCollide(ent.x, ent.y, ent.r, b.x, b.y, b.w, b.h)) continue;
+      // Push out on the shortest axis
+      const px = clamp(ent.x, b.x, b.x+b.w);
+      const py = clamp(ent.y, b.y, b.y+b.h);
+      let dx = ent.x - px, dy = ent.y - py;
+      let d = Math.hypot(dx,dy) || 0.0001;
+      const push = ent.r - d;
+      if (push > 0){
+        dx/=d; dy/=d;
+        ent.x += dx*push;
+        ent.y += dy*push;
+      }
+    }
+    ent.x = clamp(ent.x, ent.r, W.w - ent.r);
+    ent.y = clamp(ent.y, ent.r, W.h - ent.r);
+  }
+
+  function dealDamage(target, amount, src){
+    if (target.dead) return;
+    if (target.shieldUntil && now() < target.shieldUntil){
+      // shield reflects a portion as “spark”
+      spawnEffect('ring', target.x, target.y, 18, 0.18, 'rgba(255,255,255,.65)');
+      return;
+    }
+    target.hp -= amount;
+    if (src && src.isPlayer) player.super = clamp(player.super + amount*0.9, 0, 100);
+    if (src && !src.isPlayer && target.isPlayer) player.super = clamp(player.super + amount*0.25, 0, 100);
+
+    spawnEffect('hit', target.x, target.y, 14, 0.14);
+    if (target.hp <= 0){
+      target.dead = true;
+      target.deadUntil = now() + 2.0;
+      if (src && src.isPlayer) ui.kos.textContent = String(++stats.kos);
+      if (target.isPlayer) ui.deaths.textContent = String(++stats.deaths);
+    }
+  }
+
+  function spawnEffect(type, x,y, size, life, color){
+    effects.push({type, x,y, size, born:now(), life, color});
+  }
+
+  function shootProjectile(src, x,y, vx,vy, dmg, ttl, radius, opts={}){
+    bullets.push({
+      x,y, vx,vy, dmg, ttl,
+      r: radius,
+      born: now(),
+      team: src.team,
+      slow: opts.slow || 0,
+      blind: opts.blind || 0,
+      pierce: !!opts.pierce,
+      onHit: opts.onHit || null,
+      color: opts.color || null,
+    });
+  }
+
+  function spawnTrail(x,y, r, life, color){
+    effects.push({type:'trail', x,y, size:r, born:now(), life, color});
+  }
+
+  // ====== Heroes (3) ======
+  const HERO = {
+    Iris: {
+      img: IMG.iris,
+      maxHp: 320,
+      spd: 260,
+      atkCd: 0.20,
+      atk: (self, aim) => { // Nube colorida: bola lenta + deja estela dañina
+        const n = norm(aim.x, aim.y);
+        const speed = 520;
+        shootProjectile(self, self.x + n.x*(self.r+6), self.y + n.y*(self.r+6),
+          n.x*speed, n.y*speed, 18, 0.9, 9, {
+            color: 'rgba(130,220,255,.9)',
+            onHit: (b, target) => {
+              // estela arcoiris (suelo) que daña al tocar
+              const t0 = now();
+              const dur = 1.4;
+              effects.push({type:'hazard', x:b.x, y:b.y, size:38, born:t0, life:dur, color:'rgba(150,120,255,.22)', team:self.team, dmg:10});
+            }
+          }
+        );
+      },
+      super: (self) => { // Arcoiris en cruz + escudo 1s
+        if (self.super < 100) return false;
+        self.super = 0;
+        self.shieldUntil = now() + 1.0; // rebota ataques (simplificado)
+        // cross beams (piercing)
+        const beams = [
+          {x: 1, y: 0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1},
+        ];
+        for (const d of beams){
+          shootProjectile(self, self.x, self.y, d.x*1100, d.y*1100, 22, 0.55, 10, {pierce:true, color:'rgba(255,255,255,.8)'});
+        }
+        spawnEffect('ring', self.x, self.y, 80, 0.35, 'rgba(255,120,220,.35)');
+        toast('Iris: Arcoíris en cruz + escudo');
+        return true;
+      },
+      special: (self) => { // Corazón protector 3s, CD 15s
+        const t = now();
+        if (t < (self.specialReadyAt||0)) return false;
+        self.specialReadyAt = t + 15;
+        self.shieldUntil = t + 3.0;
+        spawnEffect('ring', self.x, self.y, 110, 0.50, 'rgba(255,120,220,.35)');
+        toast('Iris: Corazón protector (3s)');
+        return true;
+      },
+    },
+
+    Chispa: {
+      img: IMG.chispa,
+      maxHp: 300,
+      spd: 290,
+      atkCd: 0.12,
+      atk: (self, aim) => { // 2 puñetazos: corto alcance tipo “shotgun”
+        const n = norm(aim.x, aim.y);
+        const base = Math.atan2(n.y,n.x);
+        for (let i=0;i<2;i++){
+          const ang = base + rnd(-0.12,0.12);
+          const vx = Math.cos(ang)*620;
+          const vy = Math.sin(ang)*620;
+          shootProjectile(self, self.x + Math.cos(ang)*(self.r+8), self.y + Math.sin(ang)*(self.r+8),
+            vx, vy, 16, 0.22, 7, {color:'rgba(255,210,80,.95)'}
+          );
+        }
+      },
+      super: (self) => { // velocidad x3 y deja estela que paraliza 3s
+        if (self.super < 100) return false;
+        self.super = 0;
+        self.boostUntil = now() + 3.0;
+        self.boostMult = 3.0;
+        self.trailUntil = now() + 3.0;
+        toast('Chispa: Súper velocidad + estela paralizante');
+        return true;
+      },
+      special: (self) => { // látigo: atrapa al más cercano 3s y roba 2%/s (velocidad) permanente (simplificado)
+        const t = now();
+        if (t < (self.specialReadyAt||0)) return false;
+        self.specialReadyAt = t + 10;
+        const enemies = [...bots].filter(b=>b.team!==self.team && !b.dead);
+        if (!enemies.length) return false;
+        enemies.sort((a,b)=>len(a.x-self.x,a.y-self.y)-len(b.x-self.x,b.y-self.y));
+        const target = enemies[0];
+        target.rootUntil = t + 3.0;
+        // roba velocidad 2%/s durante 3s => 6% total (simplificado)
+        const steal = 0.06;
+        target.spdMult = (target.spdMult||1) * (1 - steal);
+        self.spdMult = (self.spdMult||1) * (1 + steal);
+        spawnEffect('ring', target.x, target.y, 70, 0.35, 'rgba(255,210,80,.35)');
+        toast('Chispa: Látigo (atrapa + roba velocidad)');
+        return true;
+      },
+    },
+
+    StarSun: {
+      img: IMG.sun,
+      maxHp: 340,
+      spd: 250,
+      atkCd: 0.26,
+      atk: (self, aim) => { // Polvo estelar: proyectil que daña y “ciega” un poco
+        const n = norm(aim.x, aim.y);
+        const speed = 520;
+        shootProjectile(self, self.x + n.x*(self.r+6), self.y + n.y*(self.r+6),
+          n.x*speed, n.y*speed, 20, 0.8, 9, {blind: 0.55, color:'rgba(255,200,90,.95)'}
+        );
+      },
+      super: (self) => { // Giro estelar: daño alrededor por ticks
+        if (self.super < 100) return false;
+        self.super = 0;
+        self.spinUntil = now() + 1.2;
+        toast('Star Sun: Giro estelar');
+        return true;
+      },
+      special: (self) => { // Salto estelar: dash largo + “vuela” (invulnerable parcial)
+        const t = now();
+        if (t < (self.specialReadyAt||0)) return false;
+        self.specialReadyAt = t + 9;
+        self.jumpUntil = t + 0.9;
+        self.jumpPhase = 0;
+        toast('Star Sun: Salto estelar');
+        return true;
+      },
+    }
+  };
+
+  // ====== Player & Bots ======
+  const stats = {kos:0, deaths:0};
+
+  function makeFighter(heroName, x,y, team, isPlayer=false){
+    const h = HERO[heroName];
+    return {
+      heroName,
+      team,
+      isPlayer,
+      x,y, vx:0, vy:0,
+      r: 26,
+      hp: h.maxHp,
+      maxHp: h.maxHp,
+      baseSpd: h.spd,
+      spdMult: 1,
+      super: isPlayer ? 0 : 100, // bots can use often
+      atkCd: h.atkCd,
+      atkAt: 0,
+      specialReadyAt: 0,
+      dead:false,
+      deadUntil:0,
+      blindUntil:0,
+      rootUntil:0,
+      shieldUntil:0,
+      boostUntil:0,
+      boostMult:1,
+      trailUntil:0,
+      spinUntil:0,
+      jumpUntil:0,
+      jumpPhase:0,
+    };
+  }
+
+  let player = makeFighter('Iris', 350, 300, 1, true);
+
+  function resetMatch(){
+    bullets.length=0; effects.length=0; bots.length=0;
+    makeWalls();
+    player.x = 350; player.y = 300; player.vx=0; player.vy=0;
+    player.hp = player.maxHp; player.super = 0;
+    player.dead=false; player.deadUntil=0; player.blindUntil=0; player.rootUntil=0;
+    player.shieldUntil=0; player.boostUntil=0; player.spdMult=1; player.boostMult=1;
+    player.spinUntil=0; player.jumpUntil=0;
+
+    // spawn 6 bots
+    const roster = ['Chispa','StarSun','Iris','Chispa','StarSun','Iris'];
+    for (let i=0;i<6;i++){
+      const hero = roster[i];
+      const team = (i%2===0)?2:3;
+      bots.push(makeFighter(hero, rnd(900, 1900), rnd(250, 1200), team, false));
+    }
+    stats.kos=0; stats.deaths=0;
+    ui.kos.textContent='0'; ui.deaths.textContent='0';
+    toast('¡A pelear!');
+  }
+
+  // ====== Input ======
+  const keys = new Set();
+  addEventListener('keydown', e=>{
+    if (e.repeat) return;
+    keys.add(e.code);
+    if (e.code === 'Space') e.preventDefault();
+  });
+  addEventListener('keyup', e=>keys.delete(e.code));
+
+  let mouse = {x:0, y:0, down:false};
+  canvas.addEventListener('mousemove', e=>{
+    const r = canvas.getBoundingClientRect();
+    mouse.x = (e.clientX - r.left) * DPR;
+    mouse.y = (e.clientY - r.top) * DPR;
+  });
+  canvas.addEventListener('mousedown', ()=>mouse.down=true);
+  addEventListener('mouseup', ()=>mouse.down=false);
+
+  // buttons
+  function pick(hero){
+    const old = player;
+    const keep = {x: old.x, y: old.y, super: old.super, hp: Math.min(old.hp, HERO[hero].maxHp)};
+    player = makeFighter(hero, keep.x, keep.y, 1, true);
+    player.super = keep.super;
+    player.hp = keep.hp;
+    ui.heroName.textContent = hero;
+    toast('Elegido: ' + hero);
+  }
+  document.getElementById('pickIris').onclick = ()=>pick('Iris');
+  document.getElementById('pickChispa').onclick = ()=>pick('Chispa');
+  document.getElementById('pickSun').onclick = ()=>pick('StarSun');
+  document.getElementById('restart').onclick = ()=>resetMatch();
+
+  // ====== Camera ======
+  const cam = {x:0,y:0};
+  function worldToScreen(x,y){
+    return {x: (x - cam.x), y: (y - cam.y)};
+  }
+  function screenToWorld(x,y){
+    return {x: x + cam.x, y: y + cam.y};
+  }
+
+  // ====== Update ======
+  function updateFighter(self, dt){
+    if (self.dead){
+      if (now() > self.deadUntil){
+        self.dead=false;
+        self.hp = self.maxHp;
+        self.x = self.isPlayer ? 350 : rnd(900, 1900);
+        self.y = self.isPlayer ? 300 : rnd(250, 1200);
+        self.vx = self.vy = 0;
+        self.rootUntil = 0; self.blindUntil=0; self.shieldUntil=0;
+        self.boostUntil=0; self.spdMult=1; self.boostMult=1;
+        self.spinUntil=0; self.jumpUntil=0;
+      }
+      return;
+    }
+
+    // base speed
+    let spd = self.baseSpd * (self.spdMult||1);
+
+    // Chispa super speed
+    if (self.boostUntil && now() < self.boostUntil) spd *= (self.boostMult||1);
+    else if (self.boostUntil && now() >= self.boostUntil){ self.boostUntil=0; self.boostMult=1; }
+
+    // root
+    const rooted = self.rootUntil && now() < self.rootUntil;
+
+    // StarSun jump: dash forward + slight invuln feel (we'll just shield during jump)
+    if (self.jumpUntil && now() < self.jumpUntil){
+      self.shieldUntil = Math.max(self.shieldUntil||0, now()+0.05);
+    } else if (self.jumpUntil && now() >= self.jumpUntil){
+      self.jumpUntil = 0;
+    }
+
+    // movement
+    if (!rooted){
+      self.x += self.vx * dt;
+      self.y += self.vy * dt;
+      self.vx *= Math.pow(0.0005, dt); // friction
+      self.vy *= Math.pow(0.0005, dt);
+    } else {
+      self.vx *= Math.pow(0.001, dt);
+      self.vy *= Math.pow(0.001, dt);
+    }
+
+    resolveCircleWalls(self);
+
+    // Chispa trail hazard (paralyze)
+    if (self.trailUntil && now() < self.trailUntil){
+      spawnTrail(self.x, self.y, 30, 0.45, 'rgba(255,210,80,.18)');
+      effects.push({type:'hazard_root', x:self.x, y:self.y, size:42, born:now(), life:0.35, color:'rgba(255,210,80,.10)', team:self.team});
+    }
+
+    // StarSun super spin damage
+    if (self.spinUntil && now() < self.spinUntil){
+      // hit nearby enemies per tick
+      self._spinTick = (self._spinTick||0) - dt;
+      if (self._spinTick <= 0){
+        self._spinTick = 0.12;
+        const targets = self.isPlayer ? bots : [player, ...bots.filter(b=>b!==self)];
+        for (const t of targets){
+          if (t.team === self.team || t.dead) continue;
+          const d = len(t.x-self.x, t.y-self.y);
+          if (d < 90) dealDamage(t, 14, self);
+        }
+        spawnEffect('ring', self.x, self.y, 90, 0.10, 'rgba(255,200,90,.18)');
+      }
+    }
+  }
+
+  function updatePlayerInput(dt){
+    if (player.dead) return;
+
+    const aimW = screenToWorld(mouse.x, mouse.y);
+    const ax = aimW.x - player.x;
+    const ay = aimW.y - player.y;
+
+    // move vector
+    let mx = 0, my = 0;
+    if (keys.has('KeyW')) my -= 1;
+    if (keys.has('KeyS')) my += 1;
+    if (keys.has('KeyA')) mx -= 1;
+    if (keys.has('KeyD')) mx += 1;
+
+    const m = norm(mx,my);
+    const rooted = player.rootUntil && now() < player.rootUntil;
+    if (!rooted){
+      const spd = player.baseSpd * (player.spdMult||1) * ((player.boostUntil && now()<player.boostUntil) ? (player.boostMult||1) : 1);
+      player.vx += m.x * spd * 8 * dt;
+      player.vy += m.y * spd * 8 * dt;
+    }
+
+    // dash (small)
+    if (keys.has('ShiftLeft') || keys.has('ShiftRight')){
+      if (!player._dashAt || now() > player._dashAt){
+        player._dashAt = now() + 2.0;
+        const d = norm(ax,ay);
+        player.vx += d.x * 900;
+        player.vy += d.y * 900;
+        spawnEffect('ring', player.x, player.y, 70, 0.18, 'rgba(78,166,255,.22)');
+      }
+    }
+
+    // attack
+    const h = HERO[player.heroName];
+    if (mouse.down && now() > player.atkAt){
+      player.atkAt = now() + h.atkCd;
+      h.atk(player, {x:ax, y:ay});
+    }
+
+    // super
+    if (keys.has('Space')){
+      keys.delete('Space');
+      h.super(player);
+    }
+
+    // special
+    if (keys.has('KeyE')){
+      keys.delete('KeyE');
+      h.special(player);
+    }
+  }
+
+  function updateBotAI(bot, dt){
+    if (bot.dead) return;
+
+    // Target: player
+    const tx = player.x - bot.x;
+    const ty = player.y - bot.y;
+    const d = Math.hypot(tx,ty) || 1;
+    const dir = {x: tx/d, y: ty/d};
+
+    // move: keep some distance for ranged, close for Chispa
+    const wantsClose = (bot.heroName === 'Chispa');
+    const desired = wantsClose ? 120 : 320;
+    const moveToward = d > desired ? 1 : (d < desired*0.65 ? -1 : 0);
+
+    const rooted = bot.rootUntil && now() < bot.rootUntil;
+    if (!rooted){
+      const spd = bot.baseSpd * (bot.spdMult||1) * ((bot.boostUntil && now()<bot.boostUntil) ? (bot.boostMult||1) : 1);
+      bot.vx += dir.x * spd * 6 * dt * moveToward;
+      bot.vy += dir.y * spd * 6 * dt * moveToward;
+    }
+
+    // attack if line-ish
+    const h = HERO[bot.heroName];
+    bot._think = (bot._think||0) - dt;
+    if (bot._think <= 0){
+      bot._think = rnd(0.10, 0.22);
+
+      // sometimes use special
+      if (Math.random() < 0.05) h.special(bot);
+
+      // use super sometimes when full
+      if (bot.super >= 100 && Math.random() < 0.12) h.super(bot);
+
+      if (now() > bot.atkAt){
+        const jitter = wantsClose ? 0.20 : 0.08;
+        const aim = norm(tx + rnd(-jitter*80, jitter*80), ty + rnd(-jitter*80, jitter*80));
+        bot.atkAt = now() + h.atkCd + rnd(0.0, 0.08);
+        h.atk(bot, {x:aim.x, y:aim.y});
+      }
+    }
+  }
+
+  function updateBullets(dt){
+    for (let i=bullets.length-1;i>=0;i--){
+      const b = bullets[i];
+      const age = now() - b.born;
+      if (age > b.ttl){ bullets.splice(i,1); continue; }
+
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+
+      // wall collision: remove
+      let hitWall = false;
+      for (const w of W.walls){
+        if (b.x > w.x && b.x < w.x+w.w && b.y > w.y && b.y < w.y+w.h){
+          hitWall = true; break;
+        }
+      }
+      if (hitWall){ bullets.splice(i,1); spawnEffect('hit', b.x,b.y,12,0.12); continue; }
+
+      // entity collision
+      const targets = [player, ...bots];
+      for (const t of targets){
+        if (t.dead) continue;
+        if (t.team === b.team) continue;
+        const dd = Math.hypot(t.x - b.x, t.y - b.y);
+        if (dd < t.r + b.r){
+          dealDamage(t, b.dmg, {team:b.team, isPlayer: (b.team===player.team)});
+          if (b.slow){
+            t.spdMult = (t.spdMult||1) * (1 - 0.18); // slow light
+            setTimeout(()=>{ t.spdMult = clamp(t.spdMult/(1-0.18), 0.5, 2.0); }, 700);
+          }
+          if (b.blind){
+            t.blindUntil = Math.max(t.blindUntil||0, now() + b.blind);
+          }
+          if (b.onHit) b.onHit(b, t);
+          if (!b.pierce){ bullets.splice(i,1); }
+          break;
+        }
+      }
+
+      // bounds
+      if (b.x<0 || b.y<0 || b.x>W.w || b.y>W.h){ bullets.splice(i,1); }
+    }
+  }
+
+  function updateEffects(){
+    for (let i=effects.length-1;i>=0;i--){
+      const e = effects[i];
+      const age = now() - e.born;
+      if (age > e.life){ effects.splice(i,1); continue; }
+
+      if (e.type === 'hazard'){ // Iris ground dmg
+        const targets = [player, ...bots];
+        for (const t of targets){
+          if (t.dead) continue;
+          if (t.team === e.team) continue;
+          const d = len(t.x-e.x, t.y-e.y);
+          if (d < e.size){
+            // tick damage (small)
+            t._hazTick = (t._hazTick||0) - (1/60);
+            if (t._hazTick <= 0){
+              t._hazTick = 0.18;
+              dealDamage(t, e.dmg, {team:e.team, isPlayer:(e.team===player.team)});
+            }
+          }
+        }
+      }
+
+      if (e.type === 'hazard_root'){ // Chispa trail paralyze
+        const targets = [player, ...bots];
+        for (const t of targets){
+          if (t.dead) continue;
+          if (t.team === e.team) continue;
+          const d = len(t.x-e.x, t.y-e.y);
+          if (d < e.size){
+            // root 3s (paralyze) only if touched
+            t.rootUntil = Math.max(t.rootUntil||0, now() + 0.35); // stacking small; feels “sticky”
+          }
+        }
+      }
+    }
+  }
+
+  // ====== Render ======
+  function draw(){
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    ctx.clearRect(0,0,canvas.width/DPR, canvas.height/DPR);
+
+    // camera center on player
+    cam.x = clamp(player.x - (canvas.width/DPR)/2, 0, W.w - (canvas.width/DPR));
+    cam.y = clamp(player.y - (canvas.height/DPR)/2, 0, W.h - (canvas.height/DPR));
+
+    // background grid
+    ctx.save();
+    ctx.translate(-cam.x, -cam.y);
+    ctx.fillStyle = 'rgba(255,255,255,.02)';
+    for (let x=0; x<W.w; x+=80){
+      ctx.fillRect(x,0,1,W.h);
+    }
+    for (let y=0; y<W.h; y+=80){
+      ctx.fillRect(0,y,W.w,1);
+    }
+
+    // walls
+    for (const w of W.walls){
+      ctx.fillStyle = 'rgba(255,255,255,.05)';
+      ctx.strokeStyle = 'rgba(255,255,255,.10)';
+      ctx.lineWidth = 2;
+      roundRect(ctx, w.x, w.y, w.w, w.h, 16);
+      ctx.fill(); ctx.stroke();
+    }
+
+    // effects
+    for (const e of effects){
+      const age = now() - e.born;
+      const t = age / e.life;
+      if (e.type === 'trail'){
+        ctx.fillStyle = e.color || 'rgba(255,255,255,.10)';
+        ctx.beginPath(); ctx.arc(e.x, e.y, e.size*(1.0 - t*0.4), 0, Math.PI*2); ctx.fill();
+      } else if (e.type === 'hit'){
+        ctx.fillStyle = 'rgba(255,255,255,.55)';
+        ctx.beginPath(); ctx.arc(e.x, e.y, e.size*(1.2 - t), 0, Math.PI*2); ctx.fill();
+      } else if (e.type === 'ring'){
+        ctx.strokeStyle = e.color || 'rgba(255,255,255,.40)';
+        ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(e.x, e.y, e.size*(0.8 + t*0.7), 0, Math.PI*2); ctx.stroke();
+      } else if (e.type === 'hazard' || e.type === 'hazard_root'){
+        ctx.fillStyle = e.color || 'rgba(200,120,255,.15)';
+        ctx.beginPath(); ctx.arc(e.x, e.y, e.size, 0, Math.PI*2); ctx.fill();
+      }
+    }
+
+    // bullets
+    for (const b of bullets){
+      ctx.fillStyle = b.color || 'rgba(255,255,255,.85)';
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill();
+    }
+
+    // fighters
+    drawFighter(player);
+    for (const bot of bots) drawFighter(bot);
+
+    ctx.restore();
+
+    // vignette / blindness
+    if (player.blindUntil && now() < player.blindUntil){
+      const a = clamp((player.blindUntil - now())/0.55, 0, 1);
+      ctx.fillStyle = `rgba(0,0,0,${0.50*a})`;
+      ctx.fillRect(0,0,canvas.width/DPR, canvas.height/DPR);
+    }
+  }
+
+  function drawFighter(f){
+    const {x,y} = f;
+    // base circle shadow
+    ctx.save();
+    ctx.translate(x,y);
+
+    // status ring
+    if (f.shieldUntil && now() < f.shieldUntil){
+      ctx.strokeStyle = 'rgba(255,255,255,.55)';
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(0,0,f.r+10,0,Math.PI*2); ctx.stroke();
+    }
+    if (f.rootUntil && now() < f.rootUntil){
+      ctx.strokeStyle = 'rgba(255,210,80,.45)';
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(0,0,f.r+14,0,Math.PI*2); ctx.stroke();
+    }
+
+    // body image clipped into circle
+    ctx.beginPath(); ctx.arc(0,0,f.r,0,Math.PI*2); ctx.clip();
+    const img = HERO[f.heroName].img;
+    ctx.drawImage(img, -f.r, -f.r, f.r*2, f.r*2);
+    ctx.restore();
+
+    // health bar
+    const hp = clamp(f.hp / f.maxHp, 0, 1);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,.12)';
+    ctx.fillStyle = f.isPlayer ? 'rgba(55,214,122,.85)' : 'rgba(255,77,109,.78)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(x - 28, y - f.r - 18, 56, 7, 999);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.roundRect(x - 28, y - f.r - 18, 56*hp, 7, 999);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function roundRect(ctx, x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+
+  // ====== Main loop ======
+  let tPrev = performance.now();
+  function frame(t){
+    const dt = Math.min(0.033, (t - tPrev)/1000);
+    tPrev = t;
+
+    updatePlayerInput(dt);
+
+    // recharge super slightly over time
+    if (!player.dead) player.super = clamp(player.super + dt*1.2, 0, 100);
+
+    updateFighter(player, dt);
+    for (const b of bots){
+      // bot super recharge
+      if (!b.dead) b.super = clamp(b.super + dt*2.0, 0, 100);
+      updateBotAI(b, dt);
+      updateFighter(b, dt);
+    }
+
+    updateBullets(dt);
+    updateEffects();
+
+    // UI
+    ui.hpFill.style.width = (clamp(player.hp/player.maxHp,0,1)*100).toFixed(1)+'%';
+    ui.superFill.style.width = (clamp(player.super/100,0,1)*100).toFixed(1)+'%';
+    ui.heroName.textContent = player.heroName;
+
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  // ====== Start ======
+  const statsProxy = {kos:0, deaths:0};
+  Object.defineProperty(window, 'stats', {get:()=>statsProxy});
+  const stats = statsProxy;
+
+  resetMatch();
+  requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>

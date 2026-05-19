@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ecos del Futuro — Nivel Dios</title>
+  <style>
+    :root {
+      --bg: #071018;
+      --bg2: #0d1724;
+      --panel: #111c2b;
+      --panel2: #172436;
+      --line: #29405b;
+      --text: #e8f0fb;
+      --muted: #98abc2;
+      --good: #39d98a;
+      --warn: #ffca57;
+      --bad: #ff6b6b;
+      --accent: #55c2ff;
+      --accent2: #8f7cff;
+      --chip: #203247;
+      --shadow: 0 12px 30px rgba(0,0,0,0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(85,194,255,0.08), transparent 28%),
+        radial-gradient(circle at top right, rgba(143,124,255,0.08), transparent 30%),
+        linear-gradient(180deg, var(--bg), #04080d 120%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .app {
+      width: min(1400px, calc(100% - 24px));
+      margin: 12px auto 40px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px;
+      background: linear-gradient(180deg, rgba(23,36,54,0.95), rgba(13,23,36,0.95));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 10px;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(1.1rem, 2vw, 1.55rem);
+      letter-spacing: 0.4px;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .btn, button {
+      border: 1px solid transparent;
+      background: linear-gradient(180deg, #1c3248, #16283a);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      transition: transform 0.15s ease, border-color 0.15s ease, filter 0.2s ease;
+    }
+
+    .btn:hover, button:hover {
+      transform: translateY(-1px);
+      border-color: #42658b;
+      filter: brightness(1.08);
+    }
+
+    .btn.primary {
+      background: linear-gradient(180deg, #2b74a0, #215a7c);
+    }
+
+    .btn.good { background: linear-gradient(180deg, #1f7c5e, #185c46); }
+    .btn.warn { background: linear-gradient(180deg, #8a6831, #6d5228); }
+    .btn.bad  { background: linear-gradient(180deg, #8a3c3c, #6e2d2d); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.05fr 1.4fr 1.05fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(23,36,54,0.98), rgba(11,19,29,0.98));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid rgba(65, 92, 121, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .panel-header h2, .panel-header h3 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0.25px;
+    }
+
+    .panel-body {
+      padding: 14px 16px 16px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #1d2f45, #162536);
+      color: var(--text);
+      border: 1px solid rgba(69, 101, 135, 0.4);
+      font-size: 0.88rem;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 12px;
+    }
+
+    .kpi {
+      padding: 12px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(25,39,57,0.9), rgba(18,29,42,0.9));
+      border: 1px solid rgba(61, 90, 119, 0.4);
+    }
+
+    .kpi .label {
+      color: var(--muted);
+      font-size: 0.84rem;
+      margin-bottom: 6px;
+    }
+
+    .kpi .value {
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+    }
+
+    .metric {
+      margin-bottom: 10px;
+    }
+
+    .metric-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 5px;
+      font-size: 0.9rem;
+    }
+
+    .bar {
+      width: 100%;
+      height: 11px;
+      border-radius: 999px;
+      background: #102033;
+      overflow: hidden;
+      border: 1px solid rgba(58, 88, 117, 0.35);
+    }
+
+    .bar > span {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width 0.35s ease;
+    }
+
+    .mini-bar > span { background: linear-gradient(90deg, #4be39b, #55c2ff); }
+
+    .story-box {
+      padding: 16px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(24, 35, 49, 0.95), rgba(16, 26, 38, 0.95));
+      border: 1px solid rgba(72, 104, 137, 0.32);
+      min-height: 180px;
+    }
+
+    .story-title {
+      margin: 0 0 10px;
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+
+    .story-text {
+      color: #d4e3f3;
+      line-height: 1.55;
+      margin: 0;
+      white-space: pre-line;
+    }
+
+    .choices {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .choice {
+      text-align: left;
+      padding: 14px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(29,45,65,1), rgba(18,30,43,1));
+      border: 1px solid rgba(70, 103, 138, 0.45);
+    }
+
+    .choice strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.98rem;
+    }
+
+    .choice small {
+      color: var(--muted);
+      display: block;
+      line-height: 1.45;
+    }
+
+    .subgrid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 12px;
+    }
+
+    .districts {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 10px;
+    }
+
+    .district {
+      padding: 10px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(28,42,61,0.95), rgba(17,27,39,0.95));
+      border: 1px solid rgba(67, 99, 130, 0.38);
+      cursor: pointer;
+    }
+
+    .district:hover {
+      border-color: #5b88b9;
+      transform: translateY(-1px);
+    }
+
+    .district h4 {
+      margin: 0 0 8px;
+      font-size: 0.92rem;
+    }
+
+    .district p {
+      margin: 4px 0;
+      font-size: 0.83rem;
+      color: #c1d4e9;
+    }
+
+    .list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .item {
+      padding: 11px 12px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(29,44,63,0.92), rgba(18,28,40,0.92));
+      border: 1px solid rgba(61, 94, 125, 0.34);
+    }
+
+    .item strong { display: block; margin-bottom: 4px; }
+    .item small { color: var(--muted); line-height: 1.45; }
+
+    .research-grid, .law-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 10px;
+    }
+
+    .card-button {
+      padding: 12px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(27,44,63,0.97), rgba(18,30,43,0.97));
+      border: 1px solid rgba(71, 104, 139, 0.42);
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .card-button:hover { border-color: #6ea5db; }
+    .card-button.disabled {
+      opacity: 0.48;
+      cursor: not-allowed;
+      filter: grayscale(0.2);
+    }
+
+    .card-button strong { display: block; margin-bottom: 6px; }
+    .card-button small { color: var(--muted); display: block; line-height: 1.45; }
+
+    .history {
+      max-height: 460px;
+      overflow: auto;
+      display: grid;
+      gap: 8px;
+      padding-right: 4px;
+    }
+
+    .log {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(27,39,57,0.9), rgba(17,27,39,0.9));
+      border: 1px solid rgba(57, 84, 111, 0.32);
+      color: #d6e4f5;
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    .end-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(4,10,16,0.84);
+      backdrop-filter: blur(8px);
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+
+    .end-card {
+      width: min(760px, 100%);
+      background: linear-gradient(180deg, #152337, #0d1724);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+      text-align: left;
+    }
+
+    .end-card h2 { margin-top: 0; }
+    .end-card p { color: #d7e5f5; line-height: 1.6; }
+
+    @media (max-width: 1180px) {
+      .layout { grid-template-columns: 1fr; }
+      .districts { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+
+    @media (max-width: 760px) {
+      .app { width: min(100%, calc(100% - 14px)); }
+      .topbar { padding: 12px; }
+      .toolbar { justify-content: stretch; }
+      .toolbar .btn { flex: 1 1 auto; }
+      .kpi-grid, .subgrid, .research-grid, .law-grid { grid-template-columns: 1fr; }
+      .districts { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">
+        <h1>Ecos del Futuro — Nivel Dios</h1>
+        <p>Megasimulador político, social, económico y narrativo en un solo HTML.</p>
+      </div>
+      <div class="toolbar">
+        <button class="btn primary" id="nextTurnBtn">Siguiente año</button>
+        <button class="btn" id="saveBtn">Guardar</button>
+        <button class="btn" id="exportBtn">Exportar partida</button>
+        <button class="btn" id="importBtn">Importar partida</button>
+        <button class="btn bad" id="resetBtn">Reiniciar</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Estado nacional</h2>
+          <div class="chips" id="headerChips"></div>
+        </div>
+        <div class="panel-body">
+          <div class="kpi-grid" id="kpis"></div>
+          <div id="mainMetrics"></div>
+
+          <div class="subgrid" style="margin-top:14px;">
+            <div>
+              <h3 style="margin:0 0 10px;">Clases sociales</h3>
+              <div id="classMetrics"></div>
+            </div>
+            <div>
+              <h3 style="margin:0 0 10px;">Ideología nacional</h3>
+              <div id="ideologyMetrics"></div>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <h3 style="margin:0 0 10px;">Parlamento</h3>
+            <div id="parliamentMetrics"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Centro de gobierno</h2>
+          <span class="chip" id="turnChip">Turno 0</span>
+        </div>
+        <div class="panel-body">
+          <div class="story-box">
+            <h3 class="story-title" id="eventTitle">Bienvenido, dirigente.</h3>
+            <p class="story-text" id="eventText">Tu ciudad-estado espera tu criterio. Aquí no hay decisiones limpias: cada año cambia el equilibrio entre libertad, control, riqueza, clima, guerra y supervivencia.</p>
+          </div>
+
+          <div class="choices" id="choices"></div>
+
+          <div class="subgrid" style="margin-top:16px;">
+            <div>
+              <h3 style="margin:0 0 10px;">Investigación</h3>
+              <div class="research-grid" id="researchGrid"></div>
+            </div>
+            <div>
+              <h3 style="margin:0 0 10px;">Leyes</h3>
+              <div class="law-grid" id="lawGrid"></div>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <h3 style="margin:0 0 10px;">Distritos</h3>
+            <div class="districts" id="districts"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Entorno exterior</h2>
+          <span class="chip" id="autosaveChip">Autoguardado activo</span>
+        </div>
+        <div class="panel-body">
+          <div>
+            <h3 style="margin:0 0 10px;">Líder actual</h3>
+            <div class="item" id="leaderCard"></div>
+          </div>
+
+          <div style="margin-top:14px;">
+            <h3 style="margin:0 0 10px;">Potencias extranjeras</h3>
+            <div class="list" id="nationsList"></div>
+          </div>
+
+          <div style="margin-top:14px;">
+            <h3 style="margin:0 0 10px;">Historial</h3>
+            <div class="history" id="history"></div>
+          </div>
+
+          <div style="margin-top:14px;">
+            <p class="footer-note">
+              Consejo brutalmente honesto: si gobiernas a martillazos, la ciudad aguanta un rato… hasta que decide devolverte el martillo.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="end-screen" id="endScreen">
+    <div class="end-card">
+      <h2 id="endTitle">Final</h2>
+      <p id="endText"></p>
+      <div class="chips" id="endStats"></div>
+      <div style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn primary" id="endRestartBtn">Jugar otra vez</button>
+        <button class="btn" id="endCloseBtn">Seguir viendo el resultado</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SAVE_KEY = 'ecos_del_futuro_nivel_dios_v1';
+
+    const NAMES = [
+      'Ayla', 'Noah', 'Mira', 'Orion', 'Nora', 'Dante', 'Vera', 'León', 'Iris', 'Soren',
+      'Kael', 'Livia', 'Elian', 'Nova', 'Gael', 'Dalia', 'Nico', 'Selene', 'Ares', 'Cora'
+    ];
+
+    const DISTRICT_NAMES = [
+      'Aurora', 'Puerto Gris', 'Neón Alto', 'Ribera Sur', 'Mercurio', 'Pilar Este',
+      'Jardines Delta', 'Cúpula 7', 'Cauce Norte'
+    ];
+
+    const DISTRICT_TYPES = ['industrial', 'residencial', 'tecnológico', 'agrario', 'mixto', 'portuario'];
+    const NATION_PREFIXES = ['Liga', 'República', 'Unión', 'Dominio', 'Confederación', 'Federación'];
+    const NATION_SUFFIXES = ['Helios', 'Dracon', 'Vesper', 'Orbis', 'Talos', 'Nadir', 'Kron', 'Selka'];
+
+    const RESEARCH_TREE = [
+      {
+        id: 'fusion',
+        name: 'Fusión compacta',
+        cost: 20,
+        desc: 'Más energía, menos dependencia exterior y economía más robusta.',
+        apply: s => { s.energy += 14; s.economy += 6; s.researchLevel += 1; }
+      },
+      {
+        id: 'agri',
+        name: 'Agrotech vertical',
+        cost: 16,
+        desc: 'Refuerza alimentos, empleo y estabilidad en tiempos feos.',
+        apply: s => { s.food += 12; s.employment += 5; s.stability += 3; }
+      },
+      {
+        id: 'ai_civic',
+        name: 'IA cívica',
+        cost: 18,
+        desc: 'Optimiza servicios. Subes orden y economía, pero rozas la vigilancia.',
+        apply: s => { s.order += 6; s.economy += 6; s.tech += 8; s.freedom -= 2; }
+      },
+      {
+        id: 'biohealth',
+        name: 'Biomedicina pública',
+        cost: 22,
+        desc: 'Reduce mortalidad, aumenta bienestar y humanidad.',
+        apply: s => { s.health += 14; s.humanity += 8; s.population += 70000; }
+      },
+      {
+        id: 'orbital',
+        name: 'Red orbital',
+        cost: 26,
+        desc: 'Impulso bestia a tecnología e influencia exterior.',
+        apply: s => { s.tech += 12; s.foreignInfluence += 10; s.economy += 5; }
+      },
+      {
+        id: 'defense_grid',
+        name: 'Escudo de defensa',
+        cost: 20,
+        desc: 'Sube poder militar y reduce daño potencial de guerra.',
+        apply: s => { s.military += 12; s.securityDoctrine += 1; }
+      }
+    ];
+
+    const LAW_TREE = [
+      {
+        id: 'surveillance',
+        name: 'Vigilancia algorítmica',
+        desc: 'Más control, menos libertad. El clásico “todo seguro salvo la intimidad”.',
+        apply: s => {
+          s.laws.surveillance = !s.laws.surveillance;
+          const on = s.laws.surveillance;
+          s.order += on ? 8 : -8;
+          s.freedom += on ? -9 : 9;
+          s.tech += on ? 3 : -3;
+        }
+      },
+      {
+        id: 'basic_income',
+        name: 'Renta básica',
+        desc: 'Aumenta calma social, pero aprieta la economía si abusas.',
+        apply: s => {
+          s.laws.basicIncome = !s.laws.basicIncome;
+          const on = s.laws.basicIncome;
+          s.humanity += on ? 7 : -7;
+          s.stability += on ? 5 : -5;
+          s.economy += on ? -6 : 6;
+        }
+      },
+      {
+        id: 'open_data',
+        name: 'Datos abiertos',
+        desc: 'Más transparencia, menos corrupción, algo menos de control rígido.',
+        apply: s => {
+          s.laws.openData = !s.laws.openData;
+          const on = s.laws.openData;
+          s.freedom += on ? 6 : -6;
+          s.corruption += on ? -10 : 10;
+          s.order += on ? -2 : 2;
+        }
+      },
+      {
+        id: 'military_service',
+        name: 'Servicio nacional',
+        desc: 'Refuerza músculo militar. También pone a la población de morros.',
+        apply: s => {
+          s.laws.militaryService = !s.laws.militaryService;
+          const on = s.laws.militaryService;
+          s.military += on ? 10 : -10;
+          s.order += on ? 4 : -4;
+          s.humanity += on ? -4 : 4;
+        }
+      }
+    ];
+
+    const BASE_EVENTS = [
+      {
+        title: 'Megaapagón en cadena',
+        text: 'Tres distritos se apagan a la vez. Hospitales, transporte y servidores críticos están al límite. La oposición habla de gestión chapucera; tus técnicos piden una decisión inmediata.',
+        choices: [
+          {
+            title: 'Centralizar toda la red ya',
+            desc: 'Ganas control y respuesta rápida. También dejas a media ciudad vigilada como si fuera una tostadora peligrosa.',
+            effect: s => ({ order: +8, energy: +6, freedom: -5, economy: -2, tech: +2 })
+          },
+          {
+            title: 'Permitir microredes ciudadanas',
+            desc: 'Más resiliencia local y humanidad. Menos mando central y un poco de caos administrativo.',
+            effect: s => ({ humanity: +7, stability: +4, order: -4, economy: -1 })
+          },
+          {
+            title: 'Racionamiento con prioridad sanitaria',
+            desc: 'No es bonito, pero salva lo importante. Económicamente duele, socialmente se entiende.',
+            effect: s => ({ health: +6, humanity: +4, economy: -4, energy: +3 })
+          }
+        ]
+      },
+      {
+        title: 'Filtración masiva de datos',
+        text: 'Se han filtrado perfiles biométricos, hábitos y patrones emocionales de millones de ciudadanos. El escándalo huele peor que una campaña electoral en agosto.',
+        choices: [
+          {
+            title: 'Tapar el caso y culpar a potencias extranjeras',
+            desc: 'Proteges el gobierno a corto plazo, pero la confianza empieza a oler raro.',
+            effect: s => ({ order: +4, corruption: +6, freedom: -4, stability: -3 })
+          },
+          {
+            title: 'Publicar todo y asumir responsabilidades',
+            desc: 'Duele hoy, pero limpia bastante la casa.',
+            effect: s => ({ freedom: +6, corruption: -12, humanity: +4, order: -2 })
+          },
+          {
+            title: 'Crear una comisión mixta con ciudadanos y jueces',
+            desc: 'Más lenta, pero más legítima. Menos circo, más estructura.',
+            effect: s => ({ freedom: +4, stability: +4, corruption: -7, economy: -1 })
+          }
+        ]
+      },
+      {
+        title: 'Brote respiratorio mutante',
+        text: 'Los hospitales detectan una enfermedad nueva. No es el apocalipsis… todavía. Pero sí puede convertirse en una trituradora de estabilidad.',
+        choices: [
+          {
+            title: 'Cierre temporal y red médica reforzada',
+            desc: 'Te llamarán exagerado. Mejor eso que funerario.',
+            effect: s => ({ health: +9, humanity: +5, economy: -6, freedom: -3 })
+          },
+          {
+            title: 'Medidas suaves y responsabilidad individual',
+            desc: 'La economía respira mejor. El virus también.',
+            effect: s => ({ economy: +3, health: -5, stability: -2 })
+          },
+          {
+            title: 'Biotecnología urgente con fondos extraordinarios',
+            desc: 'Apuesta fuerte. Puede ser brillante o muy cara.',
+            effect: s => ({ tech: +8, health: +5, economy: -4, research: +6 })
+          }
+        ]
+      },
+      {
+        title: 'Marchas juveniles por el clima',
+        text: 'Cientos de miles de jóvenes toman avenidas, plazas y vías elevadas. Piden recortes drásticos de emisiones y te señalan por tibio, vendido o ambas.',
+        choices: [
+          {
+            title: 'Plan verde ambicioso',
+            desc: 'Recorta emisiones, genera ilusión y te cuesta dinero. Como casi todo lo decente.',
+            effect: s => ({ climate: +10, humanity: +5, economy: -5, employment: +2 })
+          },
+          {
+            title: 'Escuchar sin comprometerte',
+            desc: 'La política del “ya veremos” funciona hasta que deja de funcionar.',
+            effect: s => ({ stability: -2, climate: -3, order: +1 })
+          },
+          {
+            title: 'Reprimir disturbios aislados y negociar luego',
+            desc: 'Contienes el desorden, pero te cargas parte del apoyo social.',
+            effect: s => ({ order: +6, freedom: -5, humanity: -4, stability: +1 })
+          }
+        ]
+      },
+      {
+        title: 'Oferta brutal de una megacorporación',
+        text: 'Una corporación propone invertir cantidades obscenas en infraestructura, IA y logística. A cambio, quiere privilegios fiscales, datos y medio gobierno en bandeja.',
+        choices: [
+          {
+            title: 'Firmar el acuerdo completo',
+            desc: 'Dinero rápido, dependencia aún más rápida.',
+            effect: s => ({ economy: +11, tech: +8, corruption: +6, freedom: -4, oligarchy: +8 })
+          },
+          {
+            title: 'Aceptar solo con regulación dura',
+            desc: 'Ganas inversión, pero no te entregas entero. Bastante sensato, raro en política.',
+            effect: s => ({ economy: +7, tech: +4, corruption: +1, order: +2 })
+          },
+          {
+            title: 'Rechazar y lanzar cooperativas públicas',
+            desc: 'Más independencia, menos dinero inmediato y más épica ideológica.',
+            effect: s => ({ humanity: +6, freedom: +3, economy: -4, employment: +4, oligarchy: -5 })
+          }
+        ]
+      }
+    ];
+
+    function rand(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function clamp(v, min = 0, max = 100) {
+      return Math.max(min, Math.min(max, v));
+    }
+
+    function pick(arr) {
+      return arr[rand(0, arr.length - 1)];
+    }
+
+    function deepClone(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    function createLeader() {
+      const name = pick(NAMES) + ' ' + String.fromCharCode(65 + rand(0, 25)) + '.';
+      return {
+        name,
+        age: rand(37, 67),
+        charisma: rand(35, 90),
+        discipline: rand(30, 90),
+        empathy: rand(20, 90),
+        corruptionBias: rand(0, 40)
+      };
+    }
+
+    function createDistrict(name) {
+      return {
+        name,
+        type: pick(DISTRICT_TYPES),
+        wealth: rand(38, 68),
+        unrest: rand(12, 35),
+        infrastructure: rand(35, 70),
+        ecology: rand(25, 65),
+        loyalty: rand(35, 65)
+      };
+    }
+
+    function createNation() {
+      return {
+        name: `${pick(NATION_PREFIXES)} ${pick(NATION_SUFFIXES)}`,
+        power: rand(35, 85),
+        relation: rand(25, 75),
+        trade: rand(25, 80),
+        ideology: rand(0, 100)
+      };
+    }
+
+    function initialState() {
+      return {
+        year: 2148,
+        turn: 0,
+        population: 5200000,
+        economy: 58,
+        order: 52,
+        freedom: 50,
+        humanity: 51,
+        tech: 49,
+        climate: 56,
+        military: 46,
+        health: 54,
+        energy: 50,
+        food: 57,
+        employment: 59,
+        stability: 57,
+        corruption: 26,
+        inflation: 4.2,
+        research: 12,
+        researchLevel: 0,
+        securityDoctrine: 0,
+        foreignInfluence: 38,
+        oligarchy: 28,
+        warRisk: 18,
+        protestHeat: 22,
+        classes: {
+          alta: 18,
+          media: 49,
+          baja: 33
+        },
+        ideology: {
+          authoritarian: 48,
+          democratic: 52,
+          capitalist: 55,
+          socialist: 45,
+          globalist: 51,
+          nationalist: 49,
+          progressive: 53,
+          conservative: 47
+        },
+        parliament: {
+          reformistas: 31,
+          orden: 24,
+          mercado: 22,
+          común: 23
+        },
+        laws: {
+          surveillance: false,
+          basicIncome: false,
+          openData: true,
+          militaryService: false
+        },
+        leader: createLeader(),
+        districts: DISTRICT_NAMES.map(createDistrict),
+        nations: Array.from({ length: 5 }, createNation),
+        researched: {},
+        history: [
+          'Comienza una nueva etapa de gobierno. La ciudad está viva, ambiciosa y peligrosamente sensible a tus decisiones.'
+        ],
+        currentEvent: null,
+        gameOver: false,
+        finalData: null
+      };
+    }
+
+    let state = loadGame() || initialState();
+
+    function saveGame() {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+      logHistory('Partida guardada. La ciudad, de momento, sigue siendo tu problema.');
+      render();
+    }
+
+    function loadGame() {
+      try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    }
+
+    function exportGame() {
+      const data = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+      navigator.clipboard?.writeText(data).then(() => {
+        logHistory('Código de exportación copiado al portapapeles.');
+        render();
+      }).catch(() => {
+        prompt('Copia este código manualmente:', data);
+      });
+    }
+
+    function importGame() {
+      const raw = prompt('Pega aquí el código de partida exportado:');
+      if (!raw) return;
+      try {
+        state = JSON.parse(decodeURIComponent(escape(atob(raw))));
+        logHistory('Partida importada correctamente.');
+        autoEnsureEvent();
+        persistSilently();
+        render();
+      } catch {
+        alert('Código inválido.');
+      }
+    }
+
+    function resetGame() {
+      if (!confirm('¿Reiniciar toda la partida?')) return;
+      localStorage.removeItem(SAVE_KEY);
+      state = initialState();
+      autoEnsureEvent();
+      render();
+    }
+
+    function persistSilently() {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+    }
+
+    function logHistory(text) {
+      state.history.unshift(`[${state.year}] ${text}`);
+      state.history = state.history.slice(0, 60);
+    }
+
+    function metricHtml(label, value, suffix = '', mini = false) {
+      return `
+        <div class="metric ${mini ? 'mini' : ''}">
+          <div class="metric-head"><span>${label}</span><strong>${typeof value === 'number' ? Math.round(value) : value}${suffix}</strong></div>
+          <div class="bar ${mini ? 'mini-bar' : ''}"><span style="width:${clamp(Number(value) || 0)}%"></span></div>
+        </div>
+      `;
+    }
+
+    function deltaToText(delta) {
+      const keys = Object.keys(delta).filter(k => delta[k] !== 0 && delta[k] !== undefined);
+      if (!keys.length) return 'Sin cambios relevantes.';
+      return keys.map(k => `${readableKey(k)} ${delta[k] > 0 ? '+' : ''}${Math.round(delta[k])}`).join(' · ');
+    }
+
+    function readableKey(key) {
+      const map = {
+        economy: 'Economía', order: 'Orden', freedom: 'Libertad', humanity: 'Humanidad', tech: 'Tecnología',
+        climate: 'Clima', military: 'Militar', health: 'Salud', energy: 'Energía', food: 'Alimentos',
+        employment: 'Empleo', stability: 'Estabilidad', corruption: 'Corrupción', research: 'Investigación',
+        oligarchy: 'Oligarquía', warRisk: 'Riesgo guerra', protestHeat: 'Tensión social', population: 'Población'
+      };
+      return map[key] || key;
+    }
+
+    function applyDelta(delta) {
+      for (const [key, value] of Object.entries(delta)) {
+        if (key === 'population') {
+          state.population += value;
+        } else if (typeof state[key] === 'number') {
+          state[key] += value;
+        }
+      }
+    }
+
+    function normalizeState() {
+      const stats = ['economy','order','freedom','humanity','tech','climate','military','health','energy','food','employment','stability','corruption','research','foreignInfluence','oligarchy','warRisk','protestHeat'];
+      stats.forEach(k => state[k] = clamp(state[k]));
+      state.inflation = Math.max(-2, Math.min(28, state.inflation));
+      state.population = Math.max(100000, Math.round(state.population));
+
+      const ideologyKeys = Object.keys(state.ideology);
+      ideologyKeys.forEach(k => state.ideology[k] = clamp(state.ideology[k]));
+
+      const districtClampKeys = ['wealth', 'unrest', 'infrastructure', 'ecology', 'loyalty'];
+      state.districts.forEach(d => districtClampKeys.forEach(k => d[k] = clamp(d[k])));
+      state.nations.forEach(n => {
+        n.power = clamp(n.power);
+        n.relation = clamp(n.relation);
+        n.trade = clamp(n.trade);
+        n.ideology = clamp(n.ideology);
+      });
+
+      rebalanceClasses();
+      rebalanceParliament();
+    }
+
+    function rebalanceClasses() {
+      let alta = clamp(state.classes.alta, 5, 40);
+      let media = clamp(state.classes.media, 20, 70);
+      let baja = 100 - alta - media;
+      if (baja < 10) {
+        media += baja - 10;
+        baja = 10;
+      }
+      state.classes = { alta: Math.round(alta), media: Math.round(media), baja: Math.round(baja) };
+    }
+
+    function rebalanceParliament() {
+      const keys = Object.keys(state.parliament);
+      let total = keys.reduce((acc, k) => acc + state.parliament[k], 0);
+      if (total === 100) return;
+      keys.forEach(k => state.parliament[k] = Math.max(1, state.parliament[k]));
+      total = keys.reduce((acc, k) => acc + state.parliament[k], 0);
+      let assigned = 0;
+      keys.forEach((k, i) => {
+        if (i === keys.length - 1) {
+          state.parliament[k] = 100 - assigned;
+        } else {
+          state.parliament[k] = Math.round((state.parliament[k] / total) * 100);
+          assigned += state.parliament[k];
+        }
+      });
+    }
+
+    function evolveSociety() {
+      const ecoPressure = (50 - state.economy) * 0.08;
+      const freedomPressure = (state.freedom - 50) * 0.06;
+      const orderPressure = (state.order - 50) * 0.05;
+      const climatePressure = (50 - state.climate) * 0.06;
+
+      state.inflation += rand(-8, 12) / 10 + (state.economy < 45 ? 0.4 : -0.1);
+      state.research += 3 + Math.floor(state.tech / 22) + (state.laws.openData ? 1 : 0);
+      state.population += Math.round((state.health - 48) * 900 + (state.food - 50) * 600 - Math.max(0, state.climate < 35 ? (35 - state.climate) * 1800 : 0));
+
+      state.economy += (state.energy - 50) * 0.05 + (state.employment - 50) * 0.06 - Math.max(0, state.inflation - 7) * 0.35 - (state.corruption - 20) * 0.03;
+      state.stability += (state.order - 50) * 0.06 + (state.humanity - 50) * 0.04 - (state.protestHeat - 25) * 0.08 - Math.max(0, state.warRisk - 40) * 0.05;
+      state.employment += (state.economy - 50) * 0.05 - Math.max(0, state.tech - 70) * 0.03 + (state.food - 50) * 0.02;
+      state.climate += (state.laws.basicIncome ? -0.2 : 0) + (state.researched.fusion ? 0.8 : -0.3) + (state.researched.agri ? 0.6 : 0) - (state.economy > 70 ? 0.5 : 0.1);
+      state.health += (state.food - 50) * 0.03 + (state.humanity - 50) * 0.03 + (state.researched.biohealth ? 0.8 : 0) - Math.max(0, state.climate < 35 ? (35 - state.climate) * 0.08 : 0);
+      state.energy += (state.researched.fusion ? 0.9 : -0.25) - Math.max(0, state.economy > 72 ? 0.4 : 0);
+      state.food += (state.researched.agri ? 0.9 : -0.15) - Math.max(0, state.climate < 32 ? (32 - state.climate) * 0.12 : 0);
+      state.protestHeat += ecoPressure * 5 - orderPressure * 2 - freedomPressure * 2 + climatePressure * 4 + (state.corruption - 25) * 0.05;
+      state.warRisk += (50 - averageRelation()) * 0.05 + (state.military > 70 ? 0.2 : -0.05) + (state.foreignInfluence > 65 ? 0.15 : 0);
+      state.corruption += (state.laws.openData ? -0.4 : 0.25) + (state.oligarchy - 30) * 0.03 + (state.leader.corruptionBias - 18) * 0.01;
+
+      state.classes.alta += (state.economy > 60 ? 0.2 : -0.1) + (state.oligarchy > 45 ? 0.18 : 0);
+      state.classes.media += (state.employment > 58 ? 0.28 : -0.2) - (state.inflation > 8 ? 0.18 : 0);
+      state.classes.baja = 100 - state.classes.alta - state.classes.media;
+
+      state.ideology.authoritarian += (state.order - 50) * 0.02 + (state.laws.surveillance ? 0.5 : -0.12);
+      state.ideology.democratic += (state.freedom - 50) * 0.025 + (state.laws.openData ? 0.35 : -0.15);
+      state.ideology.capitalist += (state.economy - 50) * 0.02 + (state.oligarchy - 25) * 0.01;
+      state.ideology.socialist += (state.humanity - 50) * 0.02 + (state.laws.basicIncome ? 0.4 : -0.12);
+      state.ideology.globalist += (averageRelation() - 50) * 0.02;
+      state.ideology.nationalist += (state.military - 50) * 0.02 + (state.warRisk - 20) * 0.015;
+      state.ideology.progressive += (state.tech - 50) * 0.015 + (state.freedom - 50) * 0.015;
+      state.ideology.conservative += (state.order - 50) * 0.017 + (state.humanity < 45 ? 0.1 : -0.03);
+
+      state.leader.age += 1;
+      if (state.leader.age > rand(78, 92)) {
+        const previous = state.leader.name;
+        state.leader = createLeader();
+        logHistory(`${previous} deja el poder por edad o desgaste. Llega ${state.leader.name}.`);
+      }
+
+      if (state.turn > 0 && state.turn % 4 === 0) {
+        holdElection();
+      }
+
+      foreignAI();
+      districtDrift();
+      normalizeState();
+    }
+
+    function districtDrift() {
+      state.districts.forEach(d => {
+        d.wealth += (state.economy - 50) * 0.04 + (d.type === 'industrial' ? 0.15 : 0) + (d.type === 'tecnológico' && state.tech > 55 ? 0.22 : 0);
+        d.unrest += (state.protestHeat - 25) * 0.08 - (state.order - 50) * 0.04 - (d.loyalty - 50) * 0.04;
+        d.infrastructure += (state.economy - 50) * 0.03 + (state.energy - 50) * 0.02;
+        d.ecology += (state.climate - 50) * 0.05 + (d.type === 'industrial' ? -0.22 : 0.08);
+        d.loyalty += (state.stability - 50) * 0.04 + (state.humanity - 50) * 0.03 - (d.unrest - 25) * 0.04;
+      });
+    }
+
+    function foreignAI() {
+      state.nations.forEach(n => {
+        n.relation += rand(-6, 6) + (state.foreignInfluence > 50 ? 1 : -1) + (state.military > 65 ? -1 : 0);
+        n.trade += rand(-4, 4) + (state.economy > 55 ? 1 : -1);
+        if (n.relation < 25 && n.power > 60) {
+          state.warRisk += 2;
+        }
+        if (n.relation > 70) {
+          state.economy += 0.5;
+          state.foreignInfluence += 0.4;
+        }
+      });
+    }
+
+    function averageRelation() {
+      return state.nations.reduce((a, n) => a + n.relation, 0) / state.nations.length;
+    }
+
+    function holdElection() {
+      const base = {
+        reformistas: 20 + (state.freedom - 50) * 0.35 + (state.humanity - 50) * 0.2,
+        orden: 20 + (state.order - 50) * 0.4 + (state.warRisk - 20) * 0.15,
+        mercado: 20 + (state.economy - 50) * 0.32 + (state.oligarchy - 25) * 0.18,
+        común: 20 + (state.humanity - 50) * 0.25 + (state.classes.baja - 30) * 0.25 - (state.corruption - 20) * 0.14
+      };
+
+      Object.keys(base).forEach(k => state.parliament[k] = Math.max(5, Math.round(base[k] + rand(-4, 4))));
+      rebalanceParliament();
+
+      const winner = Object.entries(state.parliament).sort((a, b) => b[1] - a[1])[0][0];
+      logHistory(`Elecciones celebradas. El bloque dominante ahora es ${winner}.`);
+
+      if (winner === 'reformistas') {
+        state.freedom += 4; state.tech += 3; state.order -= 2;
+      } else if (winner === 'orden') {
+        state.order += 5; state.freedom -= 4; state.military += 2;
+      } else if (winner === 'mercado') {
+        state.economy += 5; state.oligarchy += 4; state.humanity -= 2;
+      } else {
+        state.humanity += 5; state.stability += 2; state.economy -= 1;
+      }
+    }
+
+    function specialEventFromState() {
+      const events = [];
+
+      if (state.climate < 30) {
+        events.push({
+          title: 'Tormentas tóxicas sobre la periferia',
+          text: 'El aire es un insulto con forma de niebla. Las barriadas exteriores exigen evacuaciones, filtros y respuesta ya mismo.',
+          choices: [
+            {
+              title: 'Evacuar y subvencionar hogares',
+              desc: 'Muy humano, muy caro, muy necesario.',
+              effect: () => ({ humanity: +8, health: +7, economy: -6, climate: +3 })
+            },
+            {
+              title: 'Aguantar y sellar solo edificios clave',
+              desc: 'Menor coste inmediato. Bastante peor para los que no salen en la foto.',
+              effect: () => ({ economy: -1, health: -6, stability: -5, order: +2 })
+            }
+          ]
+        });
+      }
+
+      if (state.corruption > 55) {
+        events.push({
+          title: 'Red clientelar al descubierto',
+          text: 'Se destapan contratos amañados, favores, desvíos y sonrisas muy caras. La ciudad pide cabezas, no comunicados.',
+          choices: [
+            {
+              title: 'Purgar a fondo y abrir procesos judiciales',
+              desc: 'Te salpica, pero limpia bastante el tablero.',
+              effect: () => ({ corruption: -18, stability: +5, order: -2, humanity: +4 })
+            },
+            {
+              title: 'Sacrificar a unos pocos y seguir',
+              desc: 'Cirugía estética moral. No cura mucho.',
+              effect: () => ({ corruption: -6, order: +2, stability: -2 })
+            }
+          ]
+        });
+      }
+
+      if (state.warRisk > 60) {
+        events.push({
+          title: 'Incidente en la frontera orbital',
+          text: 'Una potencia rival intercepta convoyes, acusa sabotaje y empieza a mover flota. Huele a guerra con traje caro.',
+          choices: [
+            {
+              title: 'Desescalar con concesiones comerciales',
+              desc: 'Pierdes cara, ganas tiempo. Y a veces eso es jugar bien.',
+              effect: () => ({ warRisk: -14, economy: -4, foreignInfluence: -2, stability: +2 })
+            },
+            {
+              title: 'Movilizar y responder con firmeza',
+              desc: 'Subes el pulso. También la probabilidad de liarla muy seria.',
+              effect: () => ({ military: +6, order: +4, warRisk: +8, economy: -2 })
+            }
+          ]
+        });
+      }
+
+      if (state.freedom < 25 && state.order > 70) {
+        events.push({
+          title: 'Red clandestina de resistencia',
+          text: 'Aparecen nodos ocultos, panfletos cifrados y sabotajes menores. La ciudad te obedece, pero ya no te cree.',
+          choices: [
+            {
+              title: 'Negociar aperturas graduales',
+              desc: 'Aflojas un poco el puño. A veces eso evita perder el brazo.',
+              effect: () => ({ freedom: +8, stability: +5, order: -4 })
+            },
+            {
+              title: 'Aplastarlos con vigilancia total',
+              desc: 'Ganas silencio. No necesariamente paz.',
+              effect: () => ({ order: +6, freedom: -6, protestHeat: +7, humanity: -5 })
+            }
+          ]
+        });
+      }
+
+      if (state.tech > 78 && state.humanity > 65) {
+        events.push({
+          title: 'Proyecto Aurora',
+          text: 'Tus científicos presentan un sistema capaz de armonizar redes, sanidad y abastecimiento sin devorar libertades. No es magia, pero casi.',
+          choices: [
+            {
+              title: 'Desplegarlo de forma pública y auditada',
+              desc: 'El raro momento en el que tecnología y ética se llevan bien.',
+              effect: () => ({ tech: +8, humanity: +7, economy: +5, stability: +5 })
+            },
+            {
+              title: 'Reservarlo para élites y zonas premium',
+              desc: 'Rentable. Moralmente regulero, por decirlo fino.',
+              effect: () => ({ economy: +7, oligarchy: +8, humanity: -6, corruption: +4 })
+            }
+          ]
+        });
+      }
+
+      return events.length ? pick(events) : null;
+    }
+
+    function proceduralEvent() {
+      const sectors = ['energía', 'sanidad', 'logística', 'educación', 'defensa', 'clima', 'trabajo', 'datos'];
+      const problems = ['crisis', 'avance', 'escándalo', 'reforma', 'conflicto', 'descubrimiento'];
+      const sector = pick(sectors);
+      const problem = pick(problems);
+
+      const e1 = { economy: rand(-5, 7), order: rand(-4, 5), freedom: rand(-5, 5), tech: rand(-3, 6) };
+      const e2 = { humanity: rand(-4, 7), stability: rand(-5, 6), climate: rand(-3, 5), health: rand(-4, 5) };
+      const e3 = { military: rand(-4, 6), economy: rand(-4, 6), corruption: rand(-5, 5), protestHeat: rand(-5, 6) };
+
+      return {
+        title: `${problem.charAt(0).toUpperCase() + problem.slice(1)} en ${sector}`,
+        text: `Se produce un ${problem} relacionado con ${sector}. Los medios, los mercados y la calle reaccionan a la vez. Todo muy civilizado, como siempre.`,
+        choices: [
+          { title: 'Respuesta tecnocrática', desc: 'Más control, más gestión central y algo menos de romanticismo democrático.', effect: () => e1 },
+          { title: 'Respuesta social', desc: 'Más humanidad y amortiguación del golpe, aunque con costes materiales.', effect: () => e2 },
+          { title: 'Respuesta dura y estratégica', desc: 'Defiendes poder y estructura. Puede salir caro por debajo.', effect: () => e3 }
+        ]
+      };
+    }
+
+    function generateEvent() {
+      const special = specialEventFromState();
+      const event = special || (Math.random() < 0.62 ? deepClone(pick(BASE_EVENTS)) : proceduralEvent());
+      state.currentEvent = event;
+    }
+
+    function autoEnsureEvent() {
+      if (!state.currentEvent && !state.gameOver) generateEvent();
+    }
+
+    function resolveChoice(index) {
+      if (state.gameOver || !state.currentEvent) return;
+      const choice = state.currentEvent.choices[index];
+      if (!choice) return;
+
+      const delta = typeof choice.effect === 'function' ? choice.effect(state) : {};
+      applyDelta(delta);
+      logHistory(`${state.currentEvent.title}: eliges “${choice.title}”. Resultado inmediato: ${deltaToText(delta)}.`);
+
+      nextTurnCore();
+    }
+
+    function researchItem(id) {
+      if (state.gameOver) return;
+      const item = RESEARCH_TREE.find(r => r.id === id);
+      if (!item || state.researched[id] || state.research < item.cost) return;
+      state.research -= item.cost;
+      state.researched[id] = true;
+      item.apply(state);
+      logHistory(`Investigación completada: ${item.name}.`);
+      normalizeState();
+      persistSilently();
+      render();
+    }
+
+    function toggleLaw(id) {
+      if (state.gameOver) return;
+      const item = LAW_TREE.find(l => l.id === id);
+      if (!item) return;
+      item.apply(state);
+      logHistory(`Ley ajustada: ${item.name}. Estado actual: ${state.laws[id] ? 'activa' : 'inactiva'}.`);
+      normalizeState();
+      persistSilently();
+      render();
+    }
+
+    function investDistrict(index) {
+      if (state.gameOver) return;
+      const d = state.districts[index];
+      if (!d) return;
+      const cost = 3;
+      if (state.economy < cost) return;
+
+      state.economy -= cost;
+      d.infrastructure += 7;
+      d.loyalty += 5;
+      d.unrest -= 5;
+      d.wealth += 4;
+      if (d.type === 'agrario') state.food += 3;
+      if (d.type === 'tecnológico') state.tech += 2;
+      if (d.type === 'industrial') state.energy += 2;
+
+      logHistory(`Inversión local en ${d.name}. Mejoran infraestructuras y baja la tensión.`);
+      normalizeState();
+      persistSilently();
+      render();
+    }
+
+    function nextTurnManual() {
+      if (state.gameOver) return;
+      logHistory('Avanzas un año sin tomar una medida concreta. A veces gobernar es decidir no decidir… y luego pagar la factura.');
+      nextTurnCore(true);
+    }
+
+    function nextTurnCore(fromSkip = false) {
+      state.turn += 1;
+      state.year += 1;
+
+      if (fromSkip) {
+        state.protestHeat += 2;
+        state.stability -= 1;
+      }
+
+      evolveSociety();
+      resolveWarIfNeeded();
+      normalizeState();
+      checkEndings();
+      if (!state.gameOver) {
+        generateEvent();
+      }
+      persistSilently();
+      render();
+    }
+
+    function resolveWarIfNeeded() {
+      if (state.warRisk < 72) return;
+      const enemy = [...state.nations].sort((a, b) => (b.power - b.relation) - (a.power - a.relation))[0];
+      const attackPower = enemy.power + rand(-8, 12);
+      const defensePower = state.military + state.order * 0.2 + state.securityDoctrine * 8 + rand(-10, 10);
+
+      if (attackPower > defensePower) {
+        const popLoss = rand(70000, 220000);
+        state.population -= popLoss;
+        state.economy -= rand(6, 12);
+        state.stability -= rand(7, 13);
+        state.health -= rand(3, 8);
+        state.warRisk -= 20;
+        state.order += 4;
+        logHistory(`Conflicto abierto con ${enemy.name}. Tu defensa resiste regular: pierdes ${popLoss.toLocaleString()} habitantes y un buen trozo de calma.`);
+      } else {
+        state.military += 3;
+        state.foreignInfluence += 5;
+        state.stability += 2;
+        state.warRisk -= 24;
+        enemy.relation -= 10;
+        logHistory(`Crisis militar contenida frente a ${enemy.name}. No era bonito, pero has evitado el desastre.`);
+      }
+    }
+
+    function checkEndings() {
+      if (state.population < 700000) {
+        finishGame(
+          'Colapso demográfico',
+          'La ciudad no aguanta más. Entre clima, tensión, decadencia y errores acumulados, la población se marcha o cae. Has gobernado un sistema que terminó por vaciarse.'
+        );
+        return;
+      }
+
+      if (state.climate < 10 && state.health < 25) {
+        finishGame(
+          'Ruina ecológica',
+          'El entorno se vuelve hostil, el aire enferma y la infraestructura ya no compensa el daño. El progreso sin freno ha presentado la factura completa.'
+        );
+        return;
+      }
+
+      if (state.order > 92 && state.freedom < 15 && state.humanity < 25) {
+        finishGame(
+          'Dictadura estable',
+          'Has construido un régimen eficaz, frío y casi irrompible. Hay orden. También hay miedo. Mucho. Lo bastante como para que nadie discuta el parte oficial.'
+        );
+        return;
+      }
+
+      if (state.tech > 88 && state.humanity > 78 && state.climate > 62 && state.corruption < 20 && state.stability > 72) {
+        finishGame(
+          'Utopía cívica-tecnológica',
+          'Contra pronóstico, has unido tecnología, salud pública, estabilidad y libertades razonables. Milagro político detectado. No toques nada demasiado fuerte.'
+        );
+        return;
+      }
+
+      if (state.economy > 86 && state.oligarchy > 74 && state.humanity < 32) {
+        finishGame(
+          'Paraíso corporativo',
+          'La economía vuela, las élites aplauden y el ciudadano medio aprende a sobrevivir con sonrisa contractual. Es rentable. También inquietante.'
+        );
+        return;
+      }
+    }
+
+    function finishGame(title, text) {
+      state.gameOver = true;
+      state.finalData = { title, text };
+      persistSilently();
+    }
+
+    function render() {
+      autoEnsureEvent();
+      normalizeState();
+
+      document.getElementById('turnChip').textContent = `Turno ${state.turn}`;
+      document.getElementById('headerChips').innerHTML = `
+        <span class="chip">Año ${state.year}</span>
+        <span class="chip">Población ${state.population.toLocaleString()}</span>
+        <span class="chip">Inflación ${state.inflation.toFixed(1)}%</span>
+        <span class="chip">Investigación ${Math.round(state.research)}</span>
+      `;
+
+      document.getElementById('kpis').innerHTML = `
+        <div class="kpi"><div class="label">Economía</div><div class="value">${Math.round(state.economy)}</div></div>
+        <div class="kpi"><div class="label">Estabilidad</div><div class="value">${Math.round(state.stability)}</div></div>
+        <div class="kpi"><div class="label">Tecnología</div><div class="value">${Math.round(state.tech)}</div></div>
+        <div class="kpi"><div class="label">Clima</div><div class="value">${Math.round(state.climate)}</div></div>
+      `;
+
+      document.getElementById('mainMetrics').innerHTML = [
+        metricHtml('Orden', state.order),
+        metricHtml('Libertad', state.freedom),
+        metricHtml('Humanidad', state.humanity),
+        metricHtml('Militar', state.military),
+        metricHtml('Salud', state.health),
+        metricHtml('Energía', state.energy),
+        metricHtml('Alimentos', state.food),
+        metricHtml('Empleo', state.employment),
+        metricHtml('Corrupción', state.corruption),
+        metricHtml('Oligarquía', state.oligarchy),
+        metricHtml('Riesgo de guerra', state.warRisk),
+        metricHtml('Tensión social', state.protestHeat)
+      ].join('');
+
+      document.getElementById('classMetrics').innerHTML = `
+        ${metricHtml('Clase alta', state.classes.alta, '%', true)}
+        ${metricHtml('Clase media', state.classes.media, '%', true)}
+        ${metricHtml('Clase baja', state.classes.baja, '%', true)}
+      `;
+
+      document.getElementById('ideologyMetrics').innerHTML = `
+        ${metricHtml('Autoritarismo', state.ideology.authoritarian, '%', true)}
+        ${metricHtml('Democracia', state.ideology.democratic, '%', true)}
+        ${metricHtml('Capitalismo', state.ideology.capitalist, '%', true)}
+        ${metricHtml('Socialismo', state.ideology.socialist, '%', true)}
+        ${metricHtml('Globalismo', state.ideology.globalist, '%', true)}
+        ${metricHtml('Nacionalismo', state.ideology.nationalist, '%', true)}
+        ${metricHtml('Progresismo', state.ideology.progressive, '%', true)}
+        ${metricHtml('Conservadurismo', state.ideology.conservative, '%', true)}
+      `;
+
+      document.getElementById('parliamentMetrics').innerHTML = `
+        ${metricHtml('Reformistas', state.parliament.reformistas, '%', true)}
+        ${metricHtml('Orden', state.parliament.orden, '%', true)}
+        ${metricHtml('Mercado', state.parliament.mercado, '%', true)}
+        ${metricHtml('Común', state.parliament.común, '%', true)}
+      `;
+
+      document.getElementById('leaderCard').innerHTML = `
+        <strong>${state.leader.name}</strong>
+        <small>
+          Edad: ${state.leader.age} años<br>
+          Carisma: ${state.leader.charisma}<br>
+          Disciplina: ${state.leader.discipline}<br>
+          Empatía: ${state.leader.empathy}<br>
+          Tendencia a corromperse: ${state.leader.corruptionBias}
+        </small>
+      `;
+
+      document.getElementById('nationsList').innerHTML = state.nations.map(n => `
+        <div class="item">
+          <strong>${n.name}</strong>
+          <small>
+            Poder: ${Math.round(n.power)}<br>
+            Relación: ${Math.round(n.relation)}<br>
+            Comercio: ${Math.round(n.trade)}<br>
+            Ideología: ${Math.round(n.ideology)}
+          </small>
+        </div>
+      `).join('');
+
+      document.getElementById('history').innerHTML = state.history.map(h => `<div class="log">${h}</div>`).join('');
+
+      document.getElementById('districts').innerHTML = state.districts.map((d, i) => `
+        <div class="district" onclick="investDistrict(${i})" title="Invertir en ${d.name}">
+          <h4>${d.name}</h4>
+          <p>Tipo: ${d.type}</p>
+          <p>Riqueza: ${Math.round(d.wealth)}</p>
+          <p>Disturbios: ${Math.round(d.unrest)}</p>
+          <p>Infraestructura: ${Math.round(d.infrastructure)}</p>
+          <p>Ecología: ${Math.round(d.ecology)}</p>
+          <p>Lealtad: ${Math.round(d.loyalty)}</p>
+        </div>
+      `).join('');
+
+      document.getElementById('researchGrid').innerHTML = RESEARCH_TREE.map(r => {
+        const done = !!state.researched[r.id];
+        const disabled = done || state.research < r.cost || state.gameOver;
+        return `
+          <div class="card-button ${disabled ? 'disabled' : ''}" ${disabled ? '' : `onclick="researchItem('${r.id}')"`}>
+            <strong>${r.name} — ${r.cost}</strong>
+            <small>${r.desc}</small>
+            <small>${done ? 'Completada' : (state.research < r.cost ? 'Falta investigación' : 'Disponible')}</small>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('lawGrid').innerHTML = LAW_TREE.map(l => {
+        const active = !!state.laws[l.id];
+        return `
+          <div class="card-button ${state.gameOver ? 'disabled' : ''}" ${state.gameOver ? '' : `onclick="toggleLaw('${l.id}')"`}>
+            <strong>${l.name}</strong>
+            <small>${l.desc}</small>
+            <small>Estado: ${active ? 'Activa' : 'Inactiva'}</small>
+          </div>
+        `;
+      }).join('');
+
+      if (state.currentEvent) {
+        document.getElementById('eventTitle').textContent = state.currentEvent.title;
+        document.getElementById('eventText').textContent = state.currentEvent.text;
+        document.getElementById('choices').innerHTML = state.currentEvent.choices.map((c, i) => `
+          <button class="choice" onclick="resolveChoice(${i})" ${state.gameOver ? 'disabled' : ''}>
+            <strong>${c.title}</strong>
+            <small>${c.desc}</small>
+          </button>
+        `).join('');
+      }
+
+      const endScreen = document.getElementById('endScreen');
+      if (state.gameOver && state.finalData) {
+        document.getElementById('endTitle').textContent = state.finalData.title;
+        document.getElementById('endText').textContent = state.finalData.text;
+        document.getElementById('endStats').innerHTML = `
+          <span class="chip">Año ${state.year}</span>
+          <span class="chip">Población ${state.population.toLocaleString()}</span>
+          <span class="chip">Economía ${Math.round(state.economy)}</span>
+          <span class="chip">Clima ${Math.round(state.climate)}</span>
+          <span class="chip">Libertad ${Math.round(state.freedom)}</span>
+          <span class="chip">Orden ${Math.round(state.order)}</span>
+        `;
+        endScreen.style.display = 'flex';
+      } else {
+        endScreen.style.display = 'none';
+      }
+    }
+
+    document.getElementById('nextTurnBtn').addEventListener('click', nextTurnManual);
+    document.getElementById('saveBtn').addEventListener('click', saveGame);
+    document.getElementById('exportBtn').addEventListener('click', exportGame);
+    document.getElementById('importBtn').addEventListener('click', importGame);
+    document.getElementById('resetBtn').addEventListener('click', resetGame);
+
+    document.getElementById('endRestartBtn').addEventListener('click', () => {
+      localStorage.removeItem(SAVE_KEY);
+      state = initialState();
+      autoEnsureEvent();
+      render();
+    });
+
+    document.getElementById('endCloseBtn').addEventListener('click', () => {
+      document.getElementById('endScreen').style.display = 'none';
+    });
+
+    autoEnsureEvent();
+    persistSilently();
+    render();
+
+    window.resolveChoice = resolveChoice;
+    window.researchItem = researchItem;
+    window.toggleLaw = toggleLaw;
+    window.investDistrict = investDistrict;
+  </script>
+</body>
+</html>

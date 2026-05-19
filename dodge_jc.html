@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dodge JC | Juegos JC</title>
+<style>
+  :root {
+    --bg: #070b16;
+    --panel: #101827;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --accent2: #a855f7;
+    --danger: #fb7185;
+    --line: rgba(255,255,255,0.12);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(56,189,248,0.25), transparent 35%),
+      radial-gradient(circle at top right, rgba(168,85,247,0.25), transparent 35%),
+      var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+  h1 {
+    margin: 10px 0;
+    font-size: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hud {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 12px;
+    font-weight: 900;
+  }
+  .hud .stat {
+    background: rgba(255,255,255,0.06);
+    padding: 8px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+  }
+  .hud .score { color: var(--accent); }
+  .hud .best { color: var(--accent2); }
+  canvas {
+    background: rgba(16,24,39,0.85);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    max-width: 100%;
+    touch-action: none;
+  }
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(7,11,22,0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+  .overlay.hidden { display: none; }
+  .panel {
+    background: linear-gradient(135deg, rgba(16,24,39,0.95), rgba(22,34,56,0.95));
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 36px;
+    text-align: center;
+    max-width: 420px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  }
+  .panel h2 {
+    margin: 0 0 12px;
+    font-size: 32px;
+  }
+  .panel p { color: var(--muted); line-height: 1.5; }
+  .btn {
+    display: inline-block;
+    padding: 14px 24px;
+    border-radius: 14px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #020617;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 12px;
+  }
+  .btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+  .back {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 14px;
+    background: rgba(255,255,255,0.06);
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+  }
+  .back:hover { color: var(--accent); }
+  .controls-hint {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back">← Volver</a>
+
+<h1>Dodge JC</h1>
+
+<div class="hud">
+  <div class="stat score">Puntos: <span id="score">0</span></div>
+  <div class="stat best">Récord: <span id="best">0</span></div>
+</div>
+
+<canvas id="game" width="600" height="500"></canvas>
+
+<p class="controls-hint">Muévete con ← → o arrastra con el dedo / ratón</p>
+
+<div class="overlay" id="overlay">
+  <div class="panel">
+    <h2 id="overlayTitle">Dodge JC</h2>
+    <p id="overlayText">Esquiva los bloques. Sobrevive lo máximo posible.<br>Cada segundo suma puntos.</p>
+    <button class="btn" id="startBtn">¡Empezar!</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = canvas.width;
+const H = canvas.height;
+
+const scoreEl = document.getElementById('score');
+const bestEl = document.getElementById('best');
+const overlay = document.getElementById('overlay');
+const overlayTitle = document.getElementById('overlayTitle');
+const overlayText = document.getElementById('overlayText');
+const startBtn = document.getElementById('startBtn');
+
+let player, obstacles, particles, score, best, speed, spawnTimer, running, keys, lastTime;
+
+best = parseInt(localStorage.getItem('dodgejc_best') || '0');
+bestEl.textContent = best;
+
+function reset() {
+  player = { x: W/2, y: H - 50, r: 16, vx: 0 };
+  obstacles = [];
+  particles = [];
+  score = 0;
+  speed = 3;
+  spawnTimer = 0;
+  keys = { left: false, right: false };
+  lastTime = performance.now();
+  running = true;
+}
+
+function spawnObstacle() {
+  const w = 30 + Math.random() * 60;
+  obstacles.push({
+    x: Math.random() * (W - w),
+    y: -30,
+    w: w,
+    h: 20 + Math.random() * 20,
+    color: Math.random() < 0.5 ? '#fb7185' : '#facc15'
+  });
+}
+
+function spawnParticles(x, y, color) {
+  for (let i = 0; i < 20; i++) {
+    particles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 8,
+      vy: (Math.random() - 0.5) * 8,
+      life: 1,
+      color
+    });
+  }
+}
+
+function gameOver() {
+  running = false;
+  spawnParticles(player.x, player.y, '#38bdf8');
+  if (Math.floor(score) > best) {
+    best = Math.floor(score);
+    localStorage.setItem('dodgejc_best', best);
+    bestEl.textContent = best;
+    overlayTitle.textContent = '¡Nuevo récord!';
+    overlayText.innerHTML = `Has hecho <strong>${best}</strong> puntos.<br>¿Otra ronda?`;
+  } else {
+    overlayTitle.textContent = '¡Game Over!';
+    overlayText.innerHTML = `Puntos: <strong>${Math.floor(score)}</strong><br>Récord: <strong>${best}</strong>`;
+  }
+  startBtn.textContent = 'Reintentar';
+  setTimeout(() => overlay.classList.remove('hidden'), 600);
+}
+
+function update(dt) {
+  if (!running) return;
+
+  // Player movement
+  const moveSpeed = 6;
+  if (keys.left) player.vx = -moveSpeed;
+  else if (keys.right) player.vx = moveSpeed;
+  else player.vx *= 0.85;
+
+  player.x += player.vx;
+  if (player.x < player.r) player.x = player.r;
+  if (player.x > W - player.r) player.x = W - player.r;
+
+  // Score & difficulty
+  score += dt * 0.01;
+  speed = 3 + score * 0.02;
+  scoreEl.textContent = Math.floor(score);
+
+  // Spawn obstacles
+  spawnTimer += dt;
+  const spawnRate = Math.max(300, 800 - score * 3);
+  if (spawnTimer > spawnRate) {
+    spawnObstacle();
+    spawnTimer = 0;
+  }
+
+  // Update obstacles
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    const o = obstacles[i];
+    o.y += speed;
+    if (o.y > H + 50) obstacles.splice(i, 1);
+
+    // Collision
+    const cx = Math.max(o.x, Math.min(player.x, o.x + o.w));
+    const cy = Math.max(o.y, Math.min(player.y, o.y + o.h));
+    const dx = player.x - cx;
+    const dy = player.y - cy;
+    if (dx*dx + dy*dy < player.r * player.r) {
+      gameOver();
+    }
+  }
+
+  // Update particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life -= 0.03;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Background stars
+  ctx.fillStyle = 'rgba(255,255,255,0.05)';
+  for (let i = 0; i < 30; i++) {
+    const x = (i * 73 + score * 0.5) % W;
+    const y = (i * 41 + score * 2) % H;
+    ctx.fillRect(x, y, 2, 2);
+  }
+
+  // Obstacles
+  obstacles.forEach(o => {
+    ctx.fillStyle = o.color;
+    ctx.fillRect(o.x, o.y, o.w, o.h);
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.fillRect(o.x, o.y, o.w, 3);
+  });
+
+  // Player
+  if (running) {
+    const grad = ctx.createRadialGradient(player.x, player.y, 0, player.x, player.y, player.r);
+    grad.addColorStop(0, '#38bdf8');
+    grad.addColorStop(1, '#a855f7');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, player.r, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  // Particles
+  particles.forEach(p => {
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - 3, p.y - 3, 6, 6);
+  });
+  ctx.globalAlpha = 1;
+}
+
+function loop(now) {
+  const dt = now - lastTime;
+  lastTime = now;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// Controls
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = true;
+  if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
+});
+document.addEventListener('keyup', e => {
+  if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = false;
+  if (e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
+});
+
+// Touch/mouse drag
+function getX(e) {
+  const rect = canvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  return (clientX - rect.left) * (W / rect.width);
+}
+let dragging = false;
+canvas.addEventListener('mousedown', e => { dragging = true; if (running) player.x = getX(e); });
+canvas.addEventListener('mousemove', e => { if (dragging && running) player.x = getX(e); });
+canvas.addEventListener('mouseup', () => dragging = false);
+canvas.addEventListener('touchstart', e => { e.preventDefault(); if (running) player.x = getX(e); });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); if (running) player.x = getX(e); });
+
+startBtn.addEventListener('click', () => {
+  overlay.classList.add('hidden');
+  reset();
+});
+
+reset();
+running = false;
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

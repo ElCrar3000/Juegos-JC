@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Juegos JC</title>
+
+  <link rel="icon" type="image/png" href="./logo.png?v=4" />
+  <link rel="apple-touch-icon" href="./logo.png?v=4" />
+
+  <link rel="stylesheet" href="styles.css?v=4" />
+</head>
+
+<body>
+
+  <header class="nav">
+    <div class="container nav-inner">
+
+      <a class="brand" href="index.html" aria-label="Ir a inicio">
+        <img src="./logo.png?v=4" alt="Juegos JC Logo" class="brand-logo" />
+        <div>
+          <h1 id="siteName">Juegos JC</h1>
+          <small>Indie. Mecánicas. Evolución.</small>
+        </div>
+      </a>
+
+      <nav class="links">
+        <a class="chip" href="index.html">Inicio</a>
+        <a class="chip" id="gameLink" href="game.html">Juegos</a>
+        <a class="chip" href="about.html">Sobre mí</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container hero">
+
+    <!-- TOP STATS -->
+    <section class="card topbar">
+      <div class="topbar-left">
+        <h2 class="topbar-title">Explora tus juegos</h2>
+        <p class="topbar-sub">Busca por nombre, versión, etiquetas… y ordénalos como un jefe.</p>
+      </div>
+
+      <div class="topbar-right">
+        <div class="stat">
+          <div class="stat-k">Visitas página (local)</div>
+          <div class="stat-v" id="siteVisits">0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEARCH + FILTERS -->
+    <section class="card controls">
+      <div class="controls-grid">
+        <div class="field">
+          <label for="q">Buscador</label>
+          <input id="q" class="input" type="search" placeholder="Ej: Infinity, Banana, v1.2, acción…" autocomplete="off" />
+        </div>
+
+        <div class="field">
+          <label for="sort">Ordenar por</label>
+          <select id="sort" class="select">
+            <option value="popular">Más popular</option>
+            <option value="new">Más nuevo</option>
+            <option value="version">Mayor versión</option>
+            <option value="name">Nombre (A-Z)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Filtros rápidos</label>
+          <div class="chips-row" id="tagFilters"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GAMES GRID -->
+    <section class="games-grid">
+
+  <a href="Zelda_Dragona.html">
+    <button>🔥 Jugar Zelda Dragona</button>
+  </a>
+
+  <a href="campana-clicker.html">
+    <button>🔔 Jugar Campana Clicker</button>
+  </a>
+
+  <a href="banana_stairs.html">
+    <button>🍌 Jugar Escaleras de Plátano</button>
+  </a>
+
+  <a href="infinity_evolution_v1.1.html">
+    <button>⚡ Jugar Evolución del Infinito</button>
+  </a>
+
+</section>
+
+    <footer class="footer">
+      © <span id="year"></span> Juegos JC • Hecho para evolucionar.
+    </footer>
+  </main>
+
+  <script src="app.js?v=4"></script>
+</body>
+</html>

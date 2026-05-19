@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Granizado Game 🍧🎮</title>
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #0ea5e9, #2563eb, #7c3aed);
+        color: white;
+        min-height: 100vh;
+    }
+
+    .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: rgba(0,0,0,0.2);
+        backdrop-filter: blur(10px);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        padding: 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .resource {
+        background: rgba(255,255,255,0.12);
+        padding: 10px 16px;
+        border-radius: 999px;
+        font-weight: bold;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+    }
+
+    .container {
+        width: min(1180px, 96%);
+        margin: 20px auto 50px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 18px;
+    }
+
+    .hero {
+        background: rgba(255,255,255,0.1);
+        border-radius: 24px;
+        padding: 22px;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+        border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .hero h1 {
+        margin: 0 0 10px;
+        font-size: 38px;
+    }
+
+    .hero p {
+        margin: 0;
+        color: rgba(255,255,255,0.9);
+        font-size: 18px;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 18px;
+    }
+
+    .card {
+        background: rgba(255,255,255,0.1);
+        border-radius: 22px;
+        padding: 18px;
+        border: 1px solid rgba(255,255,255,0.14);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+    }
+
+    .card h2 {
+        margin-top: 0;
+        font-size: 24px;
+    }
+
+    .sub {
+        color: rgba(255,255,255,0.85);
+        margin-bottom: 10px;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 14px;
+        border-radius: 14px;
+        border: none;
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+
+    button {
+        padding: 12px 16px;
+        border: none;
+        border-radius: 14px;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+        transition: transform .15s ease, opacity .15s ease;
+        margin: 4px;
+    }
+
+    button:hover {
+        transform: translateY(-1px);
+        opacity: 0.95;
+    }
+
+    .btn-yellow { background: #facc15; color: #1f2937; }
+    .btn-green { background: #22c55e; color: white; }
+    .btn-pink { background: #ec4899; color: white; }
+    .btn-blue { background: #3b82f6; color: white; }
+    .btn-purple { background: #8b5cf6; color: white; }
+    .btn-red { background: #ef4444; color: white; }
+    .btn-orange { background: #f97316; color: white; }
+
+    .resultBox {
+        min-height: 90px;
+        background: rgba(0,0,0,0.18);
+        border-radius: 16px;
+        padding: 14px;
+        font-size: 18px;
+        line-height: 1.5;
+        white-space: pre-line;
+    }
+
+    .small {
+        font-size: 14px;
+        color: rgba(255,255,255,0.8);
+    }
+
+    .shopRow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .characters {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+        gap: 16px;
+    }
+
+    .charCard {
+        background: rgba(255,255,255,0.12);
+        border-radius: 20px;
+        padding: 16px;
+        border: 1px solid rgba(255,255,255,0.15);
+        position: relative;
+    }
+
+    .charName {
+        font-size: 22px;
+        font-weight: bold;
+        margin-bottom: 6px;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: bold;
+        background: rgba(255,255,255,0.15);
+        margin-bottom: 10px;
+    }
+
+    .progressOuter {
+        width: 100%;
+        height: 18px;
+        background: rgba(0,0,0,0.22);
+        border-radius: 999px;
+        overflow: hidden;
+        margin: 10px 0;
+    }
+
+    .progressInner {
+        height: 100%;
+        background: linear-gradient(90deg, #facc15, #fb7185);
+        border-radius: 999px;
+    }
+
+    .puzzleGrid {
+        display: grid;
+        gap: 4px;
+        margin-top: 12px;
+    }
+
+    .piece {
+        aspect-ratio: 1 / 1;
+        border-radius: 6px;
+        border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(255,255,255,0.12);
+    }
+
+    .piece.filled {
+        background: linear-gradient(135deg, #f59e0b, #ef4444);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+    }
+
+    .piece.duplicate {
+        background: linear-gradient(135deg, #a855f7, #ec4899);
+    }
+
+    .sectionTitle {
+        font-size: 30px;
+        margin: 5px 0 10px;
+    }
+
+    .rewardItem {
+        background: rgba(255,255,255,0.1);
+        padding: 10px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+    }
+
+    .highlight {
+        color: #fde68a;
+        font-weight: bold;
+    }
+
+    .warning {
+        color: #fecaca;
+    }
+
+    .ok {
+        color: #bbf7d0;
+    }
+
+    .flex {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .modeGrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+    }
+
+    .mode {
+        background: rgba(255,255,255,0.1);
+        border-radius: 16px;
+        padding: 14px;
+    }
+
+    .footerSpace {
+        height: 30px;
+    }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="resource">💰 Monedas: <span id="monedasTop">0</span></div>
+    <div class="resource">🧪 Saborizante: <span id="saborizanteTop">0</span></div>
+    <div class="resource">💎 Gemas: <span id="gemasTop">0</span></div>
+    <div class="resource">🔥 Racha: <span id="rachaTop">0</span></div>
+    <div class="resource">🎟️ Cofres pendientes: <span id="cofresPendientesTop">0</span></div>
+</div>
+
+<div class="container">
+
+    <div class="hero">
+        <h1>🍧 GRANIZADO GAME</h1>
+        <p>
+            Compra granizados, escanea el QR, consigue piezas, desbloquea personajes,
+            vende duplicados, abre cofres y sube tu colección. Esto ya parece un juego serio, no un experimento con azúcar.
+        </p>
+    </div>
+
+    <div class="grid">
+
+        <div class="card">
+            <h2>📲 Canjear código / QR</h2>
+            <div class="sub">
+                El código solo simula el QR. Para empezar puedes usar cualquier texto. Si luego quieres,
+                en la Parte 3 te lo convierto en sistema más real.
+            </div>
+            <input id="codigoInput" placeholder="Ej: FRESA-1234 o cualquier código">
+            <select id="saborInput">
+                <option value="Fresa">🍓 Fresa</option>
+                <option value="Maracuyá">🥭 Maracuyá</option>
+                <option value="Mora">🫐 Mora</option>
+                <option value="Coco">🥥 Coco</option>
+                <option value="Energy Ice">🧊 Energy Ice</option>
+                <option value="Sandía">🍉 Sandía</option>
+                <option value="Mojito">🍃 Mojito</option>
+                <option value="Frutos del Bosque">🍇 Frutos del Bosque</option>
+                <option value="Café">☕ Café</option>
+                <option value="Limón">🍋 Limón</option>
+                <option value="Cereza">🍒 Cereza</option>
+                <option value="Chicle">🍬 Chicle</option>
+                <option value="Cola">🥤 Cola</option>
+                <option value="Mandarina">🍊 Mandarina</option>
+                <option value="Melón">🍈 Melón</option>
+                <option value="San Francisco">🌈 San Francisco</option>
+                <option value="Tropical">🏝️ Tropical</option>
+                <option value="Piña Colada">🍍 Piña Colada</option>
+                <option value="Menta">🌿 Menta</option>
+            </select>
+            <div class="flex">
+                <button class="btn-yellow" onclick="canjearGranizado()">Canjear 1 granizado (2€)</button>
+                <button class="btn-green" onclick="comprarPack3()">Comprar pack 3x5€</button>
+            </div>
+            <div class="small">
+                Cada granizado da 1 pieza del sabor. El pack 3x5€ da 3 piezas y además 2 recompensas extra.
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🎁 Abrir cofres</h2>
+            <div class="sub">Sistema sorpresa tipo Stardrop / Granizado Sorpresa.</div>
+            <div class="shopRow">
+                <button class="btn-blue" onclick="abrirGranizadoSorpresa()">Abrir Granizado Sorpresa (1)</button>
+                <button class="btn-purple" onclick="abrirGranGranizado()">Abrir Gran Granizado Sorpresa (3)</button>
+                <button class="btn-pink" onclick="abrirGigaGranizado()">Abrir Giga Granizado Sorpresa (5)</button>
+                <button class="btn-orange" onclick="abrirExplosionSabores()">Abrir Explosión de Sabores (10)</button>
+            </div>
+            <div class="small">
+                Tu racha modifica las probabilidades. A los 5 seguidos, el siguiente cofre duplica la probabilidad de piezas.
+                A los 10 seguidos, consigues un cofre especial de 10 recompensas.
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📣 Resultado</h2>
+            <div class="resultBox" id="resultadoBox">Aquí aparecerá todo lo que consigues.</div>
+        </div>
+
+    </div>
+
+    <div class="card">
+        <div class="sectionTitle">🎮 Modos de juego</div>
+        <div class="modeGrid">
+            <div class="mode"><strong>⚔️ Todos contra todos</strong><br>Supervivencia individual.</div>
+            <div class="mode"><strong>👥 3 vs 3</strong><br>Modo competitivo por equipos.</div>
+            <div class="mode"><strong>🥊 1 vs 1</strong><br>Duelo puro.</div>
+            <div class="mode"><strong>🤖 Oleadas</strong><br>Contra bots, ideal incluso sin internet.</div>
+        </div>
+    </div>
+
+    <div class="grid">
+
+        <div class="card">
+            <h2>🏪 Tienda rápida</h2>
+            <div class="sub">Gastas monedas, gemas o saborizante.</div>
+            <div class="shopRow">
+                <button class="btn-yellow" onclick="comprarConGemas()">Comprar 1 Giga Granizado por 10 gemas</button>
+                <button class="btn-blue" onclick="comprarConMonedas()">Comprar 1 Granizado Sorpresa por 100 monedas</button>
+                <button class="btn-purple" onclick="comprarPiezaConSaborizante()">Comprar 1 pieza aleatoria por 10 saborizante</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📈 Estado general</h2>
+            <div class="rewardItem">👤 Personajes desbloqueados: <span id="desbloqueadosCount">0</span></div>
+            <div class="rewardItem">🧩 Piezas totales conseguidas: <span id="piezasTotalesCount">0</span></div>
+            <div class="rewardItem">🔁 Duplicados guardados: <span id="duplicadosCount">0</span></div>
+            <div class="rewardItem">🎟️ Cofres pendientes: <span id="cofresPendientesCount">0</span></div>
+        </div>
+
+    </div>
+
+    <div class="card">
+        <div class="sectionTitle">🧃 Personajes y puzzles</div>
+        <div class="sub">
+            Completar el puzzle desbloquea el personaje. Si salen piezas repetidas, puedes guardarlas o venderlas por saborizante.
+        </div>
+        <div id="charactersContainer" class="characters"></div>
+    </div>
+
+    <div class="footerSpace"></div>
+</div>
+
+<script>
+/* =========================
+   1) CONFIGURACIÓN DEL JUEGO
+========================= */
+
+const rarityConfig = {
+    "Común": { grid: 3, total: 9, sellValue: 1 },
+    "Especial": { grid: 4, total: 16, sellValue: 2 },
+    "Raro": { grid: 5, total: 25, sellValue: 3 },
+    "Épico": { grid: 6, total: 36, sellValue: 5 },
+    "Mítico": { grid: 7, total: 49, sellValue: 8 },
+    "Legendario": { grid: 8, total: 64, sellValue: 12 },
+    "Extraordinario": { grid: 9, total: 81, sellValue: 18 }
+};
+
+const charactersBase = [
+    { name: "Fresa", rarity: "Común", emoji: "🍓" },
+    { name: "Sandía", rarity: "Común", emoji: "🍉" },
+    { name: "Limón", rarity: "Común", emoji: "🍋" },
+    { name: "Mandarina", rarity: "Común", emoji: "🍊" },
+
+    { name: "Maracuyá", rarity: "Especial", emoji: "🥭" },
+    { name: "Mora", rarity: "Especial", emoji: "🫐" },
+    { name: "Cola", rarity: "Especial", emoji: "🥤" },
+    { name: "Melón", rarity: "Especial", emoji: "🍈" },
+
+    { name: "Café", rarity: "Raro", emoji: "☕" },
+    { name: "Cereza", rarity: "Raro", emoji: "🍒" },
+    { name: "Chicle", rarity: "Raro", emoji: "🍬" },
+    { name: "Frutos del Bosque", rarity: "Raro", emoji: "🍇" },
+
+    { name: "Coco", rarity: "Épico", emoji: "🥥" },
+    { name: "Energy Ice", rarity: "Épico", emoji: "🧊" },
+    { name: "Tropical", rarity: "Épico", emoji: "🏝️" },
+
+    { name: "Mojito", rarity: "Mítico", emoji: "🍃" },
+    { name: "Piña Colada", rarity: "Mítico", emoji: "🍍" },
+
+    { name: "Menta", rarity: "Legendario", emoji: "🌿" },
+    { name: "San Francisco", rarity: "Legendario", emoji: "🌈" }
+];
+
+/* =========================
+   2) ESTADO DEL JUGADOR
+========================= */
+
+let game = JSON.parse(localStorage.getItem("granizadoGame_v2")) || null;
+
+if (!game) {
+    game = {
+        monedas: 0,
+        saborizante: 0,
+        gemas: 0,
+        racha: 0,
+        cofresPendientes: 0,
+        bonusPiezasNextChest: false,
+        personajes: {}
+    };
+
+    for (const c of charactersBase) {
+        const total = rarityConfig[c.rarity].total;
+        game.personajes[c.name] = {
+            rarity: c.rarity,
+            emoji: c.emoji,
+            piecesOwned: [],
+            duplicates: 0,
+            unlocked: false,
+            level: 1
+        };
+    }
+
+    saveGame();
+}
+
+/* =========================
+   3) UTILIDADES
+========================= */
+
+function saveGame() {
+    localStorage.setItem("granizadoGame_v2", JSON.stringify(game));
+}
+
+function randInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function pickRandom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function getCharacterByName(name) {
+    return charactersBase.find(c => c.name === name);
+}
+
+function getRandomCharacterName() {
+    return pickRandom(charactersBase).name;
+}
+
+function setResult(text) {
+    document.getElementById("resultadoBox").innerText = text;
+}
+
+function totalPiecesOwnedCount() {
+    let total = 0;
+    for (const name in game.personajes) {
+        total += game.personajes[name].piecesOwned.length;
+    }
+    return total;
+}
+
+function totalDuplicatesCount() {
+    let total = 0;
+    for (const name in game.personajes) {
+        total += game.personajes[name].duplicates;
+    }
+    return total;
+}
+
+function totalUnlockedCount() {
+    let total = 0;
+    for (const name in game.personajes) {
+        if (game.personajes[name].unlocked) total++;
+    }
+    return total;
+}
+
+/* =========================
+   4) LÓGICA DE PIEZAS
+========================= */
+
+function addPiece(characterName) {
+    const char = game.personajes[characterName];
+    const totalNeeded = rarityConfig[char.rarity].total;
+
+    if (char.piecesOwned.length >= totalNeeded) {
+        char.duplicates++;
+        return {
+            type: "duplicate",
+            message: `🔁 ${char.emoji} ${characterName}: pieza repetida. Ahora tienes ${char.duplicates} duplicado(s).`
+        };
+    }
+
+    const available = [];
+    for (let i = 1; i <= totalNeeded; i++) {
+        if (!char.piecesOwned.includes(i)) available.push(i);
+    }
+
+    if (available.length === 0) {
+        char.duplicates++;
+        return {
+            type: "duplicate",
+            message: `🔁 ${char.emoji} ${characterName}: pieza repetida. Ahora tienes ${char.duplicates} duplicado(s).`
+        };
+    }
+
+    const piece = pickRandom(available);
+    char.piecesOwned.push(piece);
+    char.piecesOwned.sort((a, b) => a - b);
+
+    if (char.piecesOwned.length >= totalNeeded && !char.unlocked) {
+        char.unlocked = true;
+        return {
+            type: "unlock",
+            message: `🌟 ${char.emoji} Has conseguido la pieza ${piece} de ${characterName}.\n🎉 ¡Puzzle completado! Has desbloqueado a ${characterName}.`
+        };
+    }
+
+    return {
+        type: "new",
+        message: `🧩 ${char.emoji} Has conseguido la pieza ${piece} de ${characterName}.\nProgreso: ${char.piecesOwned.length}/${totalNeeded}`
+    };
+}
+
+function sellDuplicates(characterName) {
+    const char = game.personajes[characterName];
+    if (char.duplicates <= 0) {
+        setResult(`❌ ${char.emoji} ${characterName} no tiene duplicados para vender.`);
+        return;
+    }
+
+    const value = rarityConfig[char.rarity].sellValue;
+    const totalGain = char.duplicates * value;
+    game.saborizante += totalGain;
+    const sold = char.duplicates;
+    char.duplicates = 0;
+    saveGame();
+    renderAll();
+
+    setResult(`✨ Has vendido ${sold} duplicado(s) de ${char.emoji} ${characterName}.\n+${totalGain} saborizante.`);
+}
+
+/* =========================
+   5) RECOMPENSAS
+========================= */
+
+function rewardByProbabilities(customPieceChance = null) {
+    let pieceChance = customPieceChance !== null ? customPieceChance : 25;
+    let gemChance = 5;
+    let coinChance = 35;
+    let essenceChance = 35;
+
+    const total = pieceChance + gemChance + coinChance + essenceChance;
+    let roll = Math.random() * total;
+
+    if (roll < gemChance) {
+        const amount = 1;
+        game.gemas += amount;
+        return `💎 +${amount} gema`;
+    }
+    roll -= gemChance;
+
+    if (roll < essenceChance) {
+        const amount = randInt(5, 20);
+        game.saborizante += amount;
+        return `🧪 +${amount} saborizante`;
+    }
+    roll -= essenceChance;
+
+    if (roll < coinChance) {
+        const amount = randInt(20, 100);
+        game.monedas += amount;
+        return `💰 +${amount} monedas`;
+    }
+
+    const randomChar = getRandomCharacterName();
+    const pieceResult = addPiece(randomChar);
+    return pieceResult.message;
+}
+
+/* =========================
+   6) COFRES Y SORPRESA
+========================= */
+
+function getSorpresaRareza() {
+    const rarities = [
+        { name: "Simple", reward: { monedas: 10, saborizante: 0, gemas: 0 } },
+        { name: "Común", reward: { monedas: 25, saborizante: 5, gemas: 0 } },
+        { name: "Especial", reward: { monedas: 50, saborizante: 10, gemas: 0 } },
+        { name: "Raro", reward: { monedas: 80, saborizante: 15, gemas: 0 } },
+        { name: "Épico", reward: { monedas: 120, saborizante: 25, gemas: 1 } },
+        { name: "Mítico", reward: { monedas: 180, saborizante: 40, gemas: 2 } },
+        { name: "Legendario", reward: { monedas: 260, saborizante: 60, gemas: 3 } },
+        { name: "Extraordinario", reward: { monedas: 400, saborizante: 100, gemas: 5 } }
+    ];
+
+    let idx = 0;
+    while (idx < rarities.length - 1) {
+        const chanceUp = [60, 50, 40, 30, 20, 10, 5][idx];
+        if (Math.random() * 100 < chanceUp) idx++;
+        else break;
+    }
+    return rarities[idx];
+}
+
+function abrirGranizadoSorpresa() {
+    const rare = getSorpresaRareza();
+    game.monedas += rare.reward.monedas;
+    game.saborizante += rare.reward.saborizante;
+    game.gemas += rare.reward.gemas;
+
+    saveGame();
+    renderAll();
+
+    setResult(`🥤 Granizado Sorpresa abierto\n⭐ Rareza final: ${rare.name}\n💰 +${rare.reward.monedas} monedas\n🧪 +${rare.reward.saborizante} saborizante\n💎 +${rare.reward.gemas} gemas`);
+}
+
+function openChest(count, title) {
+    let lines = [`🎁 ${title}`];
+    let pieceGuarantee = 0;
+    let essenceGuarantee = 0;
+
+    if (count >= 10) {
+        pieceGuarantee = 3;
+        essenceGuarantee = 1;
+    }
+
+    let sameTypeCounter = {
+        gema: 0,
+        saborizante: 0,
+        monedas: 0,
+        piezas: 0
+    };
+
+    for (let i = 0; i < pieceGuarantee; i++) {
+        const char = getRandomCharacterName();
+        const r = addPiece(char);
+        lines.push(r.message);
+        sameTypeCounter.piezas++;
+    }
+
+    for (let i = 0; i < essenceGuarantee; i++) {
+        const amount = randInt(5, 20);
+        game.saborizante += amount;
+        lines.push(`🧪 +${amount} saborizante`);
+        sameTypeCounter.saborizante++;
+    }
+
+    while (lines.length - 1 < count) {
+        let pieceChance = game.bonusPiezasNextChest ? 50 : 25; // duplicado aprox respecto al 25%
+        const roll = Math.random() * 100;
+        let rewardType = "";
+
+        if (roll < 5) rewardType = "gema";
+        else if (roll < 40) rewardType = "saborizante";
+        else if (roll < 75) rewardType = "monedas";
+        else rewardType = "piezas";
+
+        if (rewardType === "piezas" && pieceChance > 25) {
+            // pequeño empuje extra cuando hay bonus
+            if (Math.random() < 0.25) rewardType = "piezas";
+        }
+
+        if (sameTypeCounter[rewardType] >= 5) {
+            const options = ["gema", "saborizante", "monedas", "piezas"].filter(t => sameTypeCounter[t] < 5);
+            rewardType = pickRandom(options);
+        }
+
+        if (rewardType === "gema") {
+            game.gemas += 1;
+            lines.push(`💎 +1 gema`);
+            sameTypeCounter.gema++;
+        } else if (rewardType === "saborizante") {
+            const amount = randInt(5, 20);
+            game.saborizante += amount;
+            lines.push(`🧪 +${amount} saborizante`);
+            sameTypeCounter.saborizante++;
+        } else if (rewardType === "monedas") {
+            const amount = randInt(20, 100);
+            game.monedas += amount;
+            lines.push(`💰 +${amount} monedas`);
+            sameTypeCounter.monedas++;
+        } else {
+            const char = getRandomCharacterName();
+            const r = addPiece(char);
+            lines.push(r.message);
+            sameTypeCounter.piezas++;
+        }
+    }
+
+    if (game.bonusPiezasNextChest) {
+        lines.push(`🔥 Bonus aplicado: este cofre tuvo probabilidad de piezas aumentada por tu racha de 5.`);
+        game.bonusPiezasNextChest = false;
+    }
+
+    saveGame();
+    renderAll();
+    setResult(lines.join("\n"));
+}
+
+function abrirGranGranizado() {
+    openChest(3, "Gran Granizado Sorpresa");
+}
+
+function abrirGigaGranizado() {
+    openChest(5, "Giga Granizado Sorpresa");
+}
+
+function abrirExplosionSabores() {
+    openChest(10, "💥 Explosión de Sabores");
+}
+
+/* =========================
+   7) GRANIZADOS Y RACHAS
+========================= */
+
+function canjearGranizado() {
+    const codigo = document.getElementById("codigoInput").value.trim();
+    const sabor = document.getElementById("saborInput").value;
+
+    if (!codigo) {
+        setResult("❌ Introduce un código antes de canjear.");
+        return;
+    }
+
+    const result = addPiece(sabor);
+    game.racha += 1;
+
+    let lines = [
+        `🍧 Granizado canjeado correctamente`,
+        `Sabor: ${sabor}`,
+        result.message,
+        `🔥 Racha actual: ${game.racha}`
+    ];
+
+    if (game.racha === 5) {
+        game.bonusPiezasNextChest = true;
+        lines.push(`🔥 Has llegado a 5 seguidos: tu siguiente cofre tendrá más probabilidad de piezas.`);
+    }
+
+    if (game.racha === 10) {
+        game.cofresPendientes += 1;
+        lines.push(`💥 Has llegado a 10 seguidos: has ganado 1 Explosión de Sabores.`);
+    }
+
+    saveGame();
+    renderAll();
+    setResult(lines.join("\n"));
+    document.getElementById("codigoInput").value = "";
+}
+
+function comprarPack3() {
+    const sabores = ["Fresa", "Limón", "Sandía"]; // de ejemplo inicial
+    let lines = [`🧊 Pack 3x5€ comprado`];
+
+    for (const s of sabores) {
+        const r = addPiece(s);
+        lines.push(r.message);
+    }
+
+    game.racha += 3;
+    lines.push(`🔥 Racha actual: ${game.racha}`);
+
+    if (game.racha >= 5 && !game.bonusPiezasNextChest) {
+        game.bonusPiezasNextChest = true;
+        lines.push(`🔥 Has activado bonus de piezas para el siguiente cofre.`);
+    }
+
+    if (game.racha >= 10) {
+        const earned = Math.floor(game.racha / 10);
+        const currentAlready = game.cofresPendientes;
+        if (currentAlready < earned) {
+            game.cofresPendientes += (earned - currentAlready);
+            lines.push(`💥 Has conseguido ${earned - currentAlready} Explosión de Sabores por racha.`);
+        }
+    }
+
+    lines.push(`🎁 Además consigues 2 recompensas extra:`);
+
+    lines.push(rewardByProbabilities(game.bonusPiezasNextChest ? 50 : 25));
+    lines.push(rewardByProbabilities(game.bonusPiezasNextChest ? 50 : 25));
+
+    saveGame();
+    renderAll();
+    setResult(lines.join("\n"));
+}
+
+function abrirCofrePendiente() {
+    if (game.cofresPendientes <= 0) {
+        setResult("❌ No tienes cofres pendientes.");
+        return;
+    }
+    game.cofresPendientes--;
+    saveGame();
+    openChest(10, "💥 Explosión de Sabores (cofre pendiente)");
+}
+
+/* =========================
+   8) TIENDA
+========================= */
+
+function comprarConGemas() {
+    if (game.gemas < 10) {
+        setResult("❌ No tienes suficientes gemas. Necesitas 10.");
+        return;
+    }
+    game.gemas -= 10;
+    saveGame();
+    openChest(5, "Giga Granizado comprado con gemas");
+}
+
+function comprarConMonedas() {
+    if (game.monedas < 100) {
+        setResult("❌ No tienes suficientes monedas. Necesitas 100.");
+        return;
+    }
+    game.monedas -= 100;
+    saveGame();
+    abrirGranizadoSorpresa();
+}
+
+function comprarPiezaConSaborizante() {
+    if (game.saborizante < 10) {
+        setResult("❌ No tienes suficiente saborizante. Necesitas 10.");
+        return;
+    }
+    game.saborizante -= 10;
+    const char = getRandomCharacterName();
+    const r = addPiece(char);
+    saveGame();
+    renderAll();
+    setResult(`🧪 Has gastado 10 saborizante.\n${r.message}`);
+}
+
+/* =========================
+   9) RENDER DE PERSONAJES
+========================= */
+
+function renderCharacters() {
+    const container = document.getElementById("charactersContainer");
+    container.innerHTML = "";
+
+    for (const c of charactersBase) {
+        const state = game.personajes[c.name];
+        const cfg = rarityConfig[state.rarity];
+        const total = cfg.total;
+        const owned = state.piecesOwned.length;
+        const percent = Math.floor((owned / total) * 100);
+
+        const card = document.createElement("div");
+        card.className = "charCard";
+
+        const title = document.createElement("div");
+        title.className = "charName";
+        title.innerText = `${state.emoji} ${c.name}`;
+        card.appendChild(title);
+
+        const badge = document.createElement("div");
+        badge.className = "badge";
+        badge.innerText = `${state.rarity} • Puzzle ${cfg.grid}x${cfg.grid}`;
+        card.appendChild(badge);
+
+        const status = document.createElement("div");
+        status.innerHTML = state.unlocked
+            ? `<span class="ok">✅ Desbloqueado</span> • Nivel ${state.level}`
+            : `<span class="warning">🔒 Bloqueado</span>`;
+        card.appendChild(status);
+
+        const progText = document.createElement("div");
+        progText.style.marginTop = "10px";
+        progText.innerHTML = `🧩 Progreso: <strong>${owned}/${total}</strong> • 🔁 Duplicados: <strong>${state.duplicates}</strong>`;
+        card.appendChild(progText);
+
+        const progressOuter = document.createElement("div");
+        progressOuter.className = "progressOuter";
+        const progressInner = document.createElement("div");
+        progressInner.className = "progressInner";
+        progressInner.style.width = percent + "%";
+        progressOuter.appendChild(progressInner);
+        card.appendChild(progressOuter);
+
+        const grid = document.createElement("div");
+        grid.className = "puzzleGrid";
+        grid.style.gridTemplateColumns = `repeat(${cfg.grid}, 1fr)`;
+
+        for (let i = 1; i <= total; i++) {
+            const piece = document.createElement("div");
+            piece.className = "piece";
+            if (state.piecesOwned.includes(i)) piece.classList.add("filled");
+            grid.appendChild(piece);
+        }
+
+        card.appendChild(grid);
+
+        const actions = document.createElement("div");
+        actions.style.marginTop = "12px";
+
+        const sellBtn = document.createElement("button");
+        sellBtn.className = "btn-purple";
+        sellBtn.innerText = `Vender duplicados (+${cfg.sellValue} c/u)`;
+        sellBtn.onclick = () => sellDuplicates(c.name);
+        actions.appendChild(sellBtn);
+
+        if (state.unlocked) {
+            const levelBtn = document.createElement("button");
+            levelBtn.className = "btn-green";
+            levelBtn.innerText = `Mejorar personaje`;
+            levelBtn.onclick = () => upgradeCharacter(c.name);
+            actions.appendChild(levelBtn);
+        }
+
+        card.appendChild(actions);
+
+        container.appendChild(card);
+    }
+}
+
+/* =========================
+   10) MEJORAS DE PERSONAJE
+========================= */
+
+function upgradeCost(level) {
+    return Math.floor(20 * Math.pow(1.5, level - 1));
+}
+
+function upgradeCharacter(name) {
+    const char = game.personajes[name];
+    if (!char.unlocked) {
+        setResult(`❌ ${char.emoji} ${name} aún no está desbloqueado.`);
+        return;
+    }
+
+    const costCoins = upgradeCost(char.level);
+    const costSaborizante = Math.floor(costCoins / 2);
+
+    if (game.monedas < costCoins || game.saborizante < costSaborizante) {
+        setResult(`❌ No tienes recursos suficientes para mejorar a ${name}.\nNecesitas ${costCoins} monedas y ${costSaborizante} saborizante.`);
+        return;
+    }
+
+    game.monedas -= costCoins;
+    game.saborizante -= costSaborizante;
+    char.level += 1;
+
+    let bonusText = "";
+    if (char.level === 5 || (char.level > 5 && (char.level - 5) % 10 === 0)) {
+        bonusText = `\n⭐ Bonus especial desbloqueado en nivel ${char.level}: puedes darle un refuerzo al personaje.`;
+    }
+
+    saveGame();
+    renderAll();
+    setResult(`📈 ${char.emoji} ${name} ha subido a nivel ${char.level}.\nCoste: ${costCoins} monedas + ${costSaborizante} saborizante.${bonusText}`);
+}
+
+/* =========================
+   11) RENDER GENERAL
+========================= */
+
+function renderAll() {
+    document.getElementById("monedasTop").innerText = game.monedas;
+    document.getElementById("saborizanteTop").innerText = game.saborizante;
+    document.getElementById("gemasTop").innerText = game.gemas;
+    document.getElementById("rachaTop").innerText = game.racha;
+    document.getElementById("cofresPendientesTop").innerText = game.cofresPendientes;
+
+    document.getElementById("desbloqueadosCount").innerText = totalUnlockedCount();
+    document.getElementById("piezasTotalesCount").innerText = totalPiecesOwnedCount();
+    document.getElementById("duplicadosCount").innerText = totalDuplicatesCount();
+    document.getElementById("cofresPendientesCount").innerText = game.cofresPendientes;
+
+    renderCharacters();
+}
+
+/* =========================
+   12) BOTÓN EXTRA SI HAY COFRES
+========================= */
+
+function addPendingChestButton() {
+    const existing = document.getElementById("pendingChestBtn");
+    if (existing) existing.remove();
+
+    const parent = document.querySelector(".hero");
+    const btn = document.createElement("button");
+    btn.id = "pendingChestBtn";
+    btn.className = "btn-red";
+    btn.innerText = "Abrir cofre pendiente de racha x10";
+    btn.onclick = abrirCofrePendiente;
+    parent.appendChild(document.createElement("br"));
+    parent.appendChild(btn);
+}
+
+/* =========================
+   13) INICIO
+========================= */
+
+renderAll();
+addPendingChestButton();
+
+/* =========================
+   14) DEBUG / RESET
+========================= */
+// Si alguna vez quieres borrar todo, abre la consola y usa:
+// localStorage.removeItem("granizadoGame_v2"); location.reload();
+</script>
+
+</body>
+</html>

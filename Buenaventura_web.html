@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Finca Buenaventura | Bodas, Comuniones y Eventos en Mairena del Aljarafe</title>
+  <meta name="description" content="Finca Buenaventura: espacios para bodas, comuniones y celebraciones en Mairena del Aljarafe (Sevilla). Visitas, precios y disponibilidad por WhatsApp." />
+  <meta name="theme-color" content="#0b3d2e" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Finca Buenaventura | Eventos en Sevilla" />
+  <meta property="og:description" content="Bodas, comuniones y celebraciones. Pide disponibilidad por WhatsApp." />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="es_ES" />
+
+  <style>
+    :root{
+      --bg:#071a13;
+      --card:#0b241b;
+      --muted:#b7c5be;
+      --text:#f3f7f5;
+      --brand:#2bd37c;
+      --brand2:#1fb06a;
+      --line:rgba(255,255,255,.12);
+      --shadow: 0 12px 35px rgba(0,0,0,.35);
+      --radius: 18px;
+      --max: 1120px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;background:linear-gradient(180deg,var(--bg),#03110c);color:var(--text)}
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
+    .wrap{max-width:var(--max);margin:0 auto;padding:0 18px}
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:10px;
+      padding:12px 16px;border-radius:999px;border:1px solid var(--line);
+      background:rgba(255,255,255,.06);color:var(--text);font-weight:650;
+      box-shadow:none;transition:.18s transform ease, .18s background ease, .18s border ease;
+      cursor:pointer;white-space:nowrap
+    }
+    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.18)}
+    .btn.primary{background:linear-gradient(90deg,var(--brand),var(--brand2));border:none;color:#04150f}
+    .btn.primary:hover{filter:saturate(1.05);transform:translateY(-1px)}
+    .pill{display:inline-flex;gap:10px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.04);color:var(--muted);font-size:13px}
+    header{
+      position:sticky;top:0;z-index:50;
+      background:rgba(3,17,12,.6);backdrop-filter: blur(10px);
+      border-bottom:1px solid var(--line)
+    }
+    .nav{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0}
+    .logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.2px}
+    .mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--brand),#8cf3c3);box-shadow:var(--shadow)}
+    .links{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+    .links a{color:var(--muted);font-weight:600;font-size:14px;padding:8px 10px;border-radius:10px}
+    .links a:hover{background:rgba(255,255,255,.05);color:var(--text)}
+    .hero{padding:44px 0 24px}
+    .heroGrid{display:grid;grid-template-columns:1.2fr .8fr;gap:22px;align-items:stretch}
+    .h1{font-size:42px;line-height:1.06;margin:10px 0 10px;font-weight:900}
+    .lead{color:var(--muted);font-size:16.5px;line-height:1.6;max-width:60ch}
+    .heroCard{
+      background:linear-gradient(180deg,rgba(43,211,124,.10),rgba(255,255,255,.03));
+      border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+      padding:18px
+    }
+    .heroMedia{
+      border-radius:var(--radius);
+      border:1px solid var(--line);
+      background:
+        radial-gradient(circle at 25% 20%, rgba(43,211,124,.25), transparent 42%),
+        radial-gradient(circle at 70% 35%, rgba(140,243,195,.18), transparent 46%),
+        linear-gradient(135deg, rgba(255,255,255,.08), rgba(0,0,0,.12));
+      min-height:280px;
+      position:relative;overflow:hidden
+    }
+    .heroMedia::after{
+      content:"";
+      position:absolute;inset:0;
+      background-image: linear-gradient(transparent, rgba(0,0,0,.35));
+    }
+    .badgeRow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .ctaRow{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+    .mini{margin-top:10px;color:var(--muted);font-size:13px}
+    section{padding:26px 0}
+    .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .card{
+      background:rgba(255,255,255,.03);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.25)
+    }
+    .card h3{margin:6px 0 6px;font-size:16.5px}
+    .card p{margin:0;color:var(--muted);line-height:1.55;font-size:14.5px}
+    .kicker{color:#a9f1c9;font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-size:12px}
+    .h2{font-size:26px;margin:8px 0 6px;font-weight:900}
+    .sub{color:var(--muted);margin:0 0 14px;line-height:1.6}
+    .split{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+    .list{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+    .li{display:flex;gap:10px;align-items:flex-start}
+    .dot{width:10px;height:10px;border-radius:99px;background:var(--brand);margin-top:6px;flex:0 0 auto}
+    .faq details{
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:rgba(255,255,255,.03);
+      padding:12px 14px
+    }
+    .faq summary{cursor:pointer;font-weight:750}
+    .faq p{color:var(--muted);margin:8px 0 0;line-height:1.6}
+    .contact{
+      display:grid;grid-template-columns:1fr 1fr;gap:14px
+    }
+    .form{
+      display:grid;gap:10px
+    }
+    label{font-size:13px;color:var(--muted)}
+    input, textarea{
+      width:100%;padding:12px 12px;border-radius:12px;border:1px solid var(--line);
+      background:rgba(0,0,0,.18);color:var(--text);outline:none
+    }
+    textarea{min-height:110px;resize:vertical}
+    footer{padding:26px 0;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+    .foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .tinyLinks{display:flex;gap:10px;flex-wrap:wrap}
+    .tinyLinks a{color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+
+    /* Responsive */
+    @media (max-width: 980px){
+      .heroGrid{grid-template-columns:1fr}
+      .h1{font-size:36px}
+      .grid3{grid-template-columns:1fr}
+      .split{grid-template-columns:1fr}
+      .contact{grid-template-columns:1fr}
+      .links{display:none}
+    }
+  </style>
+
+  <!-- JSON-LD: Local Business -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"EventVenue",
+    "name":"Finca Buenaventura",
+    "address":{
+      "@type":"PostalAddress",
+      "addressLocality":"Mairena del Aljarafe",
+      "addressRegion":"Andalucía",
+      "addressCountry":"ES"
+    },
+    "areaServed":"Sevilla",
+    "telephone":"+34XXXXXXXXX",
+    "url":"https://tudominio.com",
+    "description":"Espacio para bodas, comuniones y celebraciones en Mairena del Aljarafe (Sevilla)."
+  }
+  </script>
+</head>
+
+<body>
+  <!-- HEADER -->
+  <header>
+    <div class="wrap">
+      <div class="nav">
+        <a class="logo" href="#top" aria-label="Finca Buenaventura - Inicio">
+          <span class="mark" aria-hidden="true"></span>
+          <span>Finca Buenaventura</span>
+        </a>
+
+        <nav class="links" aria-label="Navegación">
+          <a href="#espacios">Espacios</a>
+          <a href="#eventos">Eventos</a>
+          <a href="#proceso">Cómo funciona</a>
+          <a href="#faq">FAQ</a>
+          <a href="#contacto">Contacto</a>
+        </nav>
+
+        <div class="ctaRow">
+          <a class="btn" href="tel:+34XXXXXXXXX" aria-label="Llamar">📞 Llamar</a>
+          <a class="btn primary" href="https://wa.me/34XXXXXXXXX?text=Hola%20Finca%20Buenaventura%2C%20quiero%20disponibilidad%20y%20precio%20para%20mi%20evento." target="_blank" rel="noopener">💬 WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <main id="top" class="wrap">
+    <section class="hero">
+      <div class="heroGrid">
+        <div>
+          <div class="pill">📍 Mairena del Aljarafe · Sevilla · Eventos con encanto</div>
+          <h1 class="h1">Tu evento en una finca que se recuerda (sin dramas)</h1>
+          <p class="lead">
+            <strong>Finca Buenaventura</strong> es un espacio privado para <strong>bodas</strong>, <strong>comuniones</strong> y celebraciones.
+            Naturaleza, amplitud y logística fácil. Tú traes la ilusión; nosotros ponemos el escenario.
+          </p>
+
+          <div class="badgeRow">
+            <div class="pill">✅ Visitas con cita</div>
+            <div class="pill">✅ Aparcamiento</div>
+            <div class="pill">✅ Zonas exteriores + salón</div>
+            <div class="pill">✅ Acceso cómodo desde Sevilla</div>
+          </div>
+
+          <div class="ctaRow">
+            <a class="btn primary" href="#contacto">Pedir disponibilidad</a>
+            <a class="btn" href="#espacios">Ver espacios</a>
+          </div>
+
+          <p class="mini">Tip: si me dices fecha + nº de invitados, te respondo más rápido que un DJ cuando le piden “la del caballo”.</p>
+        </div>
+
+        <div class="heroCard">
+          <div class="heroMedia" aria-label="Imagen principal de la finca">
+            <!-- Sustituye este bloque por una imagen real:
+                 <img src="img/hero.jpg" alt="Finca Buenaventura" style="width:100%;height:100%;object-fit:cover;border-radius:18px;"> -->
+          </div>
+          <div style="display:grid;gap:10px;margin-top:12px">
+            <div class="card" style="padding:12px">
+              <div class="kicker">Consulta rápida</div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+                <a class="btn primary" href="https://wa.me/34XXXXXXXXX?text=Hola%20Finca%20Buenaventura%2C%20mi%20fecha%20es%20____%20y%20somos%20____%20personas.%20%C2%BFPrecio%20y%20disponibilidad%3F" target="_blank" rel="noopener">WhatsApp con plantilla</a>
+                <a class="btn" href="tel:+34XXXXXXXXX">Llamar ahora</a>
+              </div>
+            </div>
+            <div class="card" style="padding:12px">
+              <div class="kicker">Ubicación</div>
+              <p style="margin-top:6px">Mairena del Aljarafe (Sevilla). <span style="color:var(--muted)">Añade aquí tu dirección exacta.</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ESPACIOS -->
+    <section id="espacios">
+      <div class="kicker">Espacios</div>
+      <h2 class="h2">Ambiente natural + zonas pensadas para celebrar</h2>
+      <p class="sub">Una finca versátil para ceremonias, cóctel, banquete y barra libre.</p>
+
+      <div class="grid3">
+        <div class="card">
+          <h3>🌿 Exteriores</h3>
+          <p>Jardines y zonas abiertas para ceremonia civil, cóctel y fotos. Ideal para atardeceres de “esto queda de anuncio”.</p>
+        </div>
+        <div class="card">
+          <h3>🏛️ Salón</h3>
+          <p>Espacio cubierto para banquete o plan B por lluvia/calor. (Aquí pon m², aforo y detalles reales).</p>
+        </div>
+        <div class="card">
+          <h3>🚗 Aparcamiento</h3>
+          <p>Acceso cómodo y zona para coches. Menos vueltas, menos estrés, más fiesta.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- EVENTOS -->
+    <section id="eventos">
+      <div class="kicker">Eventos</div>
+      <h2 class="h2">Bodas, Comuniones y Celebraciones</h2>
+      <p class="sub">Alquila el espacio y añade extras si te interesa (decoración, mobiliario, etc.).</p>
+
+      <div class="split">
+        <div class="card">
+          <h3>💍 Bodas</h3>
+          <ul class="list">
+            <li class="li"><span class="dot"></span><span>Ceremonia, cóctel, banquete y barra libre (según montaje).</span></li>
+            <li class="li"><span class="dot"></span><span>Recomendación de proveedores (DJ, catering, foto, deco).</span></li>
+            <li class="li"><span class="dot"></span><span>Visita previa + planificación para que el día salga redondo.</span></li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>🎉 Comuniones y celebraciones</h3>
+          <ul class="list">
+            <li class="li"><span class="dot"></span><span>Perfecto para familia, niños y comida al aire libre.</span></li>
+            <li class="li"><span class="dot"></span><span>Opciones de mobiliario/mesas y zona de juegos (si aplica).</span></li>
+            <li class="li"><span class="dot"></span><span>Flexibilidad de horarios (define aquí tus condiciones reales).</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROCESO -->
+    <section id="proceso">
+      <div class="kicker">Cómo funciona</div>
+      <h2 class="h2">De “me gusta” a “reservado” en 3 pasos</h2>
+      <p class="sub">Simple y sin letra pequeña (pon tu política real).</p>
+
+      <div class="grid3">
+        <div class="card">
+          <h3>1) Escríbenos</h3>
+          <p>Fecha + nº de invitados + tipo de evento. Te decimos disponibilidad y rango de precio.</p>
+        </div>
+        <div class="card">
+          <h3>2) Visita</h3>
+          <p>Ves la finca, resolvemos dudas y te damos condiciones claras.</p>
+        </div>
+        <div class="card">
+          <h3>3) Reserva</h3>
+          <p>Señal, contrato y listo. Tú a disfrutar; nosotros a preparar el terreno.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="faq">
+      <div class="kicker">FAQ</div>
+      <h2 class="h2">Preguntas rápidas</h2>
+      <p class="sub">Las típicas que se preguntan… y las que se preguntan después de 3 cafés 😄</p>
+
+      <div class="split">
+        <details>
+          <summary>¿Puedo traer mi catering / DJ?</summary>
+          <p>Sí/No (pon tu política real). Si tienes proveedores recomendados, aquí es donde presumes.</p>
+        </details>
+        <details>
+          <summary>¿Qué pasa si llueve?</summary>
+          <p>Plan B: salón / carpa / cambio de montaje (según lo que ofrezcas).</p>
+        </details>
+        <details>
+          <summary>¿Hay límite de horario / música?</summary>
+          <p>Indica horarios, normativa y cómo lo gestionáis para evitar problemas.</p>
+        </details>
+        <details>
+          <summary>¿Se puede visitar?</summary>
+          <p>Sí, siempre con cita. Escríbenos por WhatsApp y cuadramos un hueco.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- CONTACTO -->
+    <section id="contacto">
+      <div class="kicker">Contacto</div>
+      <h2 class="h2">Pide disponibilidad</h2>
+      <p class="sub">Más datos = respuesta más rápida. (Esto es como el médico: si dices “me duele algo”, tardamos más.)</p>
+
+      <div class="contact">
+        <div class="card">
+          <h3>📲 WhatsApp y llamada</h3>
+          <p style="color:var(--muted);line-height:1.6;margin:6px 0 12px">
+            Teléfono: <strong>+34 XXXXXXX</strong><br />
+            Email: <strong>tuemail@tudominio.com</strong><br />
+            Zona: <strong>Mairena del Aljarafe, Sevilla</strong>
+          </p>
+          <div class="ctaRow">
+            <a class="btn primary" href="https://wa.me/34XXXXXXXXX?text=Hola%20Finca%20Buenaventura%2C%20mi%20fecha%20es%20____%2C%20somos%20____%20personas%20y%20quiero%20info%20de%20precio%20y%20disponibilidad." target="_blank" rel="noopener">Abrir WhatsApp</a>
+            <a class="btn" href="tel:+34XXXXXXXXX">Llamar</a>
+          </div>
+          <p class="mini">Consejo: pon aquí un mapa embebido de Google si quieres (te lo preparo cuando me pases la URL).</p>
+        </div>
+
+        <div class="card">
+          <h3>📩 Formulario (sin backend)</h3>
+          <p style="color:var(--muted);margin:6px 0 10px;line-height:1.6">
+            Este formulario abre tu email (no guarda nada en servidor). Si quieres que llegue a WhatsApp o a una hoja de Google, te lo dejo automatizado.
+          </p>
+
+          <form class="form" action="mailto:tuemail@tudominio.com" method="post" enctype="text/plain">
+            <div>
+              <label for="nombre">Nombre</label>
+              <input id="nombre" name="nombre" placeholder="Tu nombre" required />
+            </div>
+            <div>
+              <label for="telefono">Teléfono</label>
+              <input id="telefono" name="telefono" placeholder="+34..." />
+            </div>
+            <div>
+              <label for="fecha">Fecha del evento</label>
+              <input id="fecha" name="fecha" placeholder="dd/mm/aaaa" />
+            </div>
+            <div>
+              <label for="invitados">Nº de invitados</label>
+              <input id="invitados" name="invitados" placeholder="Ej: 80" />
+            </div>
+            <div>
+              <label for="mensaje">Mensaje</label>
+              <textarea id="mensaje" name="mensaje" placeholder="Cuéntanos el tipo de evento y lo que necesitas."></textarea>
+            </div>
+            <button class="btn primary" type="submit">Enviar</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+      <div class="wrap foot">
+        <div>© <span id="y"></span> Finca Buenaventura · Mairena del Aljarafe (Sevilla)</div>
+        <div class="tinyLinks">
+          <a href="#top">Arriba</a>
+          <a href="#contacto">Contacto</a>
+          <a href="#" onclick="alert('Añade aquí tu Política de Privacidad y Aviso Legal');return false;">Legal</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    // Año automático
+    document.getElementById("y").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

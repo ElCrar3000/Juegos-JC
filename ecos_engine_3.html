@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Ecos del Futuro - Engine 3.0</title>
+<style>
+body{background:#020617;color:#e2e8f0;font-family:Arial;text-align:center;padding:20px;}
+.panel{background:#0f172a;padding:10px;margin:10px;border-radius:8px;}
+button{margin:4px;padding:6px 10px;background:#22c55e;border:none;border-radius:6px;cursor:pointer;}
+button:hover{background:#4ade80;}
+.bar{height:8px;background:#334155;margin:3px;border-radius:4px;}
+.fill{height:8px;background:#22c55e;border-radius:4px;}
+</style>
+</head>
+<body>
+
+<h1>ECOS DEL FUTURO — ENGINE 3.0</h1>
+<div id="year"></div>
+
+<div class="panel"><h3>Estado</h3><div id="stats"></div></div>
+<div class="panel"><h3>Sociedad</h3><div id="society"></div></div>
+<div class="panel"><h3>Evento</h3><p id="event"></p><div id="choices"></div></div>
+
+<button onclick="nextTurn()">Siguiente Año</button>
+
+<script>
+
+let state={
+year:2200,
+pop:10000000,
+economy:60,
+inflation:5,
+employment:70,
+climate:60,
+war:0,
+
+ideology:{
+autoritarismo:50,
+libertad:50,
+progresismo:50,
+conservadurismo:50,
+capitalismo:50,
+socialismo:50,
+globalismo:50,
+nacionalismo:50
+},
+
+classes:{
+alta:20,
+media:50,
+baja:30
+},
+
+nations:[
+{name:"A",power:70,rel:50},
+{name:"B",power:60,rel:40}
+]
+};
+
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function clamp(v){return Math.max(0,Math.min(100,v));}
+
+function bar(n,v){
+return n+": "+v+"<div class='bar'><div class='fill' style='width:"+v+"%'></div></div>";
+}
+
+function update(){
+
+state.economy=clamp(state.economy);
+state.climate=clamp(state.climate);
+state.employment=clamp(state.employment);
+
+document.getElementById("year").innerText="Año "+state.year+" | Población "+state.pop.toLocaleString();
+
+let s="";
+for(let k in state.ideology){s+=bar(k,state.ideology[k]);}
+document.getElementById("stats").innerHTML=
+bar("Economía",state.economy)+
+bar("Empleo",state.employment)+
+bar("Clima",state.climate)+
+"<p>Inflación:"+state.inflation+"%</p>"+s;
+
+document.getElementById("society").innerHTML=
+"Alta:"+state.classes.alta+"% | Media:"+state.classes.media+"% | Baja:"+state.classes.baja+"%";
+}
+
+function generateEvent(){
+
+let sectors=["economía","sociedad","tecnología","militar","clima"];
+let actions=["crisis","avance","conflicto","reforma","escándalo"];
+
+let text="Evento: "+actions[rand(0,4)]+" en "+sectors[rand(0,4)];
+
+let opt1=()=>{
+state.economy+=rand(-10,10);
+state.ideology.capitalismo+=rand(-5,5);
+};
+
+let opt2=()=>{
+state.climate+=rand(-10,10);
+state.ideology.socialismo+=rand(-5,5);
+};
+
+document.getElementById("event").innerText=text;
+
+let c=document.getElementById("choices");
+c.innerHTML="";
+
+let b1=document.createElement("button");
+b1.innerText="Apoyar sector privado";
+b1.onclick=()=>{opt1();nextTurn();};
+
+let b2=document.createElement("button");
+b2.innerText="Intervención pública";
+b2.onclick=()=>{opt2();nextTurn();};
+
+c.appendChild(b1);
+c.appendChild(b2);
+}
+
+function warSystem(){
+state.nations.forEach(n=>{
+n.rel+=rand(-5,5);
+if(n.rel<20){
+let chance=state.war+rand(0,50);
+if(chance>70){
+state.pop-=500000;
+state.economy-=10;
+}
+}
+});
+}
+
+function nextTurn(){
+
+state.year++;
+state.pop+=rand(-200000,300000);
+state.inflation+=rand(-1,2);
+state.climate-=rand(0,2);
+
+warSystem();
+
+if(state.climate<20){
+state.pop-=200000;
+}
+
+update();
+generateEvent();
+}
+
+update();
+generateEvent();
+
+</script>

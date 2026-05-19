@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Color Match | Juegos JC</title>
+<style>
+  :root {
+    --bg: #070b16;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --accent2: #a855f7;
+    --line: rgba(255,255,255,0.12);
+    --c1: #fb7185;
+    --c2: #facc15;
+    --c3: #22c55e;
+    --c4: #38bdf8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(56,189,248,0.25), transparent 35%),
+      radial-gradient(circle at top right, rgba(168,85,247,0.25), transparent 35%),
+      var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+  h1 {
+    margin: 10px 0;
+    font-size: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hud {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 18px;
+    font-weight: 900;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .stat {
+    background: rgba(255,255,255,0.06);
+    padding: 8px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .stat.score { color: var(--accent); }
+  .stat.combo { color: var(--accent2); }
+  .stat.lives { color: var(--c1); }
+
+  .arena {
+    width: 100%;
+    max-width: 500px;
+    background: rgba(16,24,39,0.85);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 30px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    text-align: center;
+  }
+
+  .target {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    margin: 10px auto 30px;
+    background: var(--c1);
+    box-shadow: 0 0 60px currentColor;
+    transition: background-color 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 60px;
+    font-weight: 900;
+    color: rgba(0,0,0,0.3);
+  }
+  .target.flash { transform: scale(1.1); }
+
+  .timer-bar {
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 999px;
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .timer-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    width: 100%;
+    transition: width 0.05s linear;
+  }
+
+  .buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .color-btn {
+    height: 80px;
+    border-radius: 16px;
+    border: 3px solid transparent;
+    font-size: 16px;
+    font-weight: 900;
+    color: rgba(0,0,0,0.4);
+    cursor: pointer;
+    transition: 0.1s;
+  }
+  .color-btn:active { transform: scale(0.95); }
+  .color-btn.c1 { background: var(--c1); }
+  .color-btn.c2 { background: var(--c2); }
+  .color-btn.c3 { background: var(--c3); }
+  .color-btn.c4 { background: var(--c4); }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(7,11,22,0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+  .overlay.hidden { display: none; }
+  .panel {
+    background: linear-gradient(135deg, rgba(16,24,39,0.95), rgba(22,34,56,0.95));
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 36px;
+    text-align: center;
+    max-width: 420px;
+  }
+  .panel h2 { margin: 0 0 12px; font-size: 32px; }
+  .panel p { color: var(--muted); line-height: 1.5; }
+  .btn {
+    padding: 14px 24px;
+    border-radius: 14px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #020617;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 12px;
+  }
+  .btn:hover { filter: brightness(1.1); }
+  .back {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 14px;
+    background: rgba(255,255,255,0.06);
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+  }
+  .hint { color: var(--muted); font-size: 13px; margin: 14px 0 0; }
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back">← Volver</a>
+
+<h1>Color Match</h1>
+
+<div class="hud">
+  <div class="stat score">Puntos: <span id="score">0</span></div>
+  <div class="stat combo">Combo: <span id="combo">0</span></div>
+  <div class="stat lives">Vidas: <span id="lives">3</span></div>
+  <div class="stat">Récord: <span id="best">0</span></div>
+</div>
+
+<div class="arena">
+  <div class="target" id="target">?</div>
+  <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
+  <div class="buttons">
+    <button class="color-btn c1" data-color="c1">ROJO</button>
+    <button class="color-btn c2" data-color="c2">AMARILLO</button>
+    <button class="color-btn c3" data-color="c3">VERDE</button>
+    <button class="color-btn c4" data-color="c4">AZUL</button>
+  </div>
+  <p class="hint">Pulsa el color que aparece en el círculo</p>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="panel">
+    <h2 id="overlayTitle">Color Match</h2>
+    <p id="overlayText">Pulsa el botón del color correcto antes de que se acabe el tiempo.<br>¡Cuidado, cada vez es más rápido!</p>
+    <button class="btn" id="startBtn">¡Empezar!</button>
+  </div>
+</div>
+
+<script>
+const colors = ['c1', 'c2', 'c3', 'c4'];
+const colorMap = { c1: '#fb7185', c2: '#facc15', c3: '#22c55e', c4: '#38bdf8' };
+
+const target = document.getElementById('target');
+const timerFill = document.getElementById('timerFill');
+const scoreEl = document.getElementById('score');
+const comboEl = document.getElementById('combo');
+const livesEl = document.getElementById('lives');
+const bestEl = document.getElementById('best');
+const overlay = document.getElementById('overlay');
+const overlayTitle = document.getElementById('overlayTitle');
+const overlayText = document.getElementById('overlayText');
+const startBtn = document.getElementById('startBtn');
+
+let currentColor, score, combo, lives, best, running, timeLeft, maxTime, lastTime;
+
+best = parseInt(localStorage.getItem('colormatch_best') || '0');
+bestEl.textContent = best;
+
+function reset() {
+  score = 0;
+  combo = 0;
+  lives = 3;
+  maxTime = 1500;
+  running = true;
+  updateHUD();
+  nextRound();
+  lastTime = performance.now();
+}
+
+function updateHUD() {
+  scoreEl.textContent = score;
+  comboEl.textContent = combo;
+  livesEl.textContent = lives;
+}
+
+function nextRound() {
+  currentColor = colors[Math.floor(Math.random() * colors.length)];
+  target.style.background = colorMap[currentColor];
+  target.classList.add('flash');
+  setTimeout(() => target.classList.remove('flash'), 100);
+  timeLeft = maxTime;
+  maxTime = Math.max(400, maxTime * 0.97);
+}
+
+function loseLife() {
+  lives--;
+  combo = 0;
+  updateHUD();
+  if (lives <= 0) {
+    gameOver();
+  } else {
+    nextRound();
+  }
+}
+
+function gameOver() {
+  running = false;
+  if (score > best) {
+    best = score;
+    localStorage.setItem('colormatch_best', best);
+    bestEl.textContent = best;
+    overlayTitle.textContent = '¡Nuevo récord!';
+    overlayText.innerHTML = `Has hecho <strong>${score}</strong> puntos.`;
+  } else {
+    overlayTitle.textContent = '¡Game Over!';
+    overlayText.innerHTML = `Puntos: <strong>${score}</strong><br>Récord: <strong>${best}</strong>`;
+  }
+  startBtn.textContent = 'Reintentar';
+  overlay.classList.remove('hidden');
+}
+
+function loop(now) {
+  const dt = now - lastTime;
+  lastTime = now;
+  if (running) {
+    timeLeft -= dt;
+    timerFill.style.width = Math.max(0, (timeLeft / maxTime) * 100) + '%';
+    if (timeLeft <= 0) {
+      loseLife();
+    }
+  }
+  requestAnimationFrame(loop);
+}
+
+document.querySelectorAll('.color-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (!running) return;
+    const picked = btn.dataset.color;
+    if (picked === currentColor) {
+      combo++;
+      const points = 10 + combo * 2;
+      score += points;
+      updateHUD();
+      nextRound();
+    } else {
+      loseLife();
+    }
+  });
+});
+
+document.addEventListener('keydown', e => {
+  if (!running) return;
+  const keyMap = { '1': 'c1', '2': 'c2', '3': 'c3', '4': 'c4' };
+  if (keyMap[e.key]) {
+    const picked = keyMap[e.key];
+    if (picked === currentColor) {
+      combo++;
+      score += 10 + combo * 2;
+      updateHUD();
+      nextRound();
+    } else {
+      loseLife();
+    }
+  }
+});
+
+startBtn.addEventListener('click', () => {
+  overlay.classList.add('hidden');
+  reset();
+});
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

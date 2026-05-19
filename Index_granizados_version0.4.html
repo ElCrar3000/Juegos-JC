@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Granizado Game Ultimate 🍧👑</title>
+<style>
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background:
+            radial-gradient(circle at top left, rgba(255,255,255,0.16), transparent 25%),
+            radial-gradient(circle at bottom right, rgba(255,255,255,0.10), transparent 25%),
+            linear-gradient(135deg, #0ea5e9, #1d4ed8, #6d28d9);
+        color: white;
+        min-height: 100vh;
+    }
+
+    .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        padding: 12px;
+        background: rgba(0,0,0,0.28);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .pill {
+        background: rgba(255,255,255,0.12);
+        border-radius: 999px;
+        padding: 10px 14px;
+        font-weight: bold;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    }
+
+    .container {
+        width: min(1320px, 96%);
+        margin: 20px auto 50px;
+        display: grid;
+        gap: 18px;
+    }
+
+    .hero, .card {
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.14);
+        border-radius: 24px;
+        padding: 20px;
+        box-shadow: 0 14px 34px rgba(0,0,0,0.2);
+    }
+
+    .hero h1 {
+        margin: 0 0 8px;
+        font-size: 42px;
+    }
+
+    .hero p {
+        margin: 0;
+        font-size: 18px;
+        color: rgba(255,255,255,0.9);
+    }
+
+    .grid2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+        gap: 18px;
+    }
+
+    .grid3 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+    }
+
+    h2 {
+        margin-top: 0;
+        font-size: 26px;
+    }
+
+    .sub {
+        color: rgba(255,255,255,0.84);
+        margin-bottom: 10px;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 14px;
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+
+    button {
+        padding: 12px 16px;
+        border: none;
+        border-radius: 14px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        margin: 4px;
+        transition: transform .15s ease, opacity .15s ease;
+    }
+
+    button:hover {
+        transform: translateY(-1px);
+        opacity: 0.95;
+    }
+
+    .btn-yellow { background: #facc15; color: #1f2937; }
+    .btn-green { background: #22c55e; color: white; }
+    .btn-blue { background: #3b82f6; color: white; }
+    .btn-purple { background: #8b5cf6; color: white; }
+    .btn-pink { background: #ec4899; color: white; }
+    .btn-red { background: #ef4444; color: white; }
+    .btn-orange { background: #f97316; color: white; }
+
+    .resultBox {
+        min-height: 120px;
+        background: rgba(0,0,0,0.22);
+        border-radius: 18px;
+        padding: 16px;
+        white-space: pre-line;
+        line-height: 1.5;
+        font-size: 17px;
+    }
+
+    .rewardLine {
+        background: rgba(255,255,255,0.08);
+        border-radius: 12px;
+        padding: 10px;
+        margin-bottom: 8px;
+    }
+
+    .characters {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+        gap: 16px;
+    }
+
+    .charCard {
+        background: rgba(255,255,255,0.12);
+        border-radius: 20px;
+        padding: 16px;
+        border: 1px solid rgba(255,255,255,0.14);
+    }
+
+    .charName {
+        font-size: 22px;
+        font-weight: bold;
+        margin-bottom: 8px;
+    }
+
+    .badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.14);
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: bold;
+        margin-bottom: 8px;
+    }
+
+    .progressOuter {
+        width: 100%;
+        height: 18px;
+        background: rgba(0,0,0,0.22);
+        border-radius: 999px;
+        overflow: hidden;
+        margin: 10px 0;
+    }
+
+    .progressInner {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #facc15, #fb7185);
+    }
+
+    .puzzleGrid {
+        display: grid;
+        gap: 4px;
+        margin-top: 12px;
+    }
+
+    .piece {
+        aspect-ratio: 1/1;
+        border-radius: 6px;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.16);
+    }
+
+    .piece.filled {
+        background: linear-gradient(135deg, #f59e0b, #ef4444);
+    }
+
+    .small {
+        font-size: 14px;
+        color: rgba(255,255,255,0.8);
+    }
+
+    .leaderboardRow {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        background: rgba(255,255,255,0.08);
+        padding: 10px 12px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+    }
+
+    .seasonBarOuter {
+        width: 100%;
+        height: 20px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: rgba(0,0,0,0.2);
+        margin-top: 10px;
+    }
+
+    .seasonBarInner {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #22c55e, #84cc16);
+    }
+
+    .footerSpace {
+        height: 30px;
+    }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="pill">👤 Usuario: <span id="activeUserTop">---</span></div>
+    <div class="pill">💰 Monedas: <span id="monedasTop">0</span></div>
+    <div class="pill">🧪 Saborizante: <span id="saborizanteTop">0</span></div>
+    <div class="pill">💎 Gemas: <span id="gemasTop">0</span></div>
+    <div class="pill">🔥 Racha: <span id="rachaTop">0</span></div>
+    <div class="pill">🏆 Copas: <span id="copasTop">0</span></div>
+    <div class="pill">🎟️ Cofres pendientes: <span id="cofresTop">0</span></div>
+</div>
+
+<div class="container">
+
+    <div class="hero">
+        <h1>🍧 GRANIZADO GAME ULTIMATE</h1>
+        <p>
+            Esta versión ya parece el esqueleto de un juego real con negocio detrás:
+            usuarios, códigos únicos, ranking, misiones, tienda diaria, pase de temporada y panel de administración.
+        </p>
+    </div>
+
+    <div class="grid2">
+        <div class="card">
+            <h2>👤 Cuenta de jugador</h2>
+            <div class="sub">Crea o cambia de usuario localmente en este navegador.</div>
+            <input id="usernameInput" placeholder="Nombre de jugador">
+            <button class="btn-blue" onclick="createOrSwitchUser()">Crear / Cambiar usuario</button>
+            <button class="btn-red" onclick="resetActiveUserProgress()">Reset usuario actual</button>
+        </div>
+
+        <div class="card">
+            <h2>📲 Canjear QR / código único</h2>
+            <div class="sub">
+                Aquí ya se valida si el código existe y si ya fue usado por este usuario.
+            </div>
+            <input id="codeInput" placeholder="Ej: QR-FRESA-0001">
+            <button class="btn-yellow" onclick="redeemCode()">Canjear código</button>
+            <div class="small">
+                Cada código tiene un sabor asociado. El administrador los crea abajo.
+            </div>
+        </div>
+    </div>
+
+    <div class="grid2">
+        <div class="card">
+            <h2>📣 Resultado</h2>
+            <div class="resultBox" id="resultBox">Aquí aparecerán las acciones y recompensas.</div>
+        </div>
+
+        <div class="card">
+            <h2>🎯 Misiones diarias</h2>
+            <div id="missionsBox"></div>
+            <button class="btn-green" onclick="claimMissionRewards()">Reclamar misiones completadas</button>
+        </div>
+    </div>
+
+    <div class="grid2">
+        <div class="card">
+            <h2>🏅 Pase de temporada</h2>
+            <div class="rewardLine">Nivel de temporada: <span id="seasonLevel">1</span></div>
+            <div class="rewardLine">XP temporada: <span id="seasonXp">0</span> / <span id="seasonXpNeeded">100</span></div>
+            <div class="seasonBarOuter">
+                <div class="seasonBarInner" id="seasonBar" style="width:0%;"></div>
+            </div>
+            <div class="small" style="margin-top:10px;">
+                Cada progreso relevante da XP. Al subir niveles ganas monedas, saborizante, gemas o cofres.
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🏪 Tienda diaria</h2>
+            <div id="dailyShopBox"></div>
+            <button class="btn-purple" onclick="refreshDailyShop()">Refrescar tienda (gratis local)</button>
+        </div>
+    </div>
+
+    <div class="grid2">
+        <div class="card">
+            <h2>🏆 Ranking local</h2>
+            <div id="leaderboardBox"></div>
+        </div>
+
+        <div class="card">
+            <h2>🎉 Eventos especiales</h2>
+            <div class="rewardLine">Evento activo: <span id="specialEventName">Ninguno</span></div>
+            <div class="rewardLine">Bonus activo: <span id="specialEventBonus">Ninguno</span></div>
+            <button class="btn-orange" onclick="rotateSpecialEvent()">Cambiar evento especial</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🧃 Panel de jugador</h2>
+        <div class="grid3">
+            <div class="rewardLine">👤 Usuario activo: <span id="activeUserPanel">---</span></div>
+            <div class="rewardLine">👤 Personajes desbloqueados: <span id="unlockedCount">0</span></div>
+            <div class="rewardLine">🧩 Piezas totales: <span id="totalPiecesCount">0</span></div>
+            <div class="rewardLine">🔁 Duplicados: <span id="duplicatesCount">0</span></div>
+            <div class="rewardLine">🎨 Fragmentos skin: <span id="skinFragmentsCount">0</span></div>
+            <div class="rewardLine">🔥 Racha actual: <span id="streakPanel">0</span></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🧩 Personajes</h2>
+        <div id="charactersContainer" class="characters"></div>
+    </div>
+
+    <div class="card">
+        <h2>🛠️ Panel de administrador</h2>
+        <div class="sub">
+            Esto es justo lo que te interesa para la finca: generar códigos QR únicos por sabor.
+        </div>
+        <div class="grid3">
+            <div>
+                <select id="adminFlavorSelect"></select>
+            </div>
+            <div>
+                <input id="adminCodeCount" type="number" min="1" value="10" placeholder="Cantidad de códigos">
+            </div>
+            <div>
+                <button class="btn-red" onclick="generateCodes()">Generar códigos</button>
+            </div>
+        </div>
+        <div class="rewardLine">Códigos generados: <span id="generatedCodesCount">0</span></div>
+        <div class="resultBox" id="adminCodesBox">Aquí saldrán los últimos códigos generados.</div>
+    </div>
+
+    <div class="footerSpace"></div>
+</div>
+
+<script>
+const rarityConfig = {
+    "Común": { grid: 3, total: 9, sellValue: 1 },
+    "Especial": { grid: 4, total: 16, sellValue: 2 },
+    "Raro": { grid: 5, total: 25, sellValue: 3 },
+    "Épico": { grid: 6, total: 36, sellValue: 5 },
+    "Mítico": { grid: 7, total: 49, sellValue: 8 },
+    "Legendario": { grid: 8, total: 64, sellValue: 12 },
+    "Extraordinario": { grid: 9, total: 81, sellValue: 18 }
+};
+
+const charactersBase = [
+    { name: "Fresa", rarity: "Común", emoji: "🍓" },
+    { name: "Sandía", rarity: "Común", emoji: "🍉" },
+    { name: "Limón", rarity: "Común", emoji: "🍋" },
+    { name: "Mandarina", rarity: "Común", emoji: "🍊" },
+    { name: "Maracuyá", rarity: "Especial", emoji: "🥭" },
+    { name: "Mora", rarity: "Especial", emoji: "🫐" },
+    { name: "Cola", rarity: "Especial", emoji: "🥤" },
+    { name: "Melón", rarity: "Especial", emoji: "🍈" },
+    { name: "Café", rarity: "Raro", emoji: "☕" },
+    { name: "Cereza", rarity: "Raro", emoji: "🍒" },
+    { name: "Chicle", rarity: "Raro", emoji: "🍬" },
+    { name: "Frutos del Bosque", rarity: "Raro", emoji: "🍇" },
+    { name: "Coco", rarity: "Épico", emoji: "🥥" },
+    { name: "Energy Ice", rarity: "Épico", emoji: "🧊" },
+    { name: "Tropical", rarity: "Épico", emoji: "🏝️" },
+    { name: "Mojito", rarity: "Mítico", emoji: "🍃" },
+    { name: "Piña Colada", rarity: "Mítico", emoji: "🍍" },
+    { name: "Menta", rarity: "Legendario", emoji: "🌿" },
+    { name: "San Francisco", rarity: "Legendario", emoji: "🌈" }
+];
+
+const specialEvents = [
+    { name: "Fiebre de Fresa", bonus: "+50% monedas en códigos de Fresa" },
+    { name: "Día Tropical", bonus: "+1 recompensa extra en Tropical y Piña Colada" },
+    { name: "Noche Legendaria", bonus: "+20% probabilidad de piezas legendarias en cofres" },
+    { name: "Doble Saborizante", bonus: "x2 saborizante al vender duplicados" },
+    { name: "Evento Relax", bonus: "Sin pérdida de racha hoy" }
+];
+
+let db = JSON.parse(localStorage.getItem("granizadoGame_v4_db")) || {
+    users: {},
+    codes: {},
+    currentUser: null,
+    adminGeneratedCount: 0,
+    dailyShopSeed: null,
+    currentEvent: specialEvents[0]
+};
+
+function saveDB() {
+    localStorage.setItem("granizadoGame_v4_db", JSON.stringify(db));
+}
+
+function defaultUserState(username) {
+    const personajes = {};
+    for (const c of charactersBase) {
+        personajes[c.name] = {
+            rarity: c.rarity,
+            emoji: c.emoji,
+            piecesOwned: [],
+            duplicates: 0,
+            unlocked: false,
+            level: 1,
+            cups: 0,
+            skinFragments: 0,
+            skinUnlocked: false
+        };
+    }
+
+    return {
+        username,
+        monedas: 0,
+        saborizante: 0,
+        gemas: 0,
+        racha: 0,
+        copasTotales: 0,
+        cofresPendientes: 0,
+        personajes,
+        usedCodes: [],
+        seasonLevel: 1,
+        seasonXp: 0,
+        claimedMissionIds: [],
+        missionsDate: todayKey(),
+        missions: generateDailyMissions(),
+        dailyShopDate: todayKey(),
+        dailyShop: generateDailyShop(),
+        inventoryCofres: {
+            simple: 0,
+            grande: 0,
+            giga: 0,
+            explosion: 0
+        }
+    };
+}
+
+function getActiveUser() {
+    if (!db.currentUser || !db.users[db.currentUser]) return null;
+    return db.users[db.currentUser];
+}
+
+function setResult(text) {
+    document.getElementById("resultBox").innerText = text;
+}
+
+function todayKey() {
+    const d = new Date();
+    return d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate();
+}
+
+function randInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function pickRandom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function getRandomCharacterName() {
+    return pickRandom(charactersBase).name;
+}
+
+function createOrSwitchUser() {
+    const username = document.getElementById("usernameInput").value.trim();
+    if (!username) {
+        setResult("❌ Escribe un nombre de usuario.");
+        return;
+    }
+
+    if (!db.users[username]) {
+        db.users[username] = defaultUserState(username);
+    }
+    db.currentUser = username;
+    saveDB();
+    renderAll();
+    setResult(`👤 Usuario activo: ${username}`);
+}
+
+function resetActiveUserProgress() {
+    const user = getActiveUser();
+    if (!user) {
+        setResult("❌ No hay usuario activo.");
+        return;
+    }
+    db.users[user.username] = defaultUserState(user.username);
+    saveDB();
+    renderAll();
+    setResult(`🧨 Progreso reiniciado para ${user.username}.`);
+}
+
+function addSeasonXp(user, xp) {
+    user.seasonXp += xp;
+    let leveled = false;
+
+    while (user.seasonXp >= user.seasonLevel * 100) {
+        user.seasonXp -= user.seasonLevel * 100;
+        user.seasonLevel++;
+        leveled = true;
+
+        // Recompensas por subir nivel
+        user.monedas += 50 * user.seasonLevel;
+        user.saborizante += 10 * user.seasonLevel;
+
+        if (user.seasonLevel % 3 === 0) user.gemas += 1;
+        if (user.seasonLevel % 5 === 0) user.inventoryCofres.grande += 1;
+        if (user.seasonLevel % 10 === 0) user.inventoryCofres.giga += 1;
+    }
+
+    return leveled;
+}
+
+function generateDailyMissions() {
+    return [
+        { id: "m1", text: "Canjea 1 código", goal: 1, progress: 0, reward: { monedas: 50 }, claimed: false },
+        { id: "m2", text: "Consigue 3 piezas", goal: 3, progress: 0, reward: { saborizante: 20 }, claimed: false },
+        { id: "m3", text: "Abre 1 cofre", goal: 1, progress: 0, reward: { gemas: 1 }, claimed: false }
+    ];
+}
+
+function generateDailyShop() {
+    return [
+        { id: "shop1", text: "100 monedas → 1 Granizado Sorpresa", type: "simpleChest", costType: "monedas", cost: 100 },
+        { id: "shop2", text: "10 gemas → 1 Giga Granizado", type: "gigaChest", costType: "gemas", cost: 10 },
+        { id: "shop3", text: "10 saborizante → 1 pieza aleatoria", type: "randomPiece", costType: "saborizante", cost: 10 }
+    ];
+}
+
+function ensureUserDailyData(user) {
+    if (user.missionsDate !== todayKey()) {
+        user.missionsDate = todayKey();
+        user.missions = generateDailyMissions();
+        user.claimedMissionIds = [];
+    }
+    if (user.dailyShopDate !== todayKey()) {
+        user.dailyShopDate = todayKey();
+        user.dailyShop = generateDailyShop();
+    }
+}
+
+function updateMission(user, type, amount = 1) {
+    ensureUserDailyData(user);
+    for (const m of user.missions) {
+        if (m.claimed) continue;
+        if (type === "redeem" && m.id === "m1") m.progress += amount;
+        if (type === "piece" && m.id === "m2") m.progress += amount;
+        if (type === "chest" && m.id === "m3") m.progress += amount;
+    }
+}
+
+function claimMissionRewards() {
+    const user = getActiveUser();
+    if (!user) {
+        setResult("❌ Primero crea o activa un usuario.");
+        return;
+    }
+
+    ensureUserDailyData(user);
+    let lines = [];
+    let claimedAny = false;
+
+    for (const m of user.missions) {
+        if (!m.claimed && m.progress >= m.goal) {
+            m.claimed = true;
+            claimedAny = true;
+            if (m.reward.monedas) user.monedas += m.reward.monedas;
+            if (m.reward.saborizante) user.saborizante += m.reward.saborizante;
+            if (m.reward.gemas) user.gemas += m.reward.gemas;
+            lines.push(`✅ ${m.text} completada.`);
+        }
+    }
+
+    saveDB();
+    renderAll();
+
+    if (!claimedAny) {
+        setResult("❌ No tienes misiones listas para reclamar.");
+    } else {
+        setResult("🎯 Recompensas de misiones reclamadas:\n" + lines.join("\n"));
+    }
+}
+
+function generateCodes() {
+    const flavor = document.getElementById("adminFlavorSelect").value;
+    const count = parseInt(document.getElementById("adminCodeCount").value, 10);
+
+    if (!flavor || !count || count < 1) {
+        setResult("❌ Pon sabor y cantidad válidos.");
+        return;
+    }
+
+    const generated = [];
+    for (let i = 0; i < count; i++) {
+        db.adminGeneratedCount++;
+        const code = `QR-${flavor.toUpperCase().replace(/\s+/g, '-')}-${String(db.adminGeneratedCount).padStart(4, '0')}`;
+        db.codes[code] = {
+            flavor,
+            createdAt: new Date().toISOString(),
+            globallyUsed: false
+        };
+        generated.push(code);
+    }
+
+    saveDB();
+    renderAll();
+    document.getElementById("adminCodesBox").innerText = generated.join("\n");
+    setResult(`🛠️ Generados ${count} códigos para ${flavor}.`);
+}
+
+function addPiece(user, characterName) {
+    const char = user.personajes[characterName];
+    const totalNeeded = rarityConfig[char.rarity].total;
+
+    if (char.piecesOwned.length >= totalNeeded) {
+        char.duplicates++;
+        char.skinFragments++;
+        return `🔁 ${char.emoji} ${characterName}: pieza repetida.\n+1 duplicado y +1 fragmento de skin.`;
+    }
+
+    const available = [];
+    for (let i = 1; i <= totalNeeded; i++) {
+        if (!char.piecesOwned.includes(i)) available.push(i);
+    }
+
+    if (available.length === 0) {
+        char.duplicates++;
+        char.skinFragments++;
+        return `🔁 ${char.emoji} ${characterName}: pieza repetida.\n+1 duplicado y +1 fragmento de skin.`;
+    }
+
+    const piece = pickRandom(available);
+    char.piecesOwned.push(piece);
+    char.piecesOwned.sort((a,b)=>a-b);
+
+    updateMission(user, "piece", 1);
+    addSeasonXp(user, 15);
+
+    if (char.piecesOwned.length >= totalNeeded && !char.unlocked) {
+        char.unlocked = true;
+        addSeasonXp(user, 50);
+        return `🌟 ${char.emoji} Pieza ${piece} de ${characterName} conseguida.\n🎉 ¡Has desbloqueado a ${characterName}!`;
+    }
+
+    return `🧩 ${char.emoji} Pieza ${piece} de ${characterName} conseguida.\nProgreso: ${char.piecesOwned.length}/${totalNeeded}`;
+}
+
+function redeemCode() {
+    const user = getActiveUser();
+    if (!user) {
+        setResult("❌ Primero crea o activa un usuario.");
+        return;
+    }
+
+    ensureUserDailyData(user);
+
+    const code = document.getElementById("codeInput").value.trim();
+    if (!code) {
+        setResult("❌ Escribe un código.");
+        return;
+    }
+
+    if (!db.codes[code]) {
+        setResult("❌ Ese código no existe.");
+        return;
+    }
+
+    if (user.usedCodes.includes(code)) {
+        setResult("❌ Ese código ya fue usado por este usuario.");
+        return;
+    }
+
+    const flavor = db.codes[code].flavor;
+    const lines = [];
+    lines.push(`🍧 Código válido: ${code}`);
+    lines.push(`Sabor asociado: ${flavor}`);
+    lines.push(addPiece(user, flavor));
+
+    user.usedCodes.push(code);
+    user.racha += 1;
+    updateMission(user, "redeem", 1);
+    addSeasonXp(user, 25);
+
+    if (db.currentEvent?.name === "Fiebre de Fresa" && flavor === "Fresa") {
+        user.monedas += 50;
+        lines.push("🎉 Evento Fiebre de Fresa activo: +50 monedas extra.");
+    }
+
+    if (db.currentEvent?.name === "Día Tropical" && (flavor === "Tropical" || flavor === "Piña Colada")) {
+        lines.push(addRandomReward(user));
+        lines.push("🏝️ Evento Tropical: +1 recompensa extra.");
+    }
+
+    if (user.racha === 5) {
+        user.inventoryCofres.simple += 1;
+        lines.push("🔥 Racha 5: has ganado 1 Granizado Sorpresa.");
+    }
+
+    if (user.racha === 10) {
+        user.inventoryCofres.explosion += 1;
+        lines.push("💥 Racha 10: has ganado 1 Explosión de Sabores.");
+    }
+
+    saveDB();
+    renderAll();
+    setResult(lines.join("\n"));
+    document.getElementById("codeInput").value = "";
+}
+
+function addRandomReward(user) {
+    const roll = Math.random() * 100;
+    if (roll < 5) {
+        user.gemas += 1;
+        addSeasonXp(user, 10);
+        return "💎 +1 gema";
+    }
+    if (roll < 40) {
+        const amount = randInt(5,20);
+        user.saborizante += amount;
+        addSeasonXp(user, 10);
+        return `🧪 +${amount} saborizante`;
+    }
+    if (roll < 75) {
+        const amount = randInt(20,100);
+        user.monedas += amount;
+        addSeasonXp(user, 10);
+        return `💰 +${amount} monedas`;
+    }
+    return addPiece(user, getRandomCharacterName());
+}
+
+function openStoredChest(type) {
+    const user = getActiveUser();
+    if (!user) {
+        setResult("❌ Primero crea o activa un usuario.");
+        return;
+    }
+
+    if (user.inventoryCofres[type] <= 0) {
+        setResult("❌ No tienes ese cofre.");
+        return;
+    }
+
+    user.inventoryCofres[type]--;
+
+    const map = {
+        simple: { count: 1, title: "Granizado Sorpresa" },
+        grande: { count: 3, title: "Gran Granizado Sorpresa" },
+        giga: { count: 5, title: "Giga Granizado Sorpresa" },
+        explosion: { count: 10, title: "💥 Explosión de Sabores" }
+    };
+
+    const cfg = map[type];
+    let lines = [`🎁 ${cfg.title}`];
+
+    for (let i = 0; i < cfg.count; i++) {
+        lines.push(addRandomReward(user));
+    }
+
+    updateMission(user, "chest", 1);
+    addSeasonXp(user, 20 * cfg.count);
+
+    saveDB();
+    renderAll();
+    setResult(lines.join("\n"));
+}
+
+function buyShopItem(itemId) {
+    const user = getActiveUser();
+    if (!user) {
+        setResult("❌ Primero crea o activa un usuario.");
+        return;
+    }
+    ensureUserDailyData(user);
+
+    const item = user.dailyShop.find(x => x.id === itemId);
+    if (!item) {
+        setResult("❌ Ese objeto no existe.");
+        return;
+    }
+
+    if (user[item.costType] < item.cost) {
+        setResult(`❌ No tienes suficiente ${item.costType}.`);
+        return;
+    }
+
+    user[item.costType] -= item.cost;
+
+    if (item.type === "simpleChest") user.inventoryCofres.simple += 1;
+    if (item.type === "gigaChest") user.inventoryCofres.giga += 1;
+    if (item.type === "randomPiece") addPiece(user, getRandomCharacterName());
+
+    saveDB();
+    renderAll();
+    setResult(`🛒 Comprado: ${item.text}`);
+}
+
+function refreshDailyShop() {
+    const user = getActiveUser();
+    if (!user) {
+        setResult("❌ Primero crea o activa un usuario.");
+        return;
+    }
+    user.dailyShop = generateDailyShop();
+    saveDB();
+    renderAll();
+    setResult("🏪 Tienda diaria refrescada.");
+}
+
+function rotateSpecialEvent() {
+    db.currentEvent = pickRandom(specialEvents);
+    saveDB();
+    renderAll();
+    setResult(`🎉 Nuevo evento especial: ${db.currentEvent.name}`);
+}
+
+function sellDuplicates(characterName) {
+    const user = getActiveUser();
+    if (!user) return;
+
+    const char = user.personajes[characterName];
+    if (char.duplicates <= 0) {
+        setResult(`❌ ${char.emoji} ${characterName} no tiene duplicados.`);
+        return;
+    }
+
+    let multiplier = 1;
+    if (db.currentEvent?.name === "Doble Saborizante") multiplier = 2;
+
+    const gain = char.duplicates * rarityConfig[char.rarity].sellValue * multiplier;
+    user.saborizante += gain;
+    const sold = char.duplicates;
+    char.duplicates = 0;
+    addSeasonXp(user, 10);
+
+    saveDB();
+    renderAll();
+    setResult(`🧪 Vendidos ${sold} duplicados de ${characterName}.\n+${gain} saborizante.`);
+}
+
+function upgradeCharacter(characterName) {
+    const user = getActiveUser();
+    if (!user) return;
+
+    const char = user.personajes[characterName];
+    if (!char.unlocked) {
+        setResult(`❌ ${characterName} no está desbloqueado.`);
+        return;
+    }
+
+    const coinCost = Math.floor(25 * Math.pow(1.5, char.level - 1));
+    const essenceCost = Math.floor(coinCost / 2);
+
+    if (user.monedas < coinCost || user.saborizante < essenceCost) {
+        setResult(`❌ No tienes recursos.\nNecesitas ${coinCost} monedas y ${essenceCost} saborizante.`);
+        return;
+    }
+
+    user.monedas -= coinCost;
+    user.saborizante -= essenceCost;
+    char.level++;
+    addSeasonXp(user, 20);
+
+    saveDB();
+    renderAll();
+    setResult(`📈 ${characterName} sube a nivel ${char.level}.`);
+}
+
+function renderCharacters() {
+    const user = getActiveUser();
+    const container = document.getElementById("charactersContainer");
+    container.innerHTML = "";
+
+    if (!user) {
+        container.innerHTML = `<div class="rewardLine">Crea primero un usuario.</div>`;
+        return;
+    }
+
+    for (const c of charactersBase) {
+        const st = user.personajes[c.name];
+        const cfg = rarityConfig[st.rarity];
+        const total = cfg.total;
+        const owned = st.piecesOwned.length;
+        const percent = Math.floor((owned / total) * 100);
+
+        const card = document.createElement("div");
+        card.className = "charCard";
+
+        card.innerHTML = `
+            <div class="charName">${st.emoji} ${c.name}</div>
+            <div class="badge">${st.rarity} • ${cfg.grid}x${cfg.grid}</div>
+            <div>${st.unlocked ? '✅ Desbloqueado' : '🔒 Bloqueado'}</div>
+            <div style="margin-top:8px;">🧩 ${owned}/${total} • 🔁 ${st.duplicates} duplicados • 🎨 ${st.skinFragments} fragmentos skin</div>
+            <div style="margin-top:6px;">📈 Nivel ${st.level} • 🏆 Copas ${st.cups}</div>
+        `;
+
+        const progress = document.createElement("div");
+        progress.className = "progressOuter";
+        const inner = document.createElement("div");
+        inner.className = "progressInner";
+        inner.style.width = percent + "%";
+        progress.appendChild(inner);
+        card.appendChild(progress);
+
+        const grid = document.createElement("div");
+        grid.className = "puzzleGrid";
+        grid.style.gridTemplateColumns = `repeat(${cfg.grid}, 1fr)`;
+
+        for (let i = 1; i <= total; i++) {
+            const piece = document.createElement("div");
+            piece.className = "piece";
+            if (st.piecesOwned.includes(i)) piece.classList.add("filled");
+            grid.appendChild(piece);
+        }
+        card.appendChild(grid);
+
+        const controls = document.createElement("div");
+        controls.style.marginTop = "12px";
+
+        const sellBtn = document.createElement("button");
+        sellBtn.className = "btn-purple";
+        sellBtn.innerText = `Vender duplicados (+${cfg.sellValue})`;
+        sellBtn.onclick = () => sellDuplicates(c.name);
+        controls.appendChild(sellBtn);
+
+        if (st.unlocked) {
+            const upBtn = document.createElement("button");
+            upBtn.className = "btn-green";
+            upBtn.innerText = "Mejorar";
+            upBtn.onclick = () => upgradeCharacter(c.name);
+            controls.appendChild(upBtn);
+        }
+
+        card.appendChild(controls);
+        container.appendChild(card);
+    }
+}
+
+function renderLeaderboard() {
+    const box = document.getElementById("leaderboardBox");
+    box.innerHTML = "";
+
+    const users = Object.values(db.users).sort((a,b)=>b.copasTotales - a.copasTotales);
+    if (users.length === 0) {
+        box.innerHTML = `<div class="rewardLine">No hay usuarios todavía.</div>`;
+        return;
+    }
+
+    users.slice(0, 10).forEach((u, idx) => {
+        const row = document.createElement("div");
+        row.className = "leaderboardRow";
+        row.innerHTML = `<span>#${idx+1} ${u.username}</span><span>${u.copasTotales} copas</span>`;
+        box.appendChild(row);
+    });
+}
+
+function renderMissions() {
+    const box = document.getElementById("missionsBox");
+    const user = getActiveUser();
+    box.innerHTML = "";
+
+    if (!user) {
+        box.innerHTML = `<div class="rewardLine">Crea primero un usuario.</div>`;
+        return;
+    }
+
+    ensureUserDailyData(user);
+
+    user.missions.forEach(m => {
+        const div = document.createElement("div");
+        div.className = "rewardLine";
+        div.innerHTML = `${m.claimed ? "✅" : "🎯"} ${m.text} — ${Math.min(m.progress, m.goal)}/${m.goal}`;
+        box.appendChild(div);
+    });
+}
+
+function renderDailyShop() {
+    const box = document.getElementById("dailyShopBox");
+    const user = getActiveUser();
+    box.innerHTML = "";
+
+    if (!user) {
+        box.innerHTML = `<div class="rewardLine">Crea primero un usuario.</div>`;
+        return;
+    }
+
+    ensureUserDailyData(user);
+
+    user.dailyShop.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "rewardLine";
+        div.innerHTML = `
+            <div><strong>${item.text}</strong></div>
+            <div>Coste: ${item.cost} ${item.costType}</div>
+            <button class="btn-blue" onclick="buyShopItem('${item.id}')">Comprar</button>
+        `;
+        box.appendChild(div);
+    });
+
+    const inv = document.createElement("div");
+    inv.className = "rewardLine";
+    inv.innerHTML = `
+        <strong>Inventario de cofres</strong><br>
+        Simple: ${user.inventoryCofres.simple} |
+        Grande: ${user.inventoryCofres.grande} |
+        Giga: ${user.inventoryCofres.giga} |
+        Explosión: ${user.inventoryCofres.explosion}
+        <br><br>
+        <button class="btn-yellow" onclick="openStoredChest('simple')">Abrir Simple</button>
+        <button class="btn-purple" onclick="openStoredChest('grande')">Abrir Grande</button>
+        <button class="btn-pink" onclick="openStoredChest('giga')">Abrir Giga</button>
+        <button class="btn-orange" onclick="openStoredChest('explosion')">Abrir Explosión</button>
+    `;
+    box.appendChild(inv);
+}
+
+function renderAdminFlavorSelect() {
+    const sel = document.getElementById("adminFlavorSelect");
+    sel.innerHTML = "";
+    for (const c of charactersBase) {
+        const opt = document.createElement("option");
+        opt.value = c.name;
+        opt.textContent = `${c.emoji} ${c.name}`;
+        sel.appendChild(opt);
+    }
+}
+
+function renderAll() {
+    const user = getActiveUser();
+
+    document.getElementById("generatedCodesCount").innerText = Object.keys(db.codes).length;
+    document.getElementById("specialEventName").innerText = db.currentEvent?.name || "Ninguno";
+    document.getElementById("specialEventBonus").innerText = db.currentEvent?.bonus || "Ninguno";
+
+    if (!user) {
+        document.getElementById("activeUserTop").innerText = "---";
+        document.getElementById("activeUserPanel").innerText = "---";
+        document.getElementById("monedasTop").innerText = "0";
+        document.getElementById("saborizanteTop").innerText = "0";
+        document.getElementById("gemasTop").innerText = "0";
+        document.getElementById("rachaTop").innerText = "0";
+        document.getElementById("copasTop").innerText = "0";
+        document.getElementById("cofresTop").innerText = "0";
+        document.getElementById("unlockedCount").innerText = "0";
+        document.getElementById("totalPiecesCount").innerText = "0";
+        document.getElementById("duplicatesCount").innerText = "0";
+        document.getElementById("skinFragmentsCount").innerText = "0";
+        document.getElementById("streakPanel").innerText = "0";
+        document.getElementById("seasonLevel").innerText = "1";
+        document.getElementById("seasonXp").innerText = "0";
+        document.getElementById("seasonXpNeeded").innerText = "100";
+        document.getElementById("seasonBar").style.width = "0%";
+    } else {
+        ensureUserDailyData(user);
+
+        document.getElementById("activeUserTop").innerText = user.username;
+        document.getElementById("activeUserPanel").innerText = user.username;
+        document.getElementById("monedasTop").innerText = user.monedas;
+        document.getElementById("saborizanteTop").innerText = user.saborizante;
+        document.getElementById("gemasTop").innerText = user.gemas;
+        document.getElementById("rachaTop").innerText = user.racha;
+        document.getElementById("copasTop").innerText = user.copasTotales;
+        document.getElementById("cofresTop").innerText = Object.values(user.inventoryCofres).reduce((a,b)=>a+b,0);
+
+        document.getElementById("unlockedCount").innerText = Object.values(user.personajes).filter(p=>p.unlocked).length;
+        document.getElementById("totalPiecesCount").innerText = Object.values(user.personajes).reduce((a,p)=>a+p.piecesOwned.length,0);
+        document.getElementById("duplicatesCount").innerText = Object.values(user.personajes).reduce((a,p)=>a+p.duplicates,0);
+        document.getElementById("skinFragmentsCount").innerText = Object.values(user.personajes).reduce((a,p)=>a+p.skinFragments,0);
+        document.getElementById("streakPanel").innerText = user.racha;
+
+        document.getElementById("seasonLevel").innerText = user.seasonLevel;
+        document.getElementById("seasonXp").innerText = user.seasonXp;
+        document.getElementById("seasonXpNeeded").innerText = user.seasonLevel * 100;
+        const pct = Math.min(100, (user.seasonXp / (user.seasonLevel * 100)) * 100);
+        document.getElementById("seasonBar").style.width = pct + "%";
+    }
+
+    renderCharacters();
+    renderLeaderboard();
+    renderMissions();
+    renderDailyShop();
+    renderAdminFlavorSelect();
+}
+
+renderAll();
+
+// Reset total si alguna vez quieres:
+// localStorage.removeItem("granizadoGame_v4_db"); location.reload();
+</script>
+
+</body>
+</html>

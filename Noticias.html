@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Juego base tipo cámara social</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      background: linear-gradient(to bottom, #1a1a1a, #2c2c2c);
+    }
+
+    .ui {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .panel {
+      background: rgba(0,0,0,0.55);
+      padding: 10px 14px;
+      border-radius: 12px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 0 10px rgba(0,0,0,0.25);
+    }
+
+    .title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .small {
+      font-size: 14px;
+      opacity: 0.9;
+      line-height: 1.4;
+    }
+
+    .bar-wrap {
+      width: 220px;
+      height: 16px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4caf50, #ff9800, #f44336);
+      transition: width 0.2s;
+    }
+
+    .message {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.65);
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 16px;
+      opacity: 0;
+      transition: opacity 0.25s;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .message.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="ui">
+    <div class="panel">
+      <div class="title">Base del juego</div>
+      <div class="small">
+        Mueve la cámara con el ratón<br>
+        Haz clic para “capturar” una escena
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="small">Fotos: <span id="shots">0</span></div>
+      <div class="small">Caos social: <span id="chaosText">0%</span></div>
+      <div class="bar-wrap">
+        <div class="bar" id="chaosBar"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="message" id="message"></div>
+
+  <canvas id="game"></canvas>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    const shotsEl = document.getElementById("shots");
+    const chaosTextEl = document.getElementById("chaosText");
+    const chaosBarEl = document.getElementById("chaosBar");
+    const messageEl = document.getElementById("message");
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    const mouse = {
+      x: canvas.width / 2,
+      y: canvas.height / 2
+    };
+
+    window.addEventListener("mousemove", (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+
+    const state = {
+      shots: 0,
+      chaos: 0,
+      gameOver: false
+    };
+
+    const npcs = [];
+    const NPC_COUNT = 22;
+
+    function rand(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function showMessage(text) {
+      messageEl.textContent = text;
+      messageEl.classList.add("show");
+      clearTimeout(showMessage.timer);
+      showMessage.timer = setTimeout(() => {
+        messageEl.classList.remove("show");
+      }, 1300);
+    }
+
+    function createNPC() {
+      const types = ["normal", "odd", "angry"];
+      const type = Math.random() < 0.78 ? "normal" : (Math.random() < 0.6 ? "odd" : "angry");
+
+      return {
+        x: rand(60, canvas.width - 60),
+        y: rand(80, canvas.height - 80),
+        vx: rand(-1.2, 1.2),
+        vy: rand(-1.2, 1.2),
+        r: 18,
+        type,
+        panic: 0
+      };
+    }
+
+    for (let i = 0; i < NPC_COUNT; i++) {
+      npcs.push(createNPC());
+    }
+
+    function drawNPC(npc) {
+      // cuerpo
+      let bodyColor = "#d9d9d9";
+      let eyeColor = "#111";
+
+      if (npc.type === "odd") bodyColor = "#ffd54f";
+      if (npc.type === "angry") bodyColor = "#ef5350";
+
+      ctx.beginPath();
+      ctx.arc(npc.x, npc.y, npc.r, 0, Math.PI * 2);
+      ctx.fillStyle = bodyColor;
+      ctx.fill();
+
+      // ojos
+      ctx.beginPath();
+      ctx.arc(npc.x - 6, npc.y - 3, 2.3, 0, Math.PI * 2);
+      ctx.arc(npc.x + 6, npc.y - 3, 2.3, 0, Math.PI * 2);
+      ctx.fillStyle = eyeColor;
+      ctx.fill();
+
+      // boca
+      ctx.strokeStyle = "#111";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+
+      if (npc.type === "angry" || npc.panic > 0) {
+        ctx.moveTo(npc.x - 7, npc.y + 8);
+        ctx.lineTo(npc.x + 7, npc.y + 8);
+      } else if (npc.type === "odd") {
+        ctx.arc(npc.x, npc.y + 6, 5, 0, Math.PI, false);
+      } else {
+        ctx.arc(npc.x, npc.y + 8, 5, 0, Math.PI, true);
+      }
+      ctx.stroke();
+
+      // símbolo especial
+      if (npc.type === "odd") {
+        ctx.fillStyle = "#111";
+        ctx.fillRect(npc.x - 3, npc.y - 22, 6, 6);
+      }
+
+      if (npc.type === "angry") {
+        ctx.strokeStyle = "#111";
+        ctx.beginPath();
+        ctx.moveTo(npc.x - 9, npc.y - 10);
+        ctx.lineTo(npc.x - 2, npc.y - 7);
+        ctx.moveTo(npc.x + 2, npc.y - 7);
+        ctx.lineTo(npc.x + 9, npc.y - 10);
+        ctx.stroke();
+      }
+    }
+
+    function updateNPC(npc) {
+      const speedBoost = 1 + state.chaos * 0.015;
+
+      npc.x += npc.vx * speedBoost;
+      npc.y += npc.vy * speedBoost;
+
+      if (npc.x < npc.r || npc.x > canvas.width - npc.r) npc.vx *= -1;
+      if (npc.y < npc.r + 45 || npc.y > canvas.height - npc.r) npc.vy *= -1;
+
+      if (Math.random() < 0.01 + state.chaos * 0.0003) {
+        npc.vx = rand(-1.5, 1.5);
+        npc.vy = rand(-1.5, 1.5);
+      }
+
+      if (npc.panic > 0) npc.panic--;
+    }
+
+    function drawBackground() {
+      const grid = 40;
+      ctx.strokeStyle = "rgba(255,255,255,0.03)";
+      ctx.lineWidth = 1;
+
+      for (let x = 0; x < canvas.width; x += grid) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+
+      for (let y = 0; y < canvas.height; y += grid) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+    }
+
+    function drawCamera() {
+      const size = 110;
+
+      ctx.strokeStyle = "white";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(mouse.x - size / 2, mouse.y - size / 2, size, size);
+
+      ctx.beginPath();
+      ctx.moveTo(mouse.x - 15, mouse.y);
+      ctx.lineTo(mouse.x + 15, mouse.y);
+      ctx.moveTo(mouse.x, mouse.y - 15);
+      ctx.lineTo(mouse.x, mouse.y + 15);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(255,255,255,0.25)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(mouse.x, mouse.y, 55, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    function takeShot() {
+      if (state.gameOver) return;
+
+      const range = 55;
+      let target = null;
+
+      for (const npc of npcs) {
+        const dx = npc.x - mouse.x;
+        const dy = npc.y - mouse.y;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist < range) {
+          target = npc;
+          break;
+        }
+      }
+
+      state.shots++;
+      shotsEl.textContent = state.shots;
+
+      if (!target) {
+        state.chaos += 1;
+        showMessage("Foto vacía. La gente sospecha.");
+      } else {
+        if (target.type === "normal") {
+          state.chaos += 2;
+          showMessage("Has mostrado algo normal.");
+        }
+
+        if (target.type === "odd") {
+          state.chaos += 12;
+          showMessage("Has mostrado algo raro. Esto se mueve.");
+          for (const npc of npcs) {
+            if (Math.random() < 0.28) npc.type = "odd";
+          }
+        }
+
+        if (target.type === "angry") {
+          state.chaos += 18;
+          showMessage("Has mostrado enfado. Mala idea.");
+          for (const npc of npcs) {
+            npc.panic = 50;
+            if (Math.random() < 0.35) npc.type = "angry";
+          }
+        }
+
+        if (state.chaos > 25 && target.type === "normal" && Math.random() < 0.35) {
+          target.type = "angry";
+        }
+      }
+
+      if (state.chaos > 45) {
+        for (const npc of npcs) {
+          if (Math.random() < 0.03) npc.type = "angry";
+        }
+      }
+
+      if (state.chaos > 70) {
+        for (const npc of npcs) {
+          if (Math.random() < 0.02) npc.type = "odd";
+        }
+      }
+
+      if (state.chaos >= 100) {
+        state.chaos = 100;
+        state.gameOver = true;
+        showMessage("Caos total.");
+      }
+
+      updateUI();
+
+      // flash visual
+      flash = 8;
+    }
+
+    window.addEventListener("click", takeShot);
+
+    function updateUI() {
+      chaosTextEl.textContent = `${Math.round(state.chaos)}%`;
+      chaosBarEl.style.width = `${state.chaos}%`;
+    }
+
+    let flash = 0;
+
+    function drawGameOver() {
+      ctx.fillStyle = "rgba(0,0,0,0.62)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "white";
+      ctx.textAlign = "center";
+      ctx.font = "bold 42px Arial";
+      ctx.fillText("CAOS TOTAL", canvas.width / 2, canvas.height / 2 - 20);
+
+      ctx.font = "20px Arial";
+      ctx.fillText("Pulsa F5 para reiniciar", canvas.width / 2, canvas.height / 2 + 24);
+    }
+
+    function loop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBackground();
+
+      for (const npc of npcs) {
+        updateNPC(npc);
+        drawNPC(npc);
+      }
+
+      drawCamera();
+
+      if (flash > 0) {
+        ctx.fillStyle = `rgba(255,255,255,${flash * 0.08})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        flash--;
+      }
+
+      if (state.gameOver) {
+        drawGameOver();
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    updateUI();
+    loop();
+  </script>
+</body>
+</html>

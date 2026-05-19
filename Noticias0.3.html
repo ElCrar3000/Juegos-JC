@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>La Última Portada</title>
+  <style>
+    :root{
+      --bg:#0f0f12;
+      --bg2:#17171c;
+      --panel:rgba(10,10,12,.78);
+      --line:rgba(255,255,255,.08);
+      --text:#f0f0f0;
+      --muted:#b8b8c2;
+      --money:#ffd166;
+      --fame:#8ec5ff;
+      --truth:#7be495;
+      --chaos:#ff6b6b;
+      --btn:#23232b;
+      --btn2:#f3f3f3;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{width:100%;height:100%}
+    body{
+      background: radial-gradient(circle at top, #1f1f28 0%, #111 60%);
+      color:var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      overflow:hidden;
+      user-select:none;
+    }
+
+    canvas{
+      display:block;
+      width:100vw;
+      height:100vh;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(255,255,255,.04), transparent 30%),
+        linear-gradient(to bottom, #1d1f27, #13141a 60%, #0d0e12);
+    }
+
+    .ui{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:20;
+    }
+
+    .topbar{
+      position:fixed;
+      top:14px;
+      left:14px;
+      right:14px;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:12px 14px;
+      backdrop-filter: blur(7px);
+      box-shadow:0 14px 34px rgba(0,0,0,.26);
+    }
+
+    .title{
+      font-size:18px;
+      font-weight:700;
+      margin-bottom:6px;
+    }
+
+    .small{
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.4;
+    }
+
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(130px,1fr));
+      gap:10px 14px;
+      min-width:360px;
+    }
+
+    .stat span{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:4px;
+    }
+
+    .stat strong{
+      display:block;
+      font-size:18px;
+    }
+
+    .bars{
+      margin-top:8px;
+      display:grid;
+      gap:8px;
+    }
+
+    .bar-label{
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:4px;
+    }
+
+    .bar-wrap{
+      width:100%;
+      height:12px;
+      border-radius:999px;
+      overflow:hidden;
+      background:rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.04);
+    }
+
+    .bar{
+      height:100%;
+      width:0%;
+      transition:width .18s;
+    }
+
+    .bar.money{background:linear-gradient(90deg,#e4b64a,#ffd166)}
+    .bar.fame{background:linear-gradient(90deg,#67a7ff,#8ec5ff)}
+    .bar.truth{background:linear-gradient(90deg,#46c975,#7be495)}
+    .bar.chaos{background:linear-gradient(90deg,#ff8a8a,#ff4b4b)}
+
+    .center-chip{
+      position:fixed;
+      top:16px;
+      left:50%;
+      transform:translateX(-50%);
+      background:rgba(0,0,0,.5);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:13px;
+      pointer-events:none;
+    }
+
+    .left-bottom{
+      position:fixed;
+      left:14px;
+      bottom:14px;
+      max-width:380px;
+    }
+
+    .message{
+      position:fixed;
+      left:50%;
+      bottom:18px;
+      transform:translateX(-50%);
+      background:rgba(0,0,0,.76);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      padding:12px 16px;
+      font-size:16px;
+      opacity:0;
+      transition:opacity .2s, transform .2s;
+    }
+
+    .message.show{
+      opacity:1;
+      transform:translateX(-50%) translateY(-4px);
+    }
+
+    .feed{
+      position:fixed;
+      right:14px;
+      bottom:14px;
+      width:min(440px, calc(100vw - 28px));
+      max-height:48vh;
+      overflow:hidden;
+    }
+
+    .feed-list{
+      display:flex;
+      flex-direction:column-reverse;
+      gap:8px;
+      margin-top:8px;
+    }
+
+    .feed-item{
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:14px;
+      padding:10px;
+      background:rgba(255,255,255,.03);
+      animation:fadeIn .22s ease;
+    }
+
+    .feed-item .tag{
+      display:inline-block;
+      font-size:11px;
+      border-radius:999px;
+      padding:3px 7px;
+      margin-bottom:6px;
+      background:rgba(255,255,255,.09);
+    }
+
+    .tag.money{background:rgba(255,209,102,.18)}
+    .tag.fame{background:rgba(142,197,255,.18)}
+    .tag.truth{background:rgba(123,228,149,.18)}
+    .tag.chaos{background:rgba(255,107,107,.18)}
+    .tag.story{background:rgba(201,167,255,.18)}
+
+    .feed-item p{
+      font-size:13px;
+      line-height:1.38;
+      color:#ececf1;
+    }
+
+    .screen{
+      position:fixed;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:rgba(0,0,0,.74);
+      backdrop-filter: blur(5px);
+      z-index:50;
+      padding:20px;
+    }
+
+    .hidden{display:none !important}
+
+    .card{
+      width:min(1000px, 100%);
+      background:rgba(13,13,18,.94);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:26px;
+      padding:28px;
+      box-shadow:0 26px 70px rgba(0,0,0,.42);
+      max-height:90vh;
+      overflow:auto;
+    }
+
+    .card h1{
+      font-size:42px;
+      margin-bottom:10px;
+    }
+
+    .card h2{
+      font-size:24px;
+      margin:20px 0 10px;
+    }
+
+    .card p{
+      color:#d8d8df;
+      line-height:1.6;
+      margin-bottom:10px;
+    }
+
+    .row{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:16px;
+    }
+
+    button{
+      pointer-events:auto;
+      border:none;
+      border-radius:14px;
+      padding:14px 18px;
+      font-size:15px;
+      font-weight:700;
+      cursor:pointer;
+      transition:transform .12s, filter .12s;
+    }
+
+    button:hover{
+      transform:translateY(-1px);
+      filter:brightness(1.05);
+    }
+
+    button.primary{
+      background:var(--btn2);
+      color:#111;
+    }
+
+    button.secondary{
+      background:var(--btn);
+      color:#fff;
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:12px;
+      margin-top:14px;
+    }
+
+    .box{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:16px;
+      padding:14px;
+    }
+
+    .box strong{
+      display:block;
+      margin-bottom:6px;
+      font-size:18px;
+    }
+
+    .choices{
+      display:grid;
+      gap:10px;
+      margin-top:16px;
+    }
+
+    .choice{
+      pointer-events:auto;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;
+      padding:14px;
+      cursor:pointer;
+      transition:transform .12s, background .12s;
+    }
+
+    .choice:hover{
+      transform:translateY(-1px);
+      background:rgba(255,255,255,.05);
+    }
+
+    .choice strong{
+      display:block;
+      margin-bottom:5px;
+      font-size:16px;
+    }
+
+    .mini{
+      font-size:13px;
+      color:var(--muted);
+    }
+
+    .npc-panel{
+      position:fixed;
+      left:14px;
+      top:132px;
+      width:min(350px, calc(100vw - 28px));
+      max-height:42vh;
+      overflow:auto;
+    }
+
+    .npc-card{
+      margin-top:8px;
+      padding:10px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.06);
+      background:rgba(255,255,255,.03);
+    }
+
+    .npc-card strong{
+      display:block;
+      margin-bottom:4px;
+      font-size:15px;
+    }
+
+    .ending-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(220px,1fr));
+      gap:12px;
+      margin-top:14px;
+    }
+
+    @keyframes fadeIn{
+      from{opacity:0;transform:translateY(6px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div class="ui">
+    <div class="topbar">
+      <div class="panel" style="max-width:390px;">
+        <div class="title">La Última Portada</div>
+        <div class="small">
+          Eres una periodista en una gran ciudad. Buscas el reportaje que te hará rica y famosa.<br>
+          Puedes contar la verdad... o usarla como gasolina.
+        </div>
+      </div>
+
+      <div class="panel" style="min-width:390px;">
+        <div class="stats">
+          <div class="stat"><span>Día</span><strong id="dayText">1</strong></div>
+          <div class="stat"><span>Publicaciones</span><strong id="shotsText">0</strong></div>
+          <div class="stat"><span>Fama</span><strong id="fameText">0</strong></div>
+          <div class="stat"><span>Dinero</span><strong id="moneyText">0</strong></div>
+        </div>
+
+        <div class="bars">
+          <div>
+            <div class="bar-label">Fama</div>
+            <div class="bar-wrap"><div class="bar fame" id="fameBar"></div></div>
+          </div>
+          <div>
+            <div class="bar-label">Dinero</div>
+            <div class="bar-wrap"><div class="bar money" id="moneyBar"></div></div>
+          </div>
+          <div>
+            <div class="bar-label">Verdad</div>
+            <div class="bar-wrap"><div class="bar truth" id="truthBar"></div></div>
+          </div>
+          <div>
+            <div class="bar-label">Caos</div>
+            <div class="bar-wrap"><div class="bar chaos" id="chaosBar"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="center-chip" id="phaseChip">Ciudad: rutina frágil</div>
+
+    <div class="npc-panel panel">
+      <div class="title">Personas relevantes vistas</div>
+      <div class="small">Cada una tiene vida, vínculos y puntos débiles. No son solo bolitas con cara rara.</div>
+      <div id="npcInfo"></div>
+    </div>
+
+    <div class="left-bottom">
+      <div class="panel">
+        <div class="small">
+          Ratón: mueves el encuadre.<br>
+          Clic: publicas una escena.<br>
+          Espacio: avanzar al siguiente día si aparece la opción.<br>
+          R: reiniciar al terminar.
+        </div>
+      </div>
+    </div>
+
+    <div class="feed">
+      <div class="panel">
+        <div class="title">Portadas y rumores</div>
+        <div class="feed-list" id="feedList"></div>
+      </div>
+    </div>
+
+    <div class="message" id="message"></div>
+  </div>
+
+  <div class="screen" id="startScreen">
+    <div class="card">
+      <h1>La Última Portada</h1>
+      <p>
+        Una gran ciudad hierve bajo la superficie. Desigualdad, corrupción, ansiedad, barrios enfrentados,
+        crisis de vivienda, miedo, espectáculo y hambre de atención.
+      </p>
+      <p>
+        Tú eres <b>Vera Salvat</b>, periodista ambiciosa. Tu sueño es hacer el gran reportaje de tu vida,
+        ganar muchísimo dinero, convertirte en una leyenda mediática y no volver a preocuparte jamás.
+      </p>
+      <p>
+        El problema es sencillo: <b>cuanto más potente sea la historia, más puedes romper la ciudad</b>.
+      </p>
+
+      <h2>Esta versión tiene</h2>
+      <div class="grid">
+        <div class="box"><strong>NPCs con vida propia</strong><span class="mini">nombre, trabajo, familia, estrés, ambición, barrio, tendencia y relaciones</span></div>
+        <div class="box"><strong>Tramas múltiples</strong><span class="mini">corrupción, violencia, secta mediática, apagones, comida, policía, mafias y supervivencia</span></div>
+        <div class="box"><strong>Elecciones morales</strong><span class="mini">puedes exagerar, proteger, exponer, manipular o humanizar</span></div>
+        <div class="box"><strong>Finales múltiples</strong><span class="mini">incluyendo 5 finales oscuros bastante feos, como debe ser</span></div>
+      </div>
+
+      <div class="row">
+        <button class="primary" id="startBtn">Empezar</button>
+        <button class="secondary" id="helpBtn">Ver cómo funciona</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen hidden" id="helpScreen">
+    <div class="card">
+      <h1>Cómo funciona</h1>
+      <p>
+        Tú no controlas a la gente. Controlas el foco. Y el foco en una gran ciudad vale casi más que la verdad.
+      </p>
+      <p>
+        Al publicar escenas:
+      </p>
+      <p>
+        - subes o bajas la <b>fama</b><br>
+        - ganas o pierdes <b>dinero</b><br>
+        - proteges o rompes la <b>verdad</b><br>
+        - aumentas o reduces el <b>caos</b>
+      </p>
+      <p>
+        Cada NPC puede tener pareja, hijos, amigos, vecinos o rivales. Tus portadas pueden hundirlos, volverlos extremos, hacer que huyan o que maten.
+      </p>
+      <p>
+        El objetivo “jugable” es sobrevivir a la historia. El objetivo “moral” ya es otra cosa.
+      </p>
+      <div class="row">
+        <button class="primary" id="backBtn">Volver</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen hidden" id="choiceScreen">
+    <div class="card">
+      <h1 id="choiceTitle">Decisión editorial</h1>
+      <p id="choiceDesc"></p>
+      <div class="choices" id="choicesWrap"></div>
+    </div>
+  </div>
+
+  <div class="screen hidden" id="endScreen">
+    <div class="card">
+      <h1 id="endTitle">Final</h1>
+      <p id="endDesc"></p>
+
+      <div class="ending-grid">
+        <div class="box"><strong>Día final</strong><span id="endDay">0</span></div>
+        <div class="box"><strong>Publicaciones</strong><span id="endShots">0</span></div>
+        <div class="box"><strong>Fama</strong><span id="endFame">0</span></div>
+        <div class="box"><strong>Dinero</strong><span id="endMoney">0</span></div>
+        <div class="box"><strong>Verdad</strong><span id="endTruth">0</span></div>
+        <div class="box"><strong>Caos</strong><span id="endChaos">0</span></div>
+      </div>
+
+      <div class="row">
+        <button class="primary" id="restartBtn">Jugar otra vez</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    let W = window.innerWidth;
+    let H = window.innerHeight;
+    canvas.width = W;
+    canvas.height = H;
+
+    window.addEventListener("resize", () => {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = W;
+      canvas.height = H;
+    });
+
+    const mouse = { x: W/2, y: H/2 };
+
+    window.addEventListener("mousemove", e => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+
+    const ui = {
+      dayText: document.getElementById("dayText"),
+      shotsText: document.getElementById("shotsText"),
+      fameText: document.getElementById("fameText"),
+      moneyText: document.getElementById("moneyText"),
+      fameBar: document.getElementById("fameBar"),
+      moneyBar: document.getElementById("moneyBar"),
+      truthBar: document.getElementById("truthBar"),
+      chaosBar: document.getElementById("chaosBar"),
+      phaseChip: document.getElementById("phaseChip"),
+      feedList: document.getElementById("feedList"),
+      message: document.getElementById("message"),
+      npcInfo: document.getElementById("npcInfo")
+    };
+
+    const screens = {
+      start: document.getElementById("startScreen"),
+      help: document.getElementById("helpScreen"),
+      choice: document.getElementById("choiceScreen"),
+      end: document.getElementById("endScreen")
+    };
+
+    const choiceTitle = document.getElementById("choiceTitle");
+    const choiceDesc = document.getElementById("choiceDesc");
+    const choicesWrap = document.getElementById("choicesWrap");
+
+    const endTitle = document.getElementById("endTitle");
+    const endDesc = document.getElementById("endDesc");
+    const endDay = document.getElementById("endDay");
+    const endShots = document.getElementById("endShots");
+    const endFame = document.getElementById("endFame");
+    const endMoney = document.getElementById("endMoney");
+    const endTruth = document.getElementById("endTruth");
+    const endChaos = document.getElementById("endChaos");
+
+    document.getElementById("startBtn").onclick = startGame;
+    document.getElementById("helpBtn").onclick = () => {
+      screens.start.classList.add("hidden");
+      screens.help.classList.remove("hidden");
+    };
+    document.getElementById("backBtn").onclick = () => {
+      screens.help.classList.add("hidden");
+      screens.start.classList.remove("hidden");
+    };
+    document.getElementById("restartBtn").onclick = startGame;
+
+    function rand(min, max){ return Math.random()*(max-min)+min; }
+    function clamp(v,min,max){ return Math.max(min, Math.min(max,v)); }
+    function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+    const NAMES = ["Violeta","Bruno","Lara","Damián","Eva","Nora","Samuel","Carla","Leo","Marta","Raúl","Naia","Iker","Sonia","Pablo","Alicia","Rubén","Diana","Iván","Claudia","Tomás","Elena","Gael","Lucía","Álex","Sara","David","Marina"];
+    const JOBS = ["enfermera","taxista","profesor","cocinera","repartidor","abogada","estudiante","camarero","policía","mecánico","programador","periodista local","funcionario","panadera","dependienta","electricista"];
+    const DISTRICTS = ["Centro","Puerto Viejo","Barrio Norte","Avenida Sur","Mercado Gris","Distrito Jardín","Cinturón Este"];
+    const TRAITS = ["ambicioso","agotada","solidario","desconfiada","nervioso","idealista","cansada","intensa","amable","frío"];
+    const STORY_TYPES = ["corrupcion","violencia","apagones","escasez","secta_media","protesta","familia_rota","supervivencia"];
+
+    const game = {
+      running: false,
+      over: false,
+      flash: 0,
+      time: 0,
+      day: 1,
+      shots: 0,
+      fame: 0,
+      money: 0,
+      truth: 70,
+      chaos: 8,
+      phase: "rutina frágil",
+      storyStep: 0,
+      storyFlags: {
+        corruptionKnown: false,
+        violenceKnown: false,
+        blackoutKnown: false,
+        scarcityKnown: false,
+        mediaCultKnown: false,
+        survivalKnown: false
+      },
+      nextChoiceAt: 3,
+      visibleNPCs: [],
+      trend: "normalidad",
+      endedBy: ""
+    };
+
+    const npcs = [];
+
+    function makeNPC(index){
+      const familyRoll = Math.random();
+      const family =
+        familyRoll < 0.25 ? "vive sola" :
+        familyRoll < 0.50 ? "tiene pareja" :
+        familyRoll < 0.75 ? "tiene dos hijos" :
+        "cuida a su madre enferma";
+
+      return {
+        id: "npc_" + index + "_" + Math.random().toString(36).slice(2),
+        name: pick(NAMES),
+        surname: ["Vega","Ruiz","Mora","Salas","Prieto","Campos","Nadal","Sanz","Bravo","Nieves"][Math.floor(Math.random()*10)],
+        job: pick(JOBS),
+        district: pick(DISTRICTS),
+        trait: pick(TRAITS),
+        family,
+        money: rand(20, 90),
+        stress: rand(10, 40),
+        anger: rand(5, 25),
+        fear: rand(5, 25),
+        hope: rand(40, 80),
+        fameSensitivity: rand(0.5, 1.7),
+        violenceThreshold: rand(40, 90),
+        survivalSkill: rand(10, 85),
+        ideology: rand(-100, 100),
+        alive: true,
+        isolated: false,
+        killer: false,
+        desperate: false,
+        star: Math.random() < 0.16,
+        familyCount: family.includes("dos hijos") ? 4 : family.includes("pareja") ? 2 : family.includes("madre") ? 2 : 1,
+        x: rand(70, W-70),
+        y: rand(100, H-90),
+        vx: rand(-1.2,1.2),
+        vy: rand(-1.2,1.2),
+        r: rand(16,20),
+        attention: 0,
+        network: []
+      };
+    }
+
+    function connectNetworks(){
+      for(let i=0;i<npcs.length;i++){
+        const a = npcs[i];
+        a.network = [];
+        for(let j=0;j<3;j++){
+          const other = pick(npcs);
+          if(other !== a && !a.network.includes(other.id)){
+            a.network.push(other.id);
+          }
+        }
+      }
+    }
+
+    function resetGame(){
+      npcs.length = 0;
+      for(let i=0;i<28;i++) npcs.push(makeNPC(i));
+      connectNetworks();
+
+      game.running = true;
+      game.over = false;
+      game.flash = 0;
+      game.time = 0;
+      game.day = 1;
+      game.shots = 0;
+      game.fame = 0;
+      game.money = 0;
+      game.truth = 70;
+      game.chaos = 8;
+      game.phase = "rutina frágil";
+      game.storyStep = 0;
+      game.nextChoiceAt = 3;
+      game.trend = "normalidad";
+      game.endedBy = "";
+      game.storyFlags = {
+        corruptionKnown: false,
+        violenceKnown: false,
+        blackoutKnown: false,
+        scarcityKnown: false,
+        mediaCultKnown: false,
+        survivalKnown: false
+      };
+      game.visibleNPCs = [];
+
+      ui.feedList.innerHTML = "";
+      addFeed("story", "Comienzo", "Vera Salvat llega a la ciudad buscando el reportaje que la hará intocable.");
+      updateUI();
+      renderNPCPanel();
+
+      screens.start.classList.add("hidden");
+      screens.help.classList.add("hidden");
+      screens.choice.classList.add("hidden");
+      screens.end.classList.add("hidden");
+    }
+
+    function startGame(){
+      resetGame();
+    }
+
+    function showMessage(text){
+      ui.message.textContent = text;
+      ui.message.classList.add("show");
+      clearTimeout(showMessage.timer);
+      showMessage.timer = setTimeout(() => ui.message.classList.remove("show"), 1300);
+    }
+
+    function addFeed(tagClass, tagText, text){
+      const item = document.createElement("div");
+      item.className = "feed-item";
+      item.innerHTML = `<div class="tag ${tagClass}">${tagText}</div><p>${text}</p>`;
+      ui.feedList.prepend(item);
+      while(ui.feedList.children.length > 8){
+        ui.feedList.removeChild(ui.feedList.lastChild);
+      }
+    }
+
+    function updatePhase(){
+      if(game.chaos < 18) game.phase = "rutina frágil";
+      else if(game.chaos < 35) game.phase = "ciudad nerviosa";
+      else if(game.chaos < 55) game.phase = "tensión abierta";
+      else if(game.chaos < 72) game.phase = "polarización";
+      else if(game.chaos < 88) game.phase = "quiebre social";
+      else game.phase = "preapocalipsis urbano";
+    }
+
+    function updateUI(){
+      updatePhase();
+      ui.dayText.textContent = game.day;
+      ui.shotsText.textContent = game.shots;
+      ui.fameText.textContent = Math.round(game.fame);
+      ui.moneyText.textContent = Math.round(game.money) + "k";
+      ui.fameBar.style.width = clamp(game.fame,0,100) + "%";
+      ui.moneyBar.style.width = clamp(game.money,0,100) + "%";
+      ui.truthBar.style.width = clamp(game.truth,0,100) + "%";
+      ui.chaosBar.style.width = clamp(game.chaos,0,100) + "%";
+      ui.phaseChip.textContent = "Ciudad: " + game.phase;
+    }
+
+    function renderNPCPanel(){
+      const list = game.visibleNPCs.slice(0,5);
+      ui.npcInfo.innerHTML = "";
+      if(list.length === 0){
+        ui.npcInfo.innerHTML = `<div class="npc-card"><strong>Aún no has enfocado a nadie importante</strong><div class="mini">La ciudad está llena de historias esperando a ser mal contadas.</div></div>`;
+        return;
+      }
+
+      for(const npc of list){
+        const div = document.createElement("div");
+        div.className = "npc-card";
+        div.innerHTML = `
+          <strong>${npc.name} ${npc.surname}</strong>
+          <div class="mini">${npc.job} · ${npc.district} · ${npc.family}</div>
+          <div class="mini">Estrés: ${Math.round(npc.stress)} · Miedo: ${Math.round(npc.fear)} · Esperanza: ${Math.round(npc.hope)}</div>
+          <div class="mini">${npc.alive ? (npc.isolated ? "Aislado" : "Activo") : "Muerto"}${npc.killer ? " · Violento" : ""}${npc.desperate ? " · Desesperado" : ""}</div>
+        `;
+        ui.npcInfo.appendChild(div);
+      }
+    }
+
+    function drawCity(){
+      // fondo urbano
+      ctx.fillStyle = "rgba(255,255,255,.03)";
+      for(let i=0;i<8;i++){
+        const x = 40 + i*180;
+        const h = 120 + (i%3)*70;
+        ctx.fillRect(x, H-h-20, 100, h);
+      }
+
+      ctx.strokeStyle = "rgba(255,255,255,.03)";
+      for(let i=0;i<7;i++){
+        ctx.beginPath();
+        ctx.moveTo(0, 110 + i*80);
+        ctx.lineTo(W, 110 + i*80 + Math.sin(game.time*0.01+i)*5);
+        ctx.stroke();
+      }
+    }
+
+    function npcColor(npc){
+      if(!npc.alive) return "#444";
+      if(npc.killer) return "#ff4b4b";
+      if(npc.desperate) return "#ffb86b";
+      if(npc.isolated) return "#8aa1b5";
+      if(npc.hope > 65 && npc.stress < 35) return "#7be495";
+      if(npc.fear > 55) return "#8ec5ff";
+      return "#dfdfdf";
+    }
+
+    function drawNPC(npc){
+      ctx.beginPath();
+      ctx.ellipse(npc.x, npc.y+npc.r+8, npc.r*.85, npc.r*.4, 0, 0, Math.PI*2);
+      ctx.fillStyle = "rgba(0,0,0,.18)";
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(npc.x, npc.y, npc.r, 0, Math.PI*2);
+      ctx.fillStyle = npcColor(npc);
+      ctx.fill();
+
+      if(npc.attention > 0){
+        ctx.beginPath();
+        ctx.arc(npc.x, npc.y, npc.r + 7 + Math.sin(game.time*0.02)*2, 0, Math.PI*2);
+        ctx.strokeStyle = `rgba(255,255,255,${0.08 + npc.attention*0.006})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = "#111";
+      ctx.beginPath();
+      ctx.arc(npc.x-5, npc.y-3, 2.2, 0, Math.PI*2);
+      ctx.arc(npc.x+5, npc.y-3, 2.2, 0, Math.PI*2);
+      ctx.fill();
+
+      ctx.strokeStyle = "#111";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+
+      if(!npc.alive){
+        ctx.moveTo(npc.x-6,npc.y+6);
+        ctx.lineTo(npc.x+6,npc.y+6);
+      } else if(npc.killer || npc.anger > 70){
+        ctx.moveTo(npc.x-7,npc.y+8);
+        ctx.lineTo(npc.x+7,npc.y+8);
+      } else if(npc.fear > 55){
+        ctx.arc(npc.x, npc.y+7, 4, 0, Math.PI, false);
+      } else {
+        ctx.arc(npc.x, npc.y+8, 4, 0, Math.PI, true);
+      }
+      ctx.stroke();
+
+      if(npc.star){
+        ctx.fillStyle = "#111";
+        ctx.fillRect(npc.x-3,npc.y-23,6,6);
+      }
+    }
+
+    function updateNPC(npc){
+      if(!npc.alive) return;
+
+      npc.x += npc.vx;
+      npc.y += npc.vy;
+
+      npc.vx += rand(-0.04,0.04);
+      npc.vy += rand(-0.04,0.04);
+
+      const speedBoost = 1 + game.chaos*0.01 + (npc.desperate ? 0.6 : 0);
+      npc.vx = clamp(npc.vx, -1.8*speedBoost, 1.8*speedBoost);
+      npc.vy = clamp(npc.vy, -1.8*speedBoost, 1.8*speedBoost);
+
+      if(npc.x < npc.r){ npc.x = npc.r; npc.vx *= -1; }
+      if(npc.x > W-npc.r){ npc.x = W-npc.r; npc.vx *= -1; }
+      if(npc.y < 90+npc.r){ npc.y = 90+npc.r; npc.vy *= -1; }
+      if(npc.y > H-npc.r-20){ npc.y = H-npc.r-20; npc.vy *= -1; }
+
+      npc.attention = Math.max(0, npc.attention - 0.2);
+
+      // ambiente general
+      npc.stress = clamp(npc.stress + game.chaos*0.004 - npc.hope*0.001, 0, 100);
+      npc.fear = clamp(npc.fear + game.chaos*0.003, 0, 100);
+      npc.anger = clamp(npc.anger + (game.truth < 40 ? 0.06 : 0.02), 0, 100);
+      npc.hope = clamp(npc.hope - game.chaos*0.003 + (game.truth > 55 ? 0.03 : -0.01), 0, 100);
+
+      if(npc.stress > 75 && npc.fear > 65 && Math.random() < 0.0015){
+        npc.desperate = true;
+      }
+
+      if(npc.anger > npc.violenceThreshold && game.chaos > 65 && Math.random() < 0.0012){
+        npc.killer = true;
+      }
+
+      if(game.chaos > 75 && npc.hope < 20 && Math.random() < 0.0015){
+        npc.isolated = true;
+      }
+
+      if(game.chaos > 92 && npc.desperate && Math.random() < 0.001){
+        const victim = pick(npcs.filter(n => n.alive && n.id !== npc.id));
+        if(victim){
+          victim.alive = false;
+          npc.killer = true;
+          addFeed("chaos", "Violencia", `${npc.name} ${npc.surname} mata a ${victim.name} ${victim.surname} en una espiral de desesperación.`);
+        }
+      }
+    }
+
+    function socialInteractions(){
+      for(let i=0;i<npcs.length;i++){
+        const a = npcs[i];
+        if(!a.alive) continue;
+
+        for(let j=i+1;j<npcs.length;j++){
+          const b = npcs[j];
+          if(!b.alive) continue;
+
+          const dx = a.x - b.x;
+          const dy = a.y - b.y;
+          const dist = Math.hypot(dx,dy);
+
+          if(dist < a.r + b.r + 3){
+            const tvx = a.vx; const tvy = a.vy;
+            a.vx = b.vx; a.vy = b.vy;
+            b.vx = tvx;  b.vy = tvy;
+
+            if(a.killer && Math.random() < 0.002) b.fear = clamp(b.fear + 15, 0, 100);
+            if(a.isolated && Math.random() < 0.001) b.hope = clamp(b.hope - 5, 0, 100);
+          }
+
+          if(dist < 120){
+            if(a.network.includes(b.id) || b.network.includes(a.id)){
+              a.hope = clamp(a.hope + 0.01, 0, 100);
+              b.hope = clamp(b.hope + 0.01, 0, 100);
+            }
+
+            if((a.killer || b.killer) && Math.random() < 0.002){
+              a.fear = clamp(a.fear + 7, 0, 100);
+              b.fear = clamp(b.fear + 7, 0, 100);
+            }
+          }
+        }
+      }
+    }
+
+    function drawCamera(){
+      const size = 124;
+      const x = mouse.x - size/2;
+      const y = mouse.y - size/2;
+
+      ctx.strokeStyle = "rgba(255,255,255,.92)";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x,y,size,size);
+
+      ctx.beginPath();
+      ctx.moveTo(mouse.x-15, mouse.y);
+      ctx.lineTo(mouse.x+15, mouse.y);
+      ctx.moveTo(mouse.x, mouse.y-15);
+      ctx.lineTo(mouse.x, mouse.y+15);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(mouse.x, mouse.y, 62, 0, Math.PI*2);
+      ctx.strokeStyle = "rgba(255,255,255,.18)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    function draw(){
+      ctx.clearRect(0,0,W,H);
+      drawCity();
+
+      for(const npc of npcs) updateNPC(npc);
+      socialInteractions();
+
+      npcs.sort((a,b)=>a.y-b.y);
+      for(const npc of npcs) drawNPC(npc);
+
+      if(game.chaos > 40){
+        ctx.fillStyle = `rgba(255,80,80,${(game.chaos/100)*0.06})`;
+        ctx.fillRect(0,0,W,H);
+      }
+
+      if(game.truth > 70){
+        ctx.fillStyle = `rgba(100,180,255,${((game.truth-70)/30)*0.04})`;
+        ctx.fillRect(0,0,W,H);
+      }
+
+      drawCamera();
+
+      if(game.flash > 0){
+        ctx.fillStyle = `rgba(255,255,255,${game.flash*0.08})`;
+        ctx.fillRect(0,0,W,H);
+        game.flash--;
+      }
+    }
+
+    function getTargets(){
+      return npcs.filter(n => n.alive && Math.hypot(n.x-mouse.x, n.y-mouse.y) < 62);
+    }
+
+    function classifyScene(targets){
+      if(targets.length === 0){
+        return { type:"empty", headline:"Portada vacía, rumor lleno.", fame:+2, money:+1, truth:-4, chaos:+3 };
+      }
+
+      const killers = targets.filter(t => t.killer).length;
+      const desperate = targets.filter(t => t.desperate).length;
+      const isolated = targets.filter(t => t.isolated).length;
+      const fearful = targets.filter(t => t.fear > 55).length;
+      const stressed = targets.filter(t => t.stress > 65).length;
+      const hopeful = targets.filter(t => t.hope > 65).length;
+      const stars = targets.filter(t => t.star).length;
+
+      if(killers >= 1){
+        return { type:"murder", headline:"La violencia entra en portada.", fame:+18, money:+12, truth:-10, chaos:+22 };
+      }
+
+      if(desperate >= 2){
+        return { type:"despair", headline:"La desesperación deja de esconderse.", fame:+14, money:+10, truth:-7, chaos:+15 };
+      }
+
+      if(isolated >= 2){
+        return { type:"collapse", headline:"La gente ya no vive junta: sobrevive separada.", fame:+12, money:+9, truth:-5, chaos:+14 };
+      }
+
+      if(fearful >= 2){
+        return { type:"fear", headline:"El miedo se vuelve tendencia.", fame:+10, money:+8, truth:-5, chaos:+11 };
+      }
+
+      if(stressed >= 2){
+        return { type:"tension", headline:"La ciudad se tensa otro poco.", fame:+8, money:+6, truth:-2, chaos:+8 };
+      }
+
+      if(hopeful >= 2 && stars === 0){
+        return { type:"human", headline:"Todavía quedan escenas humanas.", fame:+4, money:+2, truth:+7, chaos:-5 };
+      }
+
+      if(stars >= 1){
+        return { type:"viral", headline:"Una figura reconocible dispara el interés.", fame:+13, money:+11, truth:-3, chaos:+6 };
+      }
+
+      return { type:"ordinary", headline:"Vida normal. Poca pólvora, más contexto.", fame:+3, money:+1, truth:+5, chaos:-2 };
+    }
+
+    function registerVisibleNPCs(targets){
+      for(const npc of targets){
+        if(!game.visibleNPCs.find(n => n.id === npc.id)){
+          game.visibleNPCs.unshift(npc);
+        }
+      }
+      renderNPCPanel();
+    }
+
+    function publishScene(){
+      if(!game.running || game.over || !screens.choice.classList.contains("hidden")) return;
+
+      const targets = getTargets();
+      registerVisibleNPCs(targets);
+      const scene = classifyScene(targets);
+
+      game.shots++;
+      game.fame = clamp(game.fame + scene.fame, 0, 100);
+      game.money = clamp(game.money + scene.money, 0, 100);
+      game.truth = clamp(game.truth + scene.truth, 0, 100);
+      game.chaos = clamp(game.chaos + scene.chaos, 0, 100);
+
+      for(const t of targets){
+        t.attention += 28;
+        t.stress = clamp(t.stress + 8, 0, 100);
+        t.fear = clamp(t.fear + 5, 0, 100);
+        t.hope = clamp(t.hope - 4, 0, 100);
+      }
+
+      addFeed(scene.type === "human" || scene.type === "ordinary" ? "truth" : "fame", "Portada", scene.headline);
+      showMessage(scene.headline);
+      game.flash = 8;
+
+      triggerStoryFlags(scene, targets);
+      updateUI();
+      maybeOpenChoice();
+      checkEndings();
+    }
+
+    function triggerStoryFlags(scene, targets){
+      if(scene.type === "viral" && !game.storyFlags.mediaCultKnown){
+        game.storyFlags.mediaCultKnown = true;
+        addFeed("story", "Trama", "Los medios rivales empiezan a copiar el tono de Vera. La ciudad aprende a vivir para ser vista.");
+      }
+
+      if((scene.type === "tension" || scene.type === "fear") && !game.storyFlags.violenceKnown){
+        game.storyFlags.violenceKnown = true;
+        addFeed("story", "Trama", "En varios barrios se habla ya de enfrentamientos inminentes.");
+      }
+
+      if(scene.type === "collapse" && !game.storyFlags.survivalKnown){
+        game.storyFlags.survivalKnown = true;
+        addFeed("story", "Trama", "Algunas familias empiezan a almacenar comida y a desconectarse de la ciudad.");
+      }
+
+      if(game.shots >= 2 && !game.storyFlags.corruptionKnown){
+        game.storyFlags.corruptionKnown = true;
+        addFeed("story", "Filtración", "Un funcionario anónimo contacta con Vera: hay corrupción en la gestión de la energía y la seguridad.");
+      }
+
+      if(game.day >= 3 && !game.storyFlags.blackoutKnown){
+        game.storyFlags.blackoutKnown = true;
+        addFeed("story", "Aviso", "Se filtra la posibilidad de apagones sectorizados.");
+      }
+
+      if(game.day >= 4 && !game.storyFlags.scarcityKnown){
+        game.storyFlags.scarcityKnown = true;
+        addFeed("story", "Mercados", "Empiezan problemas de abastecimiento. Algunas tiendas racionan productos.");
+      }
+    }
+
+    function maybeOpenChoice(){
+      if(game.shots >= game.nextChoiceAt){
+        game.nextChoiceAt += 3;
+        openEditorialChoice();
+      }
+    }
+
+    function openEditorialChoice(){
+      screens.choice.classList.remove("hidden");
+      choicesWrap.innerHTML = "";
+
+      const options = buildChoices();
+      choiceTitle.textContent = "Decisión editorial";
+      choiceDesc.textContent = "Tu redacción te exige impacto. Tú decides qué clase de monstruo quieres alimentar.";
+
+      for(const opt of options){
+        const div = document.createElement("div");
+        div.className = "choice";
+        div.innerHTML = `<strong>${opt.title}</strong><div class="mini">${opt.desc}</div>`;
+        div.onclick = () => {
+          applyChoice(opt);
+          screens.choice.classList.add("hidden");
+        };
+        choicesWrap.appendChild(div);
+      }
+    }
+
+    function buildChoices(){
+      const list = [
+        {
+          title: "Humanizar la historia",
+          desc: "Das contexto, nombres, consecuencias reales y reduces el morbo.",
+          effect(){
+            game.fame += 4;
+            game.money += 2;
+            game.truth += 12;
+            game.chaos -= 7;
+            npcs.forEach(n => n.hope = clamp(n.hope + 6,0,100));
+            addFeed("truth","Edición","Vera publica una pieza humana y compleja. No arrasa, pero sostiene algo parecido a una sociedad.");
+          }
+        },
+        {
+          title: "Exagerar para romper audiencias",
+          desc: "Titular agresivo, enfoque parcial, más clics y más veneno.",
+          effect(){
+            game.fame += 13;
+            game.money += 11;
+            game.truth -= 14;
+            game.chaos += 12;
+            npcs.forEach(n => {
+              n.stress = clamp(n.stress + 8,0,100);
+              n.fear = clamp(n.fear + 7,0,100);
+            });
+            addFeed("chaos","Edición","La pieza se vuelve viral. La ciudad no mejora, pero las métricas hacen palmas.");
+          }
+        },
+        {
+          title: "Señalar culpables concretos",
+          desc: "Destapas nombres y cargos. Puede ser verdad... o gasolina.",
+          effect(){
+            game.fame += 10;
+            game.money += 8;
+            game.truth += 2;
+            game.chaos += 10;
+            const target = pick(npcs.filter(n => n.alive));
+            if(target){
+              target.stress = clamp(target.stress + 35,0,100);
+              target.fear = clamp(target.fear + 30,0,100);
+              addFeed("story","Exposición",`${target.name} ${target.surname} queda señalado públicamente. Su vida privada revienta.`);
+            }
+          }
+        },
+        {
+          title: "Proteger a una fuente y perder dinero",
+          desc: "No publicas lo más rentable. Salvas una vida, quizá varias.",
+          effect(){
+            game.fame -= 2;
+            game.money -= 4;
+            game.truth += 8;
+            game.chaos -= 6;
+            const target = pick(npcs.filter(n => n.alive));
+            if(target){
+              target.hope = clamp(target.hope + 18,0,100);
+              target.stress = clamp(target.stress - 10,0,100);
+              addFeed("truth","Protección",`Vera protege a ${target.name} ${target.surname}. No todo se vende hoy.`);
+            }
+          }
+        }
+      ];
+
+      if(game.storyFlags.blackoutKnown){
+        list.push({
+          title: "Publicar el riesgo de apagón masivo",
+          desc: "Avisas a la población, pero puedes provocar compras de pánico y saqueos.",
+          effect(){
+            game.fame += 9;
+            game.money += 5;
+            game.truth += 6;
+            game.chaos += 14;
+            npcs.forEach(n => {
+              n.fear = clamp(n.fear + 12,0,100);
+              if(n.survivalSkill > 60) n.isolated = true;
+            });
+            addFeed("story","Apagón","La noticia del apagón desata compras compulsivas y cierres de barrio.");
+          }
+        });
+      }
+
+      if(game.storyFlags.corruptionKnown){
+        list.push({
+          title: "Golpear la trama de corrupción",
+          desc: "Puede arreglar algo... o dejar la ciudad sin estabilidad de golpe.",
+          effect(){
+            game.fame += 12;
+            game.money += 9;
+            game.truth += 10;
+            game.chaos += 8;
+            addFeed("story","Corrupción","Vera destapa la red de corrupción. Caen peces gordos, pero también el equilibrio precario.");
+          }
+        });
+      }
+
+      return list.slice(0,4);
+    }
+
+    function applyChoice(opt){
+      opt.effect();
+      game.fame = clamp(game.fame,0,100);
+      game.money = clamp(game.money,0,100);
+      game.truth = clamp(game.truth,0,100);
+      game.chaos = clamp(game.chaos,0,100);
+      updateUI();
+      checkEndings();
+    }
+
+    function ambientStoryProgression(){
+      if(game.time % 600 !== 0) return;
+
+      game.day++;
+
+      // evolución natural dura
+      if(game.chaos > 25){
+        npcs.forEach(n => {
+          n.stress = clamp(n.stress + 6,0,100);
+          n.fear = clamp(n.fear + 5,0,100);
+          n.hope = clamp(n.hope - 5,0,100);
+        });
+      }
+
+      if(game.day >= 5 && game.storyFlags.scarcityKnown){
+        npcs.forEach(n => {
+          n.money = clamp(n.money - rand(4,10), 0, 100);
+          if(n.money < 20) n.desperate = true;
+        });
+        addFeed("story","Escasez","La comida y el combustible empiezan a fallar por zonas.");
+      }
+
+      if(game.day >= 6 && game.chaos > 55){
+        npcs.forEach(n => {
+          if(n.hope < 25 && Math.random() < 0.08) n.isolated = true;
+        });
+        addFeed("chaos","Ruptura","Varios barrios dejan de cooperar entre sí.");
+      }
+
+      if(game.day >= 7 && game.chaos > 68){
+        npcs.forEach(n => {
+          if(n.desperate && Math.random() < 0.10) n.killer = true;
+        });
+        addFeed("chaos","Colapso","La policía pierde presencia y empiezan ajustes de cuentas.");
+      }
+
+      updateUI();
+      checkEndings();
+    }
+
+    function checkEndings(){
+      const alive = npcs.filter(n => n.alive).length;
+      const dead = npcs.length - alive;
+      const isolated = npcs.filter(n => n.alive && n.isolated).length;
+      const killers = npcs.filter(n => n.alive && n.killer).length;
+
+      // Final oscuro 1: caos total
+      if(game.chaos >= 100){
+        finishGame(
+          "Final oscuro: Caos total",
+          "La ciudad sigue en pie físicamente, pero nadie comparte ya una realidad común. Todo es reacción, rumor y odio. Vera consigue la portada definitiva. También ayuda a pulverizar el concepto de convivencia."
+        );
+        return;
+      }
+
+      // Final oscuro 2: destrucción de la ciudad
+      if(game.chaos > 88 && game.truth < 20 && game.day >= 8){
+        finishGame(
+          "Final oscuro: Destrucción de la ciudad",
+          "Los servicios colapsan, los barrios se rompen y la ciudad deja de funcionar como ciudad. Vera gana dinero y prestigio mundial narrando la caída. Es una victoria con olor a ceniza."
+        );
+        return;
+      }
+
+      // Final oscuro 3: vida sin sociedad
+      if(isolated >= 12 && game.day >= 7){
+        finishGame(
+          "Final oscuro: Vida sin sociedad",
+          "La gente sigue viva, pero cada cual vive atrincherado en su pequeño mundo. Sin confianza, sin calle, sin comunidad. No queda ciudad: queda suma de madrigueras humanas."
+        );
+        return;
+      }
+
+      // Final oscuro 4: matanza infinita
+      if(killers >= 6 || dead >= 10){
+        finishGame(
+          "Final oscuro: Matanza infinita",
+          "La violencia deja de ser noticia y se convierte en idioma. Las portadas ya no persiguen la sangre: llegan tarde a ella. Vera obtiene el mayor tráfico de su carrera. La ciudad aprende a devorarse sin descanso."
+        );
+        return;
+      }
+
+      // Final oscuro 5: supervivencia extrema
+      if(game.day >= 9 && game.storyFlags.survivalKnown && game.chaos > 72 && alive <= 18){
+        finishGame(
+          "Final oscuro: Supervivencia extrema",
+          "Los que quedan ya no viven como ciudadanos, sino como supervivientes. Todo gira en torno a agua, comida, refugio y miedo. La civilización local no cae con un estruendo, sino con hambre."
+        );
+        return;
+      }
+
+      // Final bueno / gris
+      if(game.day >= 9 && game.truth >= 70 && game.chaos <= 35){
+        finishGame(
+          "Final: El reportaje que salva algo",
+          "Vera firma el mejor trabajo de su vida sin convertir la ciudad en un matadero emocional. Gana menos de lo que le prometían los buitres, pero gana algo mucho más raro: respeto."
+        );
+        return;
+      }
+
+      if(game.day >= 10){
+        finishGame(
+          "Final: Ciudad herida",
+          "No la has destruido del todo, pero tampoco la has dejado sana. Tu gran reportaje existe. La pregunta es si la ciudad podrá leerse a sí misma después."
+        );
+      }
+    }
+
+    function finishGame(title, desc){
+      game.running = false;
+      game.over = true;
+      endTitle.textContent = title;
+      endDesc.textContent = desc;
+      endDay.textContent = game.day;
+      endShots.textContent = game.shots;
+      endFame.textContent = Math.round(game.fame);
+      endMoney.textContent = Math.round(game.money) + "k";
+      endTruth.textContent = Math.round(game.truth) + "%";
+      endChaos.textContent = Math.round(game.chaos) + "%";
+      screens.end.classList.remove("hidden");
+    }
+
+    window.addEventListener("click", () => {
+      publishScene();
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if(e.code === "Space" && game.running && !game.over && screens.choice.classList.contains("hidden")){
+        game.time += 600;
+        ambientStoryProgression();
+        showMessage("Pasa un día más en la ciudad.");
+      }
+
+      if(e.key.toLowerCase() === "r" && game.over){
+        startGame();
+      }
+    });
+
+    function gameLoop(){
+      requestAnimationFrame(gameLoop);
+      if(!game.running || game.over) return;
+      game.time++;
+      draw();
+      if(game.time % 600 === 0) ambientStoryProgression();
+    }
+
+    gameLoop();
+  </script>
+</body>
+</html>

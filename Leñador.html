@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Leñador Pro</title>
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #87CEEB;
+  overflow: hidden;
+}
+
+#game {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+.player {
+  width: 40px;
+  height: 40px;
+  background: brown;
+  position: absolute;
+  border-radius: 5px;
+}
+
+.tree {
+  width: 40px;
+  height: 60px;
+  background: green;
+  position: absolute;
+  border-radius: 10px;
+}
+
+#ui {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background: white;
+  padding: 10px;
+  border-radius: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="ui">
+  🌲 Madera: <span id="wood">0</span><br>
+  🪓 Nivel Hacha: <span id="axe">1</span>
+</div>
+
+<div id="game">
+  <div id="player" class="player"></div>
+</div>
+
+<script>
+let player = document.getElementById("player");
+let game = document.getElementById("game");
+
+let x = 100;
+let y = 100;
+
+let wood = 0;
+let axeLevel = 1;
+
+// Crear árboles
+function createTree() {
+  let tree = document.createElement("div");
+  tree.className = "tree";
+
+  tree.style.left = Math.random() * (window.innerWidth - 50) + "px";
+  tree.style.top = Math.random() * (window.innerHeight - 70) + "px";
+
+  game.appendChild(tree);
+}
+
+// Generar varios árboles
+for(let i=0;i<10;i++) createTree();
+
+// Movimiento
+document.addEventListener("keydown", (e) => {
+  if(e.key === "ArrowUp") y -= 10;
+  if(e.key === "ArrowDown") y += 10;
+  if(e.key === "ArrowLeft") x -= 10;
+  if(e.key === "ArrowRight") x += 10;
+
+  player.style.left = x + "px";
+  player.style.top = y + "px";
+});
+
+// Ataque (tecla espacio)
+document.addEventListener("keydown", (e) => {
+  if(e.code === "Space") {
+    let trees = document.querySelectorAll(".tree");
+
+    trees.forEach(tree => {
+      let tx = tree.offsetLeft;
+      let ty = tree.offsetTop;
+
+      let dist = Math.hypot(x - tx, y - ty);
+
+      if(dist < 60) {
+        tree.remove();
+        wood += axeLevel;
+        document.getElementById("wood").textContent = wood;
+
+        createTree();
+      }
+    });
+  }
+});
+
+// Mejora automática
+setInterval(() => {
+  if(wood >= 10) {
+    wood -= 10;
+    axeLevel++;
+    document.getElementById("axe").textContent = axeLevel;
+    document.getElementById("wood").textContent = wood;
+  }
+}, 2000);
+
+</script>
+
+</body>
+</html>

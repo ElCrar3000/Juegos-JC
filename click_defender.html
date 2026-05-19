@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Click Defender | Juegos JC</title>
+<style>
+  :root {
+    --bg: #070b16;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --accent2: #a855f7;
+    --danger: #fb7185;
+    --good: #22c55e;
+    --warn: #facc15;
+    --line: rgba(255,255,255,0.12);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(56,189,248,0.25), transparent 35%),
+      radial-gradient(circle at top right, rgba(168,85,247,0.25), transparent 35%),
+      var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+  h1 {
+    margin: 10px 0;
+    font-size: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hud {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-weight: 900;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .stat {
+    background: rgba(255,255,255,0.06);
+    padding: 8px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .stat.score { color: var(--accent); }
+  .stat.wave { color: var(--accent2); }
+  .stat.lives { color: var(--danger); }
+  canvas {
+    background: rgba(16,24,39,0.85);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    max-width: 100%;
+    cursor: crosshair;
+    touch-action: none;
+  }
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(7,11,22,0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+  .overlay.hidden { display: none; }
+  .panel {
+    background: linear-gradient(135deg, rgba(16,24,39,0.95), rgba(22,34,56,0.95));
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 36px;
+    text-align: center;
+    max-width: 420px;
+  }
+  .panel h2 { margin: 0 0 12px; font-size: 32px; }
+  .panel p { color: var(--muted); line-height: 1.5; }
+  .btn {
+    padding: 14px 24px;
+    border-radius: 14px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #020617;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 12px;
+  }
+  .btn:hover { filter: brightness(1.1); }
+  .back {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 14px;
+    background: rgba(255,255,255,0.06);
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+  }
+  .controls-hint {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back">← Volver</a>
+
+<h1>Click Defender</h1>
+
+<div class="hud">
+  <div class="stat score">Puntos: <span id="score">0</span></div>
+  <div class="stat wave">Oleada: <span id="wave">1</span></div>
+  <div class="stat lives">Vidas: <span id="lives">3</span></div>
+  <div class="stat">Récord: <span id="best">0</span></div>
+</div>
+
+<canvas id="game" width="600" height="500"></canvas>
+
+<p class="controls-hint">Haz clic / toca a los enemigos antes de que lleguen al centro</p>
+
+<div class="overlay" id="overlay">
+  <div class="panel">
+    <h2 id="overlayTitle">Click Defender</h2>
+    <p id="overlayText">Defiende la base del centro.<br>Destruye a los enemigos antes de que la toquen.<br>Tienes 3 vidas.</p>
+    <button class="btn" id="startBtn">¡Defender!</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = canvas.width;
+const H = canvas.height;
+const CX = W / 2;
+const CY = H / 2;
+const BASE_R = 35;
+
+const scoreEl = document.getElementById('score');
+const waveEl = document.getElementById('wave');
+const livesEl = document.getElementById('lives');
+const bestEl = document.getElementById('best');
+const overlay = document.getElementById('overlay');
+const overlayTitle = document.getElementById('overlayTitle');
+const overlayText = document.getElementById('overlayText');
+const startBtn = document.getElementById('startBtn');
+
+let enemies, particles, score, wave, lives, best, running, spawnTimer, enemiesThisWave, enemiesLeft, pulse;
+
+best = parseInt(localStorage.getItem('clickdefender_best') || '0');
+bestEl.textContent = best;
+
+function reset() {
+  enemies = [];
+  particles = [];
+  score = 0;
+  wave = 1;
+  lives = 3;
+  pulse = 0;
+  spawnTimer = 0;
+  enemiesThisWave = 5;
+  enemiesLeft = enemiesThisWave;
+  running = true;
+  updateHUD();
+}
+
+function updateHUD() {
+  scoreEl.textContent = score;
+  waveEl.textContent = wave;
+  livesEl.textContent = lives;
+}
+
+function spawnEnemy() {
+  const angle = Math.random() * Math.PI * 2;
+  const dist = 320;
+  const speed = 0.4 + wave * 0.08 + Math.random() * 0.3;
+  const types = [
+    { color: '#fb7185', r: 18, hp: 1, points: 10 },
+    { color: '#facc15', r: 14, hp: 1, points: 15 },
+    { color: '#a855f7', r: 22, hp: 2, points: 25 }
+  ];
+  const type = wave < 3 ? types[0] : types[Math.floor(Math.random() * (wave < 6 ? 2 : 3))];
+  enemies.push({
+    x: CX + Math.cos(angle) * dist,
+    y: CY + Math.sin(angle) * dist,
+    angle,
+    speed,
+    r: type.r,
+    hp: type.hp,
+    maxHp: type.hp,
+    points: type.points,
+    color: type.color
+  });
+}
+
+function spawnParticles(x, y, color, count = 12) {
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 8,
+      vy: (Math.random() - 0.5) * 8,
+      life: 1,
+      color
+    });
+  }
+}
+
+function gameOver() {
+  running = false;
+  if (score > best) {
+    best = score;
+    localStorage.setItem('clickdefender_best', best);
+    bestEl.textContent = best;
+    overlayTitle.textContent = '¡Nuevo récord!';
+    overlayText.innerHTML = `Has hecho <strong>${score}</strong> puntos en la oleada <strong>${wave}</strong>.`;
+  } else {
+    overlayTitle.textContent = '¡Base destruida!';
+    overlayText.innerHTML = `Puntos: <strong>${score}</strong><br>Oleada: <strong>${wave}</strong><br>Récord: <strong>${best}</strong>`;
+  }
+  startBtn.textContent = 'Reintentar';
+  setTimeout(() => overlay.classList.remove('hidden'), 800);
+}
+
+function nextWave() {
+  wave++;
+  enemiesThisWave = 5 + wave * 2;
+  enemiesLeft = enemiesThisWave;
+  spawnTimer = -1500;
+  updateHUD();
+}
+
+function update(dt) {
+  if (!running) return;
+
+  pulse += dt * 0.005;
+
+  // Spawn
+  spawnTimer += dt;
+  const spawnRate = Math.max(400, 1200 - wave * 80);
+  if (spawnTimer > spawnRate && enemiesLeft > 0) {
+    spawnEnemy();
+    enemiesLeft--;
+    spawnTimer = 0;
+  }
+
+  // Enemies move toward center
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const e = enemies[i];
+    const dx = CX - e.x;
+    const dy = CY - e.y;
+    const d = Math.sqrt(dx*dx + dy*dy);
+    e.x += (dx/d) * e.speed * (dt * 0.1);
+    e.y += (dy/d) * e.speed * (dt * 0.1);
+
+    if (d < BASE_R + e.r) {
+      enemies.splice(i, 1);
+      lives--;
+      updateHUD();
+      spawnParticles(CX, CY, '#fb7185', 20);
+      if (lives <= 0) {
+        gameOver();
+        return;
+      }
+    }
+  }
+
+  // Wave complete
+  if (enemiesLeft <= 0 && enemies.length === 0) {
+    nextWave();
+  }
+
+  // Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life -= 0.025;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Concentric rings around base
+  for (let i = 0; i < 3; i++) {
+    ctx.strokeStyle = `rgba(56,189,248,${0.1 - i * 0.03})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(CX, CY, 80 + i * 60 + Math.sin(pulse + i) * 5, 0, Math.PI*2);
+    ctx.stroke();
+  }
+
+  // Base
+  const baseGrad = ctx.createRadialGradient(CX, CY, 0, CX, CY, BASE_R);
+  baseGrad.addColorStop(0, '#38bdf8');
+  baseGrad.addColorStop(1, '#a855f7');
+  ctx.fillStyle = baseGrad;
+  ctx.beginPath();
+  ctx.arc(CX, CY, BASE_R + Math.sin(pulse * 2) * 2, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Lives indicator on base
+  ctx.fillStyle = '#020617';
+  ctx.font = 'bold 24px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(lives, CX, CY);
+
+  // Enemies
+  enemies.forEach(e => {
+    ctx.fillStyle = e.color;
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, e.r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    if (e.maxHp > 1) {
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(e.x - e.r, e.y - e.r - 8, e.r * 2, 4);
+      ctx.fillStyle = '#22c55e';
+      ctx.fillRect(e.x - e.r, e.y - e.r - 8, e.r * 2 * (e.hp / e.maxHp), 4);
+    }
+  });
+
+  // Particles
+  particles.forEach(p => {
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - 3, p.y - 3, 6, 6);
+  });
+  ctx.globalAlpha = 1;
+}
+
+let lastTime = performance.now();
+function loop(now) {
+  const dt = now - lastTime;
+  lastTime = now;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function handleClick(e) {
+  if (!running) return;
+  const rect = canvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  const x = (clientX - rect.left) * (W / rect.width);
+  const y = (clientY - rect.top) * (H / rect.height);
+
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const en = enemies[i];
+    const dx = en.x - x;
+    const dy = en.y - y;
+    if (dx*dx + dy*dy < en.r * en.r) {
+      en.hp--;
+      if (en.hp <= 0) {
+        score += en.points;
+        updateHUD();
+        spawnParticles(en.x, en.y, en.color);
+        enemies.splice(i, 1);
+      } else {
+        spawnParticles(en.x, en.y, en.color, 4);
+      }
+      return;
+    }
+  }
+}
+
+canvas.addEventListener('mousedown', handleClick);
+canvas.addEventListener('touchstart', e => { e.preventDefault(); handleClick(e); });
+
+startBtn.addEventListener('click', () => {
+  overlay.classList.add('hidden');
+  reset();
+});
+
+reset();
+running = false;
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

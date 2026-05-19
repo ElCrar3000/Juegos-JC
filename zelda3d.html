@@ -1,0 +1,1712 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mini Zelda 3D (LARGO) - One File</title>
+  <style>
+    html, body { margin:0; padding:0; overflow:hidden; background:#000; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    #hud {
+      position: absolute; left: 12px; top: 10px; z-index: 5; color: #fff;
+      text-shadow: 0 2px 8px rgba(0,0,0,.8);
+      user-select:none;
+      display:flex; flex-direction:column; gap:6px;
+      width: min(520px, calc(100vw - 24px));
+    }
+    .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .pill {
+      background: rgba(0,0,0,.45);
+      border: 1px solid rgba(255,255,255,.15);
+      padding: 6px 10px;
+      border-radius: 12px;
+      backdrop-filter: blur(6px);
+    }
+    #hearts { display:flex; gap:4px; align-items:center; }
+    .heart {
+      width: 18px; height: 18px; display:inline-block; position:relative;
+      transform: translateY(1px);
+    }
+    .heart::before, .heart::after{
+      content:""; position:absolute; top:0; width:10px; height:16px; background:#ff3b5c;
+      border-radius:10px 10px 0 0;
+      box-shadow: 0 0 10px rgba(255,60,92,.25);
+    }
+    .heart::before{ left:8px; transform: rotate(-45deg); transform-origin:0 100%; }
+    .heart::after{ left:0px; transform: rotate(45deg); transform-origin:100% 100%; }
+    .heart.empty::before, .heart.empty::after{ background: rgba(255,255,255,.2); box-shadow:none; }
+
+    #bars { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .barWrap { width: 190px; height: 12px; background: rgba(255,255,255,.12); border-radius: 999px; overflow:hidden; border:1px solid rgba(255,255,255,.12); }
+    .bar { height:100%; width:100%; background: #7CFC00; }
+    .bar.stamina { background: #00e5ff; }
+
+    #minimap {
+      position:absolute; right:12px; top:12px; z-index:6;
+      width: 170px; height: 170px;
+      background: rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.15);
+      border-radius: 14px;
+      backdrop-filter: blur(6px);
+      overflow:hidden;
+    }
+    #minimap canvas { width:100%; height:100%; display:block; }
+
+    #hint {
+      position:absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
+      z-index:7; color:#fff;
+      padding: 10px 14px; border-radius: 14px;
+      background: rgba(0,0,0,.45);
+      border:1px solid rgba(255,255,255,.15);
+      text-align:center;
+      max-width: min(720px, calc(100vw - 24px));
+      text-shadow: 0 2px 8px rgba(0,0,0,.8);
+      user-select:none;
+      display:none;
+    }
+
+    #dialog {
+      position:absolute; left: 50%; bottom: 80px; transform: translateX(-50%);
+      z-index:8;
+      width: min(760px, calc(100vw - 24px));
+      background: rgba(0,0,0,.55);
+      border:1px solid rgba(255,255,255,.18);
+      border-radius: 18px;
+      padding: 14px 16px;
+      color:#fff;
+      backdrop-filter: blur(8px);
+      display:none;
+      text-shadow: 0 2px 10px rgba(0,0,0,.9);
+    }
+    #dialog .title { font-weight: 800; letter-spacing:.2px; margin-bottom:6px; }
+    #dialog .text { opacity:.95; line-height:1.35; }
+    #dialog .opts { margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; }
+    #dialog button {
+      background: rgba(255,255,255,.12);
+      color:#fff; border:1px solid rgba(255,255,255,.18);
+      border-radius: 12px; padding: 8px 10px; cursor:pointer;
+    }
+    #dialog button:hover { background: rgba(255,255,255,.18); }
+
+    #menuOverlay {
+      position:absolute; inset:0; z-index: 20; display:none;
+      background: rgba(0,0,0,.65);
+      backdrop-filter: blur(10px);
+      color:#fff;
+    }
+    #menuCard {
+      position:absolute; left:50%; top:50%; transform: translate(-50%,-50%);
+      width: min(860px, calc(100vw - 24px));
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.5);
+      border-radius: 20px;
+      padding: 16px;
+    }
+    #menuCard h2 { margin: 0 0 10px; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+    .panel { padding: 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 16px; background: rgba(255,255,255,.06); }
+    .panel h3 { margin: 0 0 8px; }
+    .kbd { display:inline-block; padding: 2px 6px; border-radius: 8px; border:1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.35); }
+    .btnRow { display:flex; gap:10px; flex-wrap:wrap; margin-top: 12px; }
+    .bigBtn {
+      padding: 10px 12px; border-radius: 14px; cursor:pointer;
+      background: rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.22);
+      color:#fff;
+      font-weight: 700;
+    }
+    .bigBtn:hover { background: rgba(255,255,255,.2); }
+
+    #crosshair {
+      position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+      width: 14px; height: 14px; z-index: 9; display:none;
+      opacity: .9;
+    }
+    #crosshair:before, #crosshair:after {
+      content:""; position:absolute; left:50%; top:50%;
+      width: 14px; height: 2px; background: rgba(255,255,255,.9);
+      transform: translate(-50%,-50%);
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(255,255,255,.25);
+    }
+    #crosshair:after {
+      width: 2px; height: 14px;
+    }
+
+    #toast {
+      position:absolute; left:12px; bottom: 14px; z-index: 12; color:#fff;
+      padding: 10px 12px; border-radius: 14px;
+      background: rgba(0,0,0,.45);
+      border:1px solid rgba(255,255,255,.15);
+      backdrop-filter: blur(6px);
+      text-shadow: 0 2px 8px rgba(0,0,0,.8);
+      display:none;
+      max-width: min(420px, calc(100vw - 24px));
+    }
+  </style>
+</head>
+<body>
+
+  <div id="hud">
+    <div class="row">
+      <div class="pill" id="hearts"></div>
+      <div class="pill">💰 <span id="coins">0</span></div>
+      <div class="pill">🗝️ <span id="keys">0</span></div>
+      <div class="pill">⚔️ Arma: <span id="weaponName">Espada</span></div>
+      <div class="pill">🎯 Misión: <span id="questName">—</span></div>
+    </div>
+    <div class="row" id="bars">
+      <div class="pill">
+        Vida
+        <div class="barWrap"><div class="bar" id="hpBar"></div></div>
+      </div>
+      <div class="pill">
+        Stamina
+        <div class="barWrap"><div class="bar stamina" id="stamBar"></div></div>
+      </div>
+      <div class="pill">⏱️ <span id="timeTxt">00:00</span></div>
+      <div class="pill">📍 Zona: <span id="zoneTxt">Bosque</span></div>
+    </div>
+  </div>
+
+  <div id="minimap"><canvas id="mapCanvas" width="256" height="256"></canvas></div>
+  <div id="crosshair"></div>
+  <div id="hint"></div>
+
+  <div id="dialog">
+    <div class="title" id="dlgTitle">NPC</div>
+    <div class="text" id="dlgText">…</div>
+    <div class="opts" id="dlgOpts"></div>
+  </div>
+
+  <div id="toast"></div>
+
+  <div id="menuOverlay">
+    <div id="menuCard">
+      <h2>⏸ Pausa</h2>
+      <div class="grid">
+        <div class="panel">
+          <h3>Controles</h3>
+          <div style="line-height:1.55; opacity:.95">
+            Mover: <span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span><br/>
+            Correr: <span class="kbd">Shift</span> (gasta stamina)<br/>
+            Saltar: <span class="kbd">Espacio</span><br/>
+            Atacar espada: <span class="kbd">Click Izq</span><br/>
+            Bloquear (escudo): <span class="kbd">Click Der</span><br/>
+            Arco: <span class="kbd">Q</span> (apunta con mira) + <span class="kbd">Click Izq</span><br/>
+            Interactuar: <span class="kbd">E</span><br/>
+            Inventario rápido: <span class="kbd">1</span> Espada, <span class="kbd">2</span> Arco, <span class="kbd">3</span> Poción<br/>
+            Guardar: <span class="kbd">F5</span> (aquí es botón)<br/>
+            Menú: <span class="kbd">Esc</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Objetivo</h3>
+          <div style="line-height:1.55; opacity:.95">
+            - Habla con el <b>Anciano</b> (NPC) junto al campamento.<br/>
+            - Acepta la misión: <b>recuperar la Llave de la Mazmorra</b>.<br/>
+            - Entra a la mazmorra y abre el cofre final.<br/>
+            - Vuelve con el Anciano para completar.<br/>
+            <hr style="border:0;border-top:1px solid rgba(255,255,255,.12); margin:10px 0;">
+            Consejo: si vas sin stamina… correrás como “un héroe con resaca”. 😄
+          </div>
+        </div>
+      </div>
+
+      <div class="btnRow">
+        <button class="bigBtn" id="btnResume">▶ Reanudar</button>
+        <button class="bigBtn" id="btnSave">💾 Guardar</button>
+        <button class="bigBtn" id="btnLoad">📥 Cargar</button>
+        <button class="bigBtn" id="btnReset">🧨 Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+
+  <script>
+  /******************************************************************
+   * MINI ZELDA 3D (LARGO) - single file
+   * - Mundo bosque + mazmorra
+   * - NPC misión, enemigos, espada/arco, cofres, monedas, guardado
+   ******************************************************************/
+
+  // ---------- Utilidades ----------
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a,b,t) => a + (b-a)*t;
+  const now = () => performance.now();
+  const rand = (a,b) => a + Math.random()*(b-a);
+
+  // ---------- UI ----------
+  const elHearts = document.getElementById("hearts");
+  const elCoins  = document.getElementById("coins");
+  const elKeys   = document.getElementById("keys");
+  const elHpBar  = document.getElementById("hpBar");
+  const elStamBar= document.getElementById("stamBar");
+  const elWeapon = document.getElementById("weaponName");
+  const elQuest  = document.getElementById("questName");
+  const elZone   = document.getElementById("zoneTxt");
+  const elTime   = document.getElementById("timeTxt");
+  const elHint   = document.getElementById("hint");
+  const elToast  = document.getElementById("toast");
+  const elCross  = document.getElementById("crosshair");
+
+  const dlg = {
+    root: document.getElementById("dialog"),
+    title: document.getElementById("dlgTitle"),
+    text: document.getElementById("dlgText"),
+    opts: document.getElementById("dlgOpts"),
+    open(name, text, options=[]) {
+      this.title.textContent = name;
+      this.text.textContent = text;
+      this.opts.innerHTML = "";
+      for (const opt of options) {
+        const b = document.createElement("button");
+        b.textContent = opt.label;
+        b.onclick = opt.onClick;
+        this.opts.appendChild(b);
+      }
+      this.root.style.display = "block";
+      hint("");
+    },
+    close() { this.root.style.display = "none"; }
+  };
+
+  function hint(text) {
+    if (!text) { elHint.style.display = "none"; return; }
+    elHint.textContent = text;
+    elHint.style.display = "block";
+  }
+
+  let toastTimer = 0;
+  function toast(text, ms=1600) {
+    elToast.textContent = text;
+    elToast.style.display = "block";
+    toastTimer = now() + ms;
+  }
+
+  // ---------- Sonido simple (WebAudio) ----------
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  const audio = {
+    ctx: null,
+    master: null,
+    init() {
+      if (this.ctx) return;
+      this.ctx = new AudioCtx();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.35;
+      this.master.connect(this.ctx.destination);
+    },
+    beep(freq=440, dur=0.07, type="sine", vol=0.25) {
+      if (!this.ctx) return;
+      const t0 = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const g   = this.ctx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      g.gain.value = vol;
+      osc.connect(g);
+      g.connect(this.master);
+      osc.start(t0);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.stop(t0 + dur);
+    },
+    hit() { this.beep(180, 0.06, "square", 0.35); },
+    coin(){ this.beep(880, 0.05, "triangle", 0.22); this.beep(1320,0.04,"triangle",0.15); },
+    chest(){ this.beep(320, 0.08, "sawtooth", 0.18); this.beep(520, 0.10, "sine", 0.22); },
+    talk(){ this.beep(540, 0.03, "sine", 0.08); },
+    shoot(){ this.beep(740, 0.03, "square", 0.12); },
+    sword(){ this.beep(260, 0.03, "sine", 0.10); this.beep(520, 0.04, "triangle", 0.08); },
+    hurt(){ this.beep(120, 0.10, "sawtooth", 0.25); },
+    door(){ this.beep(220,0.12,"square",0.16); this.beep(140,0.10,"square",0.14); }
+  };
+
+  // ---------- Estado de juego ----------
+  const state = {
+    started: false,
+    paused: false,
+    zone: "forest", // forest | dungeon
+    timeStart: now(),
+    tSec: 0,
+
+    // stats
+    hpMax: 100,
+    hp: 100,
+    stamMax: 100,
+    stam: 100,
+    invulnUntil: 0,
+
+    coins: 0,
+    keys: 0,
+
+    // inventory
+    weapon: "sword", // sword | bow
+    potions: 1,
+
+    // quest
+    quest: {
+      id: "talk_elder",
+      name: "Habla con el Anciano",
+      hasDungeonKey: false,
+      dungeonChestOpened: false,
+      completed: false
+    },
+
+    // combat flags
+    blocking: false,
+    bowAiming: false,
+
+    // input
+    keys: {},
+    mouse: { x:0, y:0, down:false, rdown:false },
+
+    // camera mode
+    camDist: 10,
+    camHeight: 6,
+    camYaw: 0,
+  };
+
+  function setQuest(id, name) {
+    state.quest.id = id;
+    state.quest.name = name;
+    elQuest.textContent = name;
+  }
+
+  // ---------- Three.js setup ----------
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x7bb7ff);
+  scene.fog = new THREE.Fog(0x7bb7ff, 25, 120);
+
+  const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 500);
+  camera.position.set(0, 8, 12);
+
+  const renderer = new THREE.WebGLRenderer({ antialias:true });
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  document.body.appendChild(renderer.domElement);
+
+  // Lights
+  const sun = new THREE.DirectionalLight(0xffffff, 1.0);
+  sun.position.set(30, 60, 20);
+  scene.add(sun);
+
+  const amb = new THREE.AmbientLight(0xffffff, 0.35);
+  scene.add(amb);
+
+  // ---------- World containers ----------
+  const world = new THREE.Group(); scene.add(world);
+  const dungeon = new THREE.Group(); scene.add(dungeon);
+  dungeon.visible = false;
+
+  // ---------- Materials ----------
+  const matGrass = new THREE.MeshStandardMaterial({ color: 0x2e8b57 });
+  const matDirt  = new THREE.MeshStandardMaterial({ color: 0x6b4f2a });
+  const matStone = new THREE.MeshStandardMaterial({ color: 0x7f8592 });
+  const matWood  = new THREE.MeshStandardMaterial({ color: 0x8b5a2b });
+  const matLeaf  = new THREE.MeshStandardMaterial({ color: 0x2ecc71 });
+  const matWater = new THREE.MeshStandardMaterial({ color: 0x1e90ff, transparent:true, opacity:0.65 });
+  const matPlayer= new THREE.MeshStandardMaterial({ color: 0x1e5cff });
+  const matEnemy = new THREE.MeshStandardMaterial({ color: 0xff2b2b });
+  const matNPC   = new THREE.MeshStandardMaterial({ color: 0xffd27a });
+  const matChest = new THREE.MeshStandardMaterial({ color: 0xa67c52 });
+  const matGold  = new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0x553300, emissiveIntensity: 0.25 });
+
+  // ---------- Simple collider system ----------
+  // Each collider: { pos:Vector3, r:number, h:number, type:string, ref?:object, zone:"forest"/"dungeon" }
+  const colliders = [];
+  function addCollider(pos, r, h, type, ref, zone) {
+    colliders.push({ pos: pos.clone(), r, h, type, ref, zone });
+  }
+  function removeColliderByRef(ref) {
+    const i = colliders.findIndex(c => c.ref === ref);
+    if (i >= 0) colliders.splice(i,1);
+  }
+  function zoneColliders() {
+    return colliders.filter(c => c.zone === state.zone);
+  }
+
+  // ---------- Player ----------
+  const player = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.45, 1.0, 6, 12), matPlayer);
+  body.position.y = 1.0;
+  player.add(body);
+
+  // "capucha" simple
+  const hood = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 16), new THREE.MeshStandardMaterial({ color: 0x19b34a }));
+  hood.position.set(0, 1.7, 0);
+  player.add(hood);
+
+  // sword visual
+  const sword = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.9, 0.08), new THREE.MeshStandardMaterial({ color: 0xd9d9d9 }));
+  sword.position.set(0.55, 1.1, 0);
+  sword.rotation.z = Math.PI * 0.18;
+  player.add(sword);
+
+  // shield visual
+  const shield = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.05, 18), new THREE.MeshStandardMaterial({ color: 0x999999 }));
+  shield.position.set(-0.62, 1.1, 0);
+  shield.rotation.z = Math.PI/2;
+  player.add(shield);
+
+  player.position.set(0,0,0);
+  world.add(player);
+
+  // physics-ish
+  const phys = {
+    vel: new THREE.Vector3(0,0,0),
+    grounded: true,
+    y: 0,
+  };
+
+  // ---------- Forest terrain ----------
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(220, 220, 1, 1), matGrass);
+  ground.rotation.x = -Math.PI/2;
+  ground.position.y = 0;
+  world.add(ground);
+
+  // Dirt path
+  const path = new THREE.Mesh(new THREE.PlaneGeometry(120, 18, 1, 1), matDirt);
+  path.rotation.x = -Math.PI/2;
+  path.position.set(0, 0.01, 0);
+  world.add(path);
+
+  // Pond / water
+  const pond = new THREE.Mesh(new THREE.CircleGeometry(10, 28), matWater);
+  pond.rotation.x = -Math.PI/2;
+  pond.position.set(-38, 0.02, -25);
+  world.add(pond);
+
+  // Rocks (colliders)
+  function makeRock(x,z, s=1.0) {
+    const m = new THREE.Mesh(new THREE.DodecahedronGeometry(1.3*s, 0), matStone);
+    m.position.set(x, 0.9*s, z);
+    m.rotation.set(rand(0,Math.PI), rand(0,Math.PI), rand(0,Math.PI));
+    world.add(m);
+    addCollider(m.position, 1.2*s, 2.0*s, "solid", m, "forest");
+    return m;
+  }
+  for (let i=0;i<18;i++) makeRock(rand(-70,70), rand(-70,70), rand(0.6,1.5));
+
+  // Trees (colliders)
+  function makeTree(x,z, scale=1) {
+    const g = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.35*scale, 0.45*scale, 3.0*scale, 10), matWood);
+    trunk.position.y = 1.5*scale;
+    g.add(trunk);
+
+    const crown = new THREE.Mesh(new THREE.SphereGeometry(1.55*scale, 18, 18), matLeaf);
+    crown.position.y = 3.4*scale;
+    g.add(crown);
+
+    const crown2 = new THREE.Mesh(new THREE.SphereGeometry(1.2*scale, 16, 16), matLeaf);
+    crown2.position.set(0.8*scale, 3.0*scale, -0.4*scale);
+    g.add(crown2);
+
+    g.position.set(x, 0, z);
+    world.add(g);
+
+    addCollider(new THREE.Vector3(x,0,z), 1.2*scale, 4.5*scale, "solid", g, "forest");
+    return g;
+  }
+  // forest ring, avoid central path
+  for (let i=0;i<70;i++){
+    const x = rand(-95,95);
+    const z = rand(-95,95);
+    if (Math.abs(z) < 12 && Math.abs(x) < 60) continue; // path area
+    if ((x+38)**2 + (z+25)**2 < 13*13) continue; // pond
+    makeTree(x,z, rand(0.85,1.45));
+  }
+
+  // Camp (NPC area)
+  const camp = new THREE.Group();
+  camp.position.set(18,0, -8);
+  world.add(camp);
+
+  const campFire = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.8, 0.25, 12), matStone);
+  campFire.position.set(0,0.14,0);
+  camp.add(campFire);
+
+  // flame (fake)
+  const flame = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.85, 10), new THREE.MeshStandardMaterial({ color: 0xff8800, emissive: 0xff5500, emissiveIntensity: 0.8 }));
+  flame.position.set(0,0.85,0);
+  camp.add(flame);
+
+  const tent = new THREE.Mesh(new THREE.ConeGeometry(1.7, 2.2, 4), new THREE.MeshStandardMaterial({ color: 0x8a2be2 }));
+  tent.position.set(2.8, 1.1, 1.4);
+  tent.rotation.y = Math.PI/4;
+  camp.add(tent);
+
+  // NPC (Elder)
+  const elder = new THREE.Group();
+  const npcBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.42, 0.9, 5, 10), matNPC);
+  npcBody.position.y = 0.95;
+  elder.add(npcBody);
+  const npcHat = new THREE.Mesh(new THREE.ConeGeometry(0.55, 0.75, 14), new THREE.MeshStandardMaterial({ color: 0x444444 }));
+  npcHat.position.set(0, 1.85, 0);
+  elder.add(npcHat);
+  elder.position.set(18,0, -14);
+  world.add(elder);
+
+  // interaction collider (non-solid)
+  addCollider(new THREE.Vector3(elder.position.x,0,elder.position.z), 2.1, 2.5, "npc_elder", elder, "forest");
+
+  // Dungeon entrance (forest)
+  const dungeonEntrance = new THREE.Group();
+  dungeonEntrance.position.set(52, 0, 36);
+  world.add(dungeonEntrance);
+
+  const arch = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.55, 12, 24, Math.PI), matStone);
+  arch.rotation.x = Math.PI;
+  arch.position.y = 3.0;
+  dungeonEntrance.add(arch);
+
+  const pillarL = new THREE.Mesh(new THREE.BoxGeometry(1.4, 4.0, 1.4), matStone);
+  pillarL.position.set(-2.6, 2.0, 0);
+  dungeonEntrance.add(pillarL);
+
+  const pillarR = pillarL.clone();
+  pillarR.position.set(2.6, 2.0, 0);
+  dungeonEntrance.add(pillarR);
+
+  const door = new THREE.Mesh(new THREE.BoxGeometry(4.6, 3.3, 0.35), new THREE.MeshStandardMaterial({ color: 0x3b3b3b, emissive: 0x111111, emissiveIntensity: 0.1 }));
+  door.position.set(0, 1.65, -0.35);
+  dungeonEntrance.add(door);
+
+  addCollider(new THREE.Vector3(dungeonEntrance.position.x,0,dungeonEntrance.position.z - 0.6), 3.0, 4.0, "dungeon_gate", dungeonEntrance, "forest");
+
+  // ---------- Dungeon interior ----------
+  // A simple big room + corridor + chest room
+  const dun = {
+    floor: null,
+    walls: new THREE.Group(),
+    doorFrame: null,
+    exitPad: null,
+    chestFinal: null,
+  };
+
+  function buildDungeon() {
+    // base
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(70, 70), new THREE.MeshStandardMaterial({ color: 0x3b3f4a }));
+    floor.rotation.x = -Math.PI/2;
+    floor.position.y = 0;
+    dungeon.add(floor);
+    dun.floor = floor;
+
+    // ambient for dungeon
+    const dunLight = new THREE.PointLight(0xffddaa, 0.85, 80);
+    dunLight.position.set(0, 10, 0);
+    dungeon.add(dunLight);
+
+    // walls box
+    function wall(x,z,w,d,h=6) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), matStone);
+      m.position.set(x, h/2, z);
+      dungeon.add(m);
+      addCollider(new THREE.Vector3(m.position.x,0,m.position.z), Math.max(w,d)/2, h, "solid", m, "dungeon");
+      return m;
+    }
+
+    // Outer boundary (approx)
+    wall(0, -35, 70, 2);
+    wall(0,  35, 70, 2);
+    wall(-35, 0, 2, 70);
+    wall( 35, 0, 2, 70);
+
+    // Corridor and inner walls
+    wall(0, -10, 36, 2);      // split
+    wall(-18, -22, 2, 26);    // left corridor wall
+    wall( 18, -22, 2, 26);    // right corridor wall
+
+    // corridor blocking door (needs key)
+    const gate = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 1), new THREE.MeshStandardMaterial({ color: 0x20222a, emissive: 0x111111, emissiveIntensity: 0.1 }));
+    gate.position.set(0, 2.0, -10);
+    dungeon.add(gate);
+    addCollider(new THREE.Vector3(gate.position.x,0,gate.position.z), 3.1, 4.0, "dungeon_inner_gate", gate, "dungeon");
+    dun.doorFrame = gate;
+
+    // exit pad (back to forest)
+    const exitPad = new THREE.Mesh(new THREE.CircleGeometry(2.2, 22), new THREE.MeshStandardMaterial({ color: 0x00d1ff, emissive: 0x0088aa, emissiveIntensity: 0.35, transparent:true, opacity:0.75 }));
+    exitPad.rotation.x = -Math.PI/2;
+    exitPad.position.set(0, 0.05, 26);
+    dungeon.add(exitPad);
+    dun.exitPad = exitPad;
+    addCollider(new THREE.Vector3(exitPad.position.x,0,exitPad.position.z), 2.2, 1.0, "dungeon_exit", exitPad, "dungeon");
+
+    // final chest room
+    const chest = makeChest(0, 0, -28, "final", "dungeon");
+    dungeon.add(chest.group);
+    dun.chestFinal = chest;
+
+    // dungeon decorations
+    for (let i=0;i<12;i++){
+      const torch = new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.2,1.2,10), matWood);
+      torch.position.set(rand(-28,28), 0.6, rand(-28,28));
+      dungeon.add(torch);
+    }
+  }
+
+  // ---------- Chests + coins ----------
+  const chests = [];
+  const coins = [];
+  function makeChest(x,y,z, kind="normal", zone="forest") {
+    const group = new THREE.Group();
+    group.position.set(x,y,z);
+
+    const base = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.9, 1.1), matChest);
+    base.position.y = 0.45;
+    group.add(base);
+
+    const lid = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.35, 1.1), new THREE.MeshStandardMaterial({ color: 0x7b5a3a }));
+    lid.position.y = 0.95;
+    lid.userData.isLid = true;
+    group.add(lid);
+
+    const lock = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.1), matGold);
+    lock.position.set(0,0.55,0.56);
+    group.add(lock);
+
+    group.userData = { kind, opened:false, lid };
+
+    addCollider(new THREE.Vector3(x,y,z), 1.2, 1.5, kind === "final" ? "chest_final" : "chest", group, zone);
+
+    const chestObj = { group, kind, zone };
+    chests.push(chestObj);
+    return chestObj;
+  }
+
+  function spawnCoin(x,y,z, zone="forest") {
+    const m = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.09, 12, 18), matGold);
+    m.position.set(x,y,z);
+    m.rotation.x = Math.PI/2;
+    m.userData = { t: rand(0,10), zone };
+    if (zone === "forest") world.add(m); else dungeon.add(m);
+    coins.push(m);
+    addCollider(new THREE.Vector3(x,y,z), 0.65, 1.0, "coin", m, zone);
+    return m;
+  }
+
+  // Place some forest chests
+  const chestA = makeChest(-18,0, 14, "normal", "forest"); world.add(chestA.group);
+  const chestB = makeChest( 36,0,-30, "normal", "forest"); world.add(chestB.group);
+  const chestC = makeChest(-60,0, 50, "normal", "forest"); world.add(chestC.group);
+
+  // scatter some forest coins
+  for (let i=0;i<28;i++){
+    const x = rand(-70,70), z=rand(-70,70);
+    if (Math.abs(z)<10 && Math.abs(x)<60) continue;
+    if ((x+38)**2 + (z+25)**2 < 12*12) continue;
+    spawnCoin(x, 0.7, z, "forest");
+  }
+
+  // ---------- Enemies ----------
+  const enemies = [];
+  function spawnEnemy(x,z, zone="forest", kind="slime") {
+    const g = new THREE.Group();
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.65, 16, 16), matEnemy);
+    core.position.y = 0.75;
+    g.add(core);
+
+    const eye1 = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+    eye1.position.set(0.2, 0.9, 0.55);
+    g.add(eye1);
+    const pup1 = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 10), new THREE.MeshStandardMaterial({ color: 0x000000 }));
+    pup1.position.set(0.22, 0.9, 0.64);
+    g.add(pup1);
+
+    const eye2 = eye1.clone();
+    eye2.position.x = -0.2;
+    g.add(eye2);
+    const pup2 = pup1.clone();
+    pup2.position.x = -0.22;
+    g.add(pup2);
+
+    g.position.set(x,0,z);
+    g.userData = {
+      zone, kind,
+      hp: kind==="knight" ? 70 : 35,
+      speed: kind==="knight" ? 0.06 : 0.045,
+      aggro: 18,
+      state: "patrol",
+      patrolTarget: new THREE.Vector3(x+rand(-8,8), 0, z+rand(-8,8)),
+      hitCD: 0,
+      knock: new THREE.Vector3()
+    };
+
+    if (zone === "forest") world.add(g); else dungeon.add(g);
+    enemies.push(g);
+
+    addCollider(new THREE.Vector3(x,0,z), 1.0, 2.0, "enemy", g, zone);
+    return g;
+  }
+
+  // forest enemies
+  for (let i=0;i<10;i++){
+    const x = rand(-70,70), z=rand(-70,70);
+    if (Math.abs(z)<10 && Math.abs(x)<60) continue;
+    spawnEnemy(x,z,"forest","slime");
+  }
+  // dungeon enemies (harder)
+  function spawnDungeonWave() {
+    for (let i=0;i<7;i++) spawnEnemy(rand(-20,20), rand(-28,10), "dungeon", i%3===0 ? "knight" : "slime");
+  }
+
+  // ---------- Projectiles (arrows) ----------
+  const arrows = [];
+  function shootArrow() {
+    const a = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.0,8), new THREE.MeshStandardMaterial({ color: 0xdedede }));
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.07,0.18,10), new THREE.MeshStandardMaterial({ color: 0x777777 }));
+    tip.position.y = 0.58; a.add(tip);
+    a.rotation.z = Math.PI/2;
+
+    // spawn at player
+    const dir = forwardDir();
+    const pos = player.position.clone().add(dir.clone().multiplyScalar(1.2));
+    pos.y = 1.2;
+
+    a.position.copy(pos);
+    a.userData = { dir, speed: 0.65, born: now(), zone: state.zone };
+
+    if (state.zone === "forest") world.add(a); else dungeon.add(a);
+    arrows.push(a);
+    audio.shoot();
+  }
+
+  // ---------- Minimap ----------
+  const mapCanvas = document.getElementById("mapCanvas");
+  const mapCtx = mapCanvas.getContext("2d");
+
+  function drawMinimap() {
+    const W = mapCanvas.width, H = mapCanvas.height;
+    mapCtx.clearRect(0,0,W,H);
+
+    // background
+    mapCtx.fillStyle = "rgba(0,0,0,0.25)";
+    mapCtx.fillRect(0,0,W,H);
+
+    // world bounds
+    const bounds = state.zone === "forest" ? 110 : 36;
+    const scale = W / (bounds*2);
+
+    // helper to map coords
+    const toMap = (x,z) => {
+      const mx = W/2 + x*scale;
+      const mz = H/2 + z*scale;
+      return [mx, mz];
+    };
+
+    // draw some static hint zones
+    mapCtx.strokeStyle = "rgba(255,255,255,0.12)";
+    mapCtx.strokeRect(12,12,W-24,H-24);
+
+    // coins
+    mapCtx.fillStyle = "rgba(255,215,0,0.75)";
+    for (const c of coins) {
+      if (!c.parent) continue;
+      if (c.userData.zone !== state.zone) continue;
+      const [mx,mz] = toMap(c.position.x, c.position.z);
+      mapCtx.fillRect(mx-1, mz-1, 2, 2);
+    }
+
+    // chests
+    mapCtx.fillStyle = "rgba(160,120,82,0.85)";
+    for (const ch of chests) {
+      if (!ch.group.parent) continue;
+      if (ch.zone !== state.zone) continue;
+      const [mx,mz] = toMap(ch.group.position.x, ch.group.position.z);
+      mapCtx.fillRect(mx-2, mz-2, 4, 4);
+    }
+
+    // enemies
+    mapCtx.fillStyle = "rgba(255,70,70,0.9)";
+    for (const e of enemies) {
+      if (!e.parent) continue;
+      if (e.userData.zone !== state.zone) continue;
+      const [mx,mz] = toMap(e.position.x, e.position.z);
+      mapCtx.beginPath(); mapCtx.arc(mx,mz,2.2,0,Math.PI*2); mapCtx.fill();
+    }
+
+    // player
+    const [px,pz] = toMap(player.position.x, player.position.z);
+    mapCtx.fillStyle = "rgba(80,180,255,1)";
+    mapCtx.beginPath(); mapCtx.arc(px,pz,3.2,0,Math.PI*2); mapCtx.fill();
+
+    // facing direction
+    const dir = forwardDir();
+    const [dx,dz] = toMap(player.position.x + dir.x*6, player.position.z + dir.z*6);
+    mapCtx.strokeStyle = "rgba(80,180,255,0.9)";
+    mapCtx.beginPath(); mapCtx.moveTo(px,pz); mapCtx.lineTo(dx,dz); mapCtx.stroke();
+
+    // special markers
+    if (state.zone === "forest") {
+      // dungeon gate marker
+      mapCtx.fillStyle = "rgba(0,220,255,0.9)";
+      const [mx,mz] = toMap(dungeonEntrance.position.x, dungeonEntrance.position.z);
+      mapCtx.fillRect(mx-3, mz-3, 6, 6);
+      // elder marker
+      mapCtx.fillStyle = "rgba(255,210,120,0.95)";
+      const [ex,ez] = toMap(elder.position.x, elder.position.z);
+      mapCtx.beginPath(); mapCtx.arc(ex,ez,3,0,Math.PI*2); mapCtx.fill();
+    } else {
+      // exit pad
+      mapCtx.fillStyle = "rgba(0,220,255,0.95)";
+      const [mx,mz] = toMap(dun.exitPad.position.x, dun.exitPad.position.z);
+      mapCtx.beginPath(); mapCtx.arc(mx,mz,3.2,0,Math.PI*2); mapCtx.fill();
+    }
+  }
+
+  // ---------- Input ----------
+  window.addEventListener("keydown", (e) => {
+    state.keys[e.key.toLowerCase()] = true;
+
+    // start audio on first key
+    if (!state.started) {
+      state.started = true;
+      audio.init();
+      audio.beep(440,0.05,"sine",0.08);
+    }
+
+    if (e.key === "Escape") togglePause();
+
+    // quick slots
+    if (e.key === "1") setWeapon("sword");
+    if (e.key === "2") setWeapon("bow");
+    if (e.key === "3") usePotion();
+
+    // prevent default page actions for some keys
+    if ([" ", "ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)) e.preventDefault();
+  }, { passive:false });
+
+  window.addEventListener("keyup", (e) => {
+    state.keys[e.key.toLowerCase()] = false;
+  });
+
+  renderer.domElement.addEventListener("mousemove", (e) => {
+    const rect = renderer.domElement.getBoundingClientRect();
+    state.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    state.mouse.y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+  });
+
+  renderer.domElement.addEventListener("mousedown", (e) => {
+    if (!state.started) { state.started=true; audio.init(); }
+    if (state.paused) return;
+
+    if (e.button === 0) { // left
+      state.mouse.down = true;
+      if (state.weapon === "sword") swordAttack();
+      if (state.weapon === "bow" && state.bowAiming) shootArrow();
+    }
+    if (e.button === 2) { // right
+      state.mouse.rdown = true;
+      state.blocking = true;
+      audio.beep(320,0.04,"sine",0.06);
+    }
+  });
+
+  renderer.domElement.addEventListener("mouseup", (e) => {
+    if (e.button === 0) state.mouse.down = false;
+    if (e.button === 2) { state.mouse.rdown = false; state.blocking = false; }
+  });
+
+  renderer.domElement.addEventListener("contextmenu", (e) => e.preventDefault());
+
+  // ---------- Pause menu ----------
+  const menu = {
+    overlay: document.getElementById("menuOverlay"),
+    btnResume: document.getElementById("btnResume"),
+    btnSave: document.getElementById("btnSave"),
+    btnLoad: document.getElementById("btnLoad"),
+    btnReset: document.getElementById("btnReset"),
+  };
+
+  menu.btnResume.onclick = () => togglePause(false);
+  menu.btnSave.onclick = () => saveGame();
+  menu.btnLoad.onclick = () => loadGame();
+  menu.btnReset.onclick = () => { if (confirm("¿Reset total?")) resetGame(); };
+
+  function togglePause(force) {
+    const newVal = (typeof force === "boolean") ? force : !state.paused;
+    state.paused = newVal;
+    menu.overlay.style.display = newVal ? "block" : "none";
+    if (!newVal) dlg.close();
+  }
+
+  // ---------- Combat / inventory ----------
+  function setWeapon(w) {
+    state.weapon = w;
+    state.bowAiming = (w === "bow");
+    elWeapon.textContent = (w === "sword") ? "Espada" : "Arco";
+    sword.visible = (w === "sword");
+    elCross.style.display = (w === "bow") ? "block" : "none";
+    toast(w === "bow" ? "Arco listo: Q para apuntar (ya activo)" : "Espada lista");
+    audio.beep(w === "bow" ? 640 : 420, 0.05, "triangle", 0.10);
+  }
+
+  function usePotion() {
+    if (state.potions <= 0) { toast("No te quedan pociones 😅"); audio.beep(160,0.06,"sine",0.08); return; }
+    if (state.hp >= state.hpMax) { toast("Ya estás a tope de vida"); return; }
+    state.potions--;
+    state.hp = clamp(state.hp + 40, 0, state.hpMax);
+    audio.beep(520,0.06,"sine",0.12); audio.beep(820,0.08,"triangle",0.10);
+    toast("Poción usada: +40 vida");
+    updateHUD();
+  }
+
+  function forwardDir() {
+    // forward based on player rotation and camera yaw
+    const v = new THREE.Vector3(0,0,-1);
+    v.applyAxisAngle(new THREE.Vector3(0,1,0), player.rotation.y);
+    return v.normalize();
+  }
+
+  function swordAttack() {
+    audio.sword();
+    // attack arc
+    const dir = forwardDir();
+    const atkPos = player.position.clone().add(dir.clone().multiplyScalar(1.2));
+    const atkR = 1.7;
+
+    // hit enemies in radius
+    for (const e of enemies) {
+      if (!e.parent) continue;
+      if (e.userData.zone !== state.zone) continue;
+      const d = e.position.distanceTo(atkPos);
+      if (d < atkR) {
+        damageEnemy(e, 18, dir);
+      }
+    }
+  }
+
+  function damageEnemy(e, dmg, dir) {
+    e.userData.hp -= dmg;
+    e.userData.hitCD = now() + 250;
+    e.userData.knock.copy(dir).multiplyScalar(0.25);
+
+    // flash
+    e.traverse(obj => { if (obj.isMesh) obj.material.emissive = new THREE.Color(0x330000); });
+    audio.hit();
+
+    if (e.userData.hp <= 0) {
+      killEnemy(e);
+    }
+  }
+
+  function killEnemy(e) {
+    // loot
+    const drop = Math.random();
+    if (drop < 0.55) spawnCoin(e.position.x, 0.7, e.position.z, e.userData.zone);
+    if (drop > 0.92) { state.potions++; toast("Encontraste una poción 🧪"); audio.beep(900,0.06,"sine",0.10); }
+    if (!state.quest.hasDungeonKey && state.zone==="forest" && Math.random() < 0.12) {
+      // rare key drop in forest
+      state.keys++;
+      toast("¡Te cayó una llave! 🗝️");
+      audio.beep(520,0.06,"square",0.10);
+    }
+    removeColliderByRef(e);
+    if (e.parent) e.parent.remove(e);
+    updateHUD();
+  }
+
+  function playerDamage(amount, fromDir=null) {
+    if (now() < state.invulnUntil) return;
+    if (state.blocking) {
+      // reduced damage and stamina cost
+      const reduced = amount * 0.25;
+      state.hp -= reduced;
+      state.stam = clamp(state.stam - amount*0.6, 0, state.stamMax);
+      audio.beep(240,0.05,"square",0.10);
+      toast("Bloqueo ✔ (daño reducido)");
+    } else {
+      state.hp -= amount;
+      audio.hurt();
+    }
+    state.invulnUntil = now() + 900;
+
+    if (state.hp <= 0) {
+      state.hp = 0;
+      updateHUD();
+      gameOver();
+      return;
+    }
+    updateHUD();
+  }
+
+  function gameOver() {
+    togglePause(true);
+    dlg.open("Derrota", "Has caído… pero un héroe siempre vuelve. ¿Reintentar desde el último guardado o empezar de nuevo?", [
+      { label: "📥 Cargar guardado", onClick: () => { dlg.close(); loadGame(); togglePause(false);} },
+      { label: "🧨 Empezar de cero", onClick: () => { dlg.close(); resetGame(); togglePause(false);} }
+    ]);
+  }
+
+  // ---------- Interaction ----------
+  function tryInteract() {
+    if (state.paused) return;
+
+    // find nearest interactive collider
+    let best = null;
+    let bestD = 9999;
+
+    for (const c of zoneColliders()) {
+      if (!["npc_elder","chest","chest_final","dungeon_gate","dungeon_inner_gate","dungeon_exit"].includes(c.type)) continue;
+      const d = c.pos.distanceTo(player.position);
+      if (d < 2.6 && d < bestD) { best = c; bestD = d; }
+    }
+
+    if (!best) { toast("Nada que interactuar aquí"); return; }
+
+    if (best.type === "npc_elder") {
+      audio.talk();
+      openElderDialog();
+      return;
+    }
+
+    if (best.type === "chest" || best.type === "chest_final") {
+      openChest(best.ref);
+      return;
+    }
+
+    if (best.type === "dungeon_gate") {
+      // entry to dungeon (needs quest started? optional)
+      if (state.quest.id === "talk_elder") {
+        toast("Antes habla con el Anciano… que luego te pierdes. 😄");
+        return;
+      }
+      enterDungeon();
+      return;
+    }
+
+    if (best.type === "dungeon_inner_gate") {
+      // needs key
+      if (state.keys <= 0) { toast("Necesitas una llave 🗝️"); audio.beep(170,0.08,"sawtooth",0.14); return; }
+      state.keys--;
+      audio.door();
+      // remove gate and collider
+      removeColliderByRef(best.ref);
+      if (best.ref.parent) best.ref.parent.remove(best.ref);
+      toast("Puerta abierta");
+      updateHUD();
+      return;
+    }
+
+    if (best.type === "dungeon_exit") {
+      exitDungeon();
+      return;
+    }
+  }
+
+  function openElderDialog() {
+    const q = state.quest;
+
+    // dialogue logic
+    if (q.completed) {
+      dlg.open("Anciano", "Has hecho un gran trabajo. El bosque está más seguro. (Y yo puedo volver a dormir la siesta.)", [
+        { label: "Cerrar", onClick: () => dlg.close() }
+      ]);
+      return;
+    }
+
+    if (q.id === "talk_elder") {
+      dlg.open("Anciano", "Héroe… siento un mal dentro de la mazmorra. ¿Me ayudas a recuperar la Llave Antigua? Te marcaré la entrada en el minimapa.", [
+        { label: "✅ Acepto", onClick: () => {
+            dlg.close();
+            setQuest("get_key", "Encuentra la Llave Antigua (mazmorra)");
+            toast("Misión aceptada: ve a la entrada azul del mapa");
+            audio.beep(720,0.06,"triangle",0.12);
+          } 
+        },
+        { label: "❌ Ahora no", onClick: () => { dlg.close(); toast("El Anciano te mira… decepcionado. 😄"); } }
+      ]);
+      return;
+    }
+
+    if (q.id === "get_key") {
+      dlg.open("Anciano", "La llave está dentro. Ten cuidado: algunas criaturas sienten tu miedo… y tu bocadillo.", [
+        { label: "Cerrar", onClick: () => dlg.close() }
+      ]);
+      return;
+    }
+
+    if (q.id === "return_to_elder") {
+      dlg.open("Anciano", "¡La Llave Antigua! Excelente. Aquí tienes una recompensa: una llave extra y una poción.", [
+        { label: "🎁 Recibir", onClick: () => {
+            dlg.close();
+            state.keys += 1;
+            state.potions += 1;
+            state.quest.completed = true;
+            setQuest("done", "Misión completada ✅");
+            toast("¡Misión completada!");
+            audio.beep(900,0.08,"triangle",0.12);
+            updateHUD();
+          }
+        }
+      ]);
+      return;
+    }
+
+    dlg.open("Anciano", "Que la luz te acompañe.", [{ label:"Cerrar", onClick: () => dlg.close() }]);
+  }
+
+  function openChest(chestGroup) {
+    const data = chestGroup.userData;
+    if (data.opened) { toast("Cofre vacío"); return; }
+
+    data.opened = true;
+
+    // lid animation: rotate up
+    data.lid.rotation.x = -Math.PI * 0.65;
+    data.lid.position.y = 1.1;
+
+    audio.chest();
+
+    // loot rules
+    if (data.kind === "final") {
+      // quest completion item: dungeon key
+      state.quest.hasDungeonKey = true;
+      state.quest.dungeonChestOpened = true;
+      toast("¡Obtuviste la Llave Antigua! 🔑");
+      setQuest("return_to_elder", "Vuelve con el Anciano");
+      // extra loot
+      state.coins += 25;
+      state.potions += 1;
+      state.keys += 1;
+      updateHUD();
+      return;
+    }
+
+    // normal chests: coins + sometimes key/potion
+    const coinGain = Math.floor(rand(6,16));
+    state.coins += coinGain;
+    if (Math.random() < 0.25) { state.keys++; toast("¡Encontraste una llave! 🗝️"); }
+    if (Math.random() < 0.18) { state.potions++; toast("¡Encontraste una poción! 🧪"); }
+
+    toast(`Cofre: +${coinGain} monedas`);
+    updateHUD();
+  }
+
+  // ---------- Zone switching ----------
+  function enterDungeon() {
+    audio.door();
+    state.zone = "dungeon";
+    elZone.textContent = "Mazmorra";
+    scene.background = new THREE.Color(0x0f141f);
+    scene.fog = new THREE.Fog(0x0f141f, 18, 90);
+
+    // move player inside
+    player.position.set(0, 0, 26);
+    player.rotation.y = Math.PI;
+
+    // show dungeon
+    world.visible = false;
+    dungeon.visible = true;
+
+    if (!dun.floor) buildDungeon();
+    // spawn enemies only once (if not spawned)
+    if (!state._dungeonWaveSpawned) {
+      spawnDungeonWave();
+      state._dungeonWaveSpawned = true;
+    }
+
+    toast("Entraste a la Mazmorra");
+  }
+
+  function exitDungeon() {
+    audio.beep(520,0.08,"sine",0.10);
+    state.zone = "forest";
+    elZone.textContent = "Bosque";
+    scene.background = new THREE.Color(0x7bb7ff);
+    scene.fog = new THREE.Fog(0x7bb7ff, 25, 120);
+
+    // return near entrance
+    player.position.copy(dungeonEntrance.position.clone().add(new THREE.Vector3(0,0,6)));
+    player.rotation.y = Math.PI;
+
+    world.visible = true;
+    dungeon.visible = false;
+
+    toast("Volviste al Bosque");
+  }
+
+  // ---------- HUD update ----------
+  function drawHearts() {
+    const hearts = 5; // 5 hearts -> 100 hp
+    const per = state.hpMax / hearts;
+    elHearts.innerHTML = "";
+    for (let i=0;i<hearts;i++){
+      const h = document.createElement("span");
+      h.className = "heart";
+      const threshold = (i+1)*per;
+      if (state.hp < threshold - 0.01) h.classList.add("empty");
+      elHearts.appendChild(h);
+    }
+  }
+
+  function updateHUD() {
+    drawHearts();
+    elCoins.textContent = Math.floor(state.coins);
+    elKeys.textContent = Math.floor(state.keys);
+    elHpBar.style.width = `${clamp((state.hp/state.hpMax)*100, 0, 100)}%`;
+    elStamBar.style.width = `${clamp((state.stam/state.stamMax)*100, 0, 100)}%`;
+    elWeapon.textContent = state.weapon === "sword" ? "Espada" : "Arco";
+    elQuest.textContent = state.quest.name || "—";
+  }
+
+  // ---------- Save / Load ----------
+  const SAVE_KEY = "miniZelda3D_save_v1";
+
+  function saveGame() {
+    const payload = {
+      zone: state.zone,
+      hp: state.hp,
+      stam: state.stam,
+      coins: state.coins,
+      keys: state.keys,
+      weapon: state.weapon,
+      potions: state.potions,
+      quest: state.quest,
+      pos: { x: player.position.x, y: player.position.y, z: player.position.z },
+      rotY: player.rotation.y,
+      openedChests: chests.map(ch => ({ kind: ch.kind, zone: ch.zone, opened: !!ch.group.userData.opened, x: ch.group.position.x, z: ch.group.position.z }))
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+    toast("Guardado ✔");
+    audio.beep(880,0.05,"triangle",0.10);
+  }
+
+  function loadGame() {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) { toast("No hay guardado"); return; }
+
+    const data = JSON.parse(raw);
+    state.zone = data.zone || "forest";
+    state.hp = clamp(data.hp ?? 100, 0, state.hpMax);
+    state.stam = clamp(data.stam ?? 100, 0, state.stamMax);
+    state.coins = data.coins ?? 0;
+    state.keys = data.keys ?? 0;
+    state.weapon = data.weapon || "sword";
+    state.potions = data.potions ?? 1;
+    state.quest = data.quest || state.quest;
+
+    player.position.set(data.pos.x, data.pos.y ?? 0, data.pos.z);
+    player.rotation.y = data.rotY ?? 0;
+
+    // restore chests opened state
+    if (Array.isArray(data.openedChests)) {
+      for (const record of data.openedChests) {
+        const ch = chests.find(x => Math.abs(x.group.position.x - record.x) < 0.001 && Math.abs(x.group.position.z - record.z) < 0.001 && x.zone === record.zone);
+        if (ch && record.opened) {
+          ch.group.userData.opened = true;
+          ch.group.userData.lid.rotation.x = -Math.PI * 0.65;
+          ch.group.userData.lid.position.y = 1.1;
+        }
+      }
+    }
+
+    // apply zone visuals
+    if (state.zone === "dungeon") {
+      world.visible = false;
+      dungeon.visible = true;
+      if (!dun.floor) buildDungeon();
+      elZone.textContent = "Mazmorra";
+      scene.background = new THREE.Color(0x0f141f);
+      scene.fog = new THREE.Fog(0x0f141f, 18, 90);
+    } else {
+      world.visible = true;
+      dungeon.visible = false;
+      elZone.textContent = "Bosque";
+      scene.background = new THREE.Color(0x7bb7ff);
+      scene.fog = new THREE.Fog(0x7bb7ff, 25, 120);
+    }
+
+    setWeapon(state.weapon);
+    setQuest(state.quest.id, state.quest.name || "—");
+    updateHUD();
+    toast("Cargado ✔");
+    audio.beep(740,0.06,"sine",0.10);
+  }
+
+  function resetGame() {
+    localStorage.removeItem(SAVE_KEY);
+
+    // reset base stats
+    state.zone = "forest";
+    state.hp = 100;
+    state.stam = 100;
+    state.coins = 0;
+    state.keys = 0;
+    state.weapon = "sword";
+    state.potions = 1;
+    state.quest = { id:"talk_elder", name:"Habla con el Anciano", hasDungeonKey:false, dungeonChestOpened:false, completed:false };
+
+    // reset player position
+    player.position.set(0,0,0);
+    player.rotation.y = 0;
+
+    // reset chests
+    for (const ch of chests) {
+      ch.group.userData.opened = false;
+      ch.group.userData.lid.rotation.x = 0;
+      ch.group.userData.lid.position.y = 0.95;
+    }
+
+    // revive enemies: simplest = reload page-like logic
+    // We'll remove current enemies & respawn quickly
+    for (const e of [...enemies]) {
+      removeColliderByRef(e);
+      if (e.parent) e.parent.remove(e);
+    }
+    enemies.length = 0;
+
+    // remove arrows
+    for (const a of [...arrows]) { if (a.parent) a.parent.remove(a); }
+    arrows.length = 0;
+
+    // remove extra coins and respawn base ones:
+    // keep it simple: refresh page would be cleaner, but we stay in-file
+    for (const c of [...coins]) { removeColliderByRef(c); if (c.parent) c.parent.remove(c); }
+    coins.length = 0;
+
+    // respawn forest coins
+    for (let i=0;i<28;i++){
+      const x = rand(-70,70), z=rand(-70,70);
+      if (Math.abs(z)<10 && Math.abs(x)<60) continue;
+      if ((x+38)**2 + (z+25)**2 < 12*12) continue;
+      spawnCoin(x, 0.7, z, "forest");
+    }
+
+    // respawn forest enemies
+    for (let i=0;i<10;i++){
+      const x = rand(-70,70), z=rand(-70,70);
+      if (Math.abs(z)<10 && Math.abs(x)<60) continue;
+      spawnEnemy(x,z,"forest","slime");
+    }
+
+    // reset dungeon
+    state._dungeonWaveSpawned = false;
+    if (dun.doorFrame && dun.doorFrame.parent) {
+      // If door removed, rebuild by hard reset: easiest is reload page,
+      // but we'll just rebuild dungeon if already built:
+    }
+    // Force to forest visuals
+    world.visible = true;
+    dungeon.visible = false;
+    scene.background = new THREE.Color(0x7bb7ff);
+    scene.fog = new THREE.Fog(0x7bb7ff, 25, 120);
+    elZone.textContent = "Bosque";
+
+    setWeapon("sword");
+    setQuest(state.quest.id, state.quest.name);
+    updateHUD();
+    toast("Reset ✔");
+  }
+
+  // ---------- Movement + camera ----------
+  function updateCamera(dt) {
+    // Third-person orbit style, yaw follows mouse a bit
+    const mouseYaw = state.mouse.x * 0.6;  // subtle
+    state.camYaw = lerp(state.camYaw, mouseYaw, 0.06);
+
+    const yaw = player.rotation.y + state.camYaw;
+    const back = new THREE.Vector3(0,0,1).applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
+    const desired = player.position.clone()
+      .add(back.multiplyScalar(state.camDist))
+      .add(new THREE.Vector3(0, state.camHeight, 0));
+
+    camera.position.lerp(desired, 0.12);
+    camera.lookAt(player.position.clone().add(new THREE.Vector3(0, 1.4, 0)));
+  }
+
+  function resolveCollisions(nextPos) {
+    // player approx cylinder: radius r and height h
+    const r = 0.65;
+    const zone = state.zone;
+
+    for (const c of colliders) {
+      if (c.zone !== zone) continue;
+      if (c.type !== "solid") continue;
+
+      const dx = nextPos.x - c.pos.x;
+      const dz = nextPos.z - c.pos.z;
+      const dist = Math.hypot(dx, dz);
+      const minDist = r + c.r;
+
+      if (dist < minDist) {
+        const push = (minDist - dist) + 0.0001;
+        const nx = dx / (dist || 1);
+        const nz = dz / (dist || 1);
+        nextPos.x += nx * push;
+        nextPos.z += nz * push;
+      }
+    }
+    return nextPos;
+  }
+
+  function updatePlayer(dt) {
+    // rotate player to movement direction relative to camera
+    const fwd = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion); fwd.y=0; fwd.normalize();
+    const right = new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion); right.y=0; right.normalize();
+
+    let mx = 0, mz = 0;
+    if (state.keys["w"]) { mx += fwd.x; mz += fwd.z; }
+    if (state.keys["s"]) { mx -= fwd.x; mz -= fwd.z; }
+    if (state.keys["a"]) { mx -= right.x; mz -= right.z; }
+    if (state.keys["d"]) { mx += right.x; mz += right.z; }
+
+    const move = new THREE.Vector3(mx,0,mz);
+    const moving = move.lengthSq() > 0.0001;
+
+    const wantRun = state.keys["shift"] && state.stam > 0.1 && moving;
+    let speed = wantRun ? 10.5 : 6.8; // units per second
+    if (!phys.grounded) speed *= 0.75;
+
+    if (wantRun) state.stam = clamp(state.stam - 28*dt, 0, state.stamMax);
+    else state.stam = clamp(state.stam + 18*dt, 0, state.stamMax);
+
+    if (moving) {
+      move.normalize();
+      // smooth rotation towards movement direction
+      const targetYaw = Math.atan2(move.x, move.z); // note swapped for yaw
+      const cur = player.rotation.y;
+      // shortest angle
+      let diff = targetYaw - cur;
+      diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+      player.rotation.y = cur + diff * 0.18;
+
+      const step = move.multiplyScalar(speed * dt);
+      const nextPos = player.position.clone().add(step);
+      resolveCollisions(nextPos);
+      player.position.copy(nextPos);
+    }
+
+    // jumping
+    if (state.keys[" "] && phys.grounded) {
+      phys.vel.y = 7.5;
+      phys.grounded = false;
+      audio.beep(420,0.05,"sine",0.06);
+    }
+
+    // gravity
+    phys.vel.y -= 18.5 * dt;
+    player.position.y += phys.vel.y * dt;
+    if (player.position.y <= 0) {
+      player.position.y = 0;
+      phys.vel.y = 0;
+      phys.grounded = true;
+    }
+
+    // show/hide shield based on blocking
+    shield.visible = state.blocking;
+  }
+
+  // ---------- Enemy AI ----------
+  function updateEnemies(dt) {
+    for (const e of enemies) {
+      if (!e.parent) continue;
+      if (e.userData.zone !== state.zone) continue;
+
+      // Knockback
+      if (e.userData.knock.lengthSq() > 0.0001) {
+        e.position.add(e.userData.knock);
+        e.userData.knock.multiplyScalar(0.88);
+        if (e.userData.knock.length() < 0.01) e.userData.knock.set(0,0,0);
+      }
+
+      const dist = e.position.distanceTo(player.position);
+      const aggro = e.userData.aggro;
+
+      // state transitions
+      if (dist < aggro) e.userData.state = "chase";
+      else if (dist > aggro + 6) e.userData.state = "patrol";
+
+      // movement
+      let dir = new THREE.Vector3();
+      if (e.userData.state === "chase") {
+        dir.subVectors(player.position, e.position).setY(0).normalize();
+      } else {
+        dir.subVectors(e.userData.patrolTarget, e.position).setY(0);
+        if (dir.length() < 1.0) {
+          e.userData.patrolTarget.set(e.position.x + rand(-10,10), 0, e.position.z + rand(-10,10));
+        }
+        dir.normalize();
+      }
+
+      const speed = e.userData.speed * (e.userData.state === "chase" ? 1.25 : 1.0);
+      e.position.addScaledVector(dir, speed * (dt*60)); // normalize dt factor
+
+      // face direction
+      const targetYaw = Math.atan2(dir.x, dir.z);
+      e.rotation.y = lerp(e.rotation.y, targetYaw, 0.12);
+
+      // attack if close
+      if (dist < 1.3 && now() > e.userData.hitCD) {
+        e.userData.hitCD = now() + 650;
+        playerDamage(e.userData.kind === "knight" ? 12 : 7, dir);
+      }
+
+      // update collider pos (keep in sync)
+      const col = colliders.find(c => c.ref === e);
+      if (col) col.pos.copy(e.position);
+    }
+  }
+
+  // ---------- Coins + projectiles update ----------
+  function updateCoins(dt) {
+    for (const c of coins) {
+      if (!c.parent) continue;
+      if (c.userData.zone !== state.zone) continue;
+      c.userData.t += dt;
+      c.rotation.y += dt * 2.8;
+      c.position.y = 0.65 + Math.sin(c.userData.t*2.2) * 0.08;
+
+      // pick up
+      if (c.position.distanceTo(player.position.clone().setY(0.7)) < 1.1) {
+        state.coins += 1;
+        audio.coin();
+        removeColliderByRef(c);
+        c.parent.remove(c);
+        updateHUD();
+      }
+    }
+  }
+
+  function updateArrows(dt) {
+    for (const a of arrows) {
+      if (!a.parent) continue;
+      if (a.userData.zone !== state.zone) continue;
+
+      a.position.addScaledVector(a.userData.dir, a.userData.speed * (dt*60));
+      // orientation
+      a.lookAt(a.position.clone().add(a.userData.dir));
+
+      // lifetime
+      if (now() - a.userData.born > 2200) {
+        if (a.parent) a.parent.remove(a);
+        continue;
+      }
+
+      // hit enemies
+      for (const e of enemies) {
+        if (!e.parent) continue;
+        if (e.userData.zone !== state.zone) continue;
+        if (e.position.distanceTo(a.position) < 0.9) {
+          damageEnemy(e, 22, a.userData.dir);
+          if (a.parent) a.parent.remove(a);
+          break;
+        }
+      }
+
+      // simple wall hit (solid colliders)
+      for (const c of zoneColliders()) {
+        if (c.type !== "solid") continue;
+        if (a.position.distanceTo(c.pos) < c.r + 0.4) {
+          if (a.parent) a.parent.remove(a);
+          audio.beep(220,0.04,"square",0.08);
+          break;
+        }
+      }
+    }
+  }
+
+  // ---------- Interaction hints ----------
+  function updateHint() {
+    let best = null;
+    let bestD = 9999;
+
+    for (const c of zoneColliders()) {
+      const isInteract = ["npc_elder","chest","chest_final","dungeon_gate","dungeon_inner_gate","dungeon_exit"].includes(c.type);
+      if (!isInteract) continue;
+      const d = c.pos.distanceTo(player.position);
+      if (d < 2.8 && d < bestD) { best = c; bestD = d; }
+    }
+
+    if (!best) { hint(""); return; }
+
+    if (best.type === "npc_elder") hint("Pulsa E para hablar con el Anciano");
+    if (best.type === "chest") hint("Pulsa E para abrir el cofre");
+    if (best.type === "chest_final") hint("Pulsa E para abrir el cofre final");
+    if (best.type === "dungeon_gate") hint("Pulsa E para entrar a la Mazmorra");
+    if (best.type === "dungeon_inner_gate") hint("Pulsa E para abrir la puerta (requiere llave)");
+    if (best.type === "dungeon_exit") hint("Pulsa E para salir al Bosque");
+  }
+
+  // ---------- Main loop ----------
+  let lastT = now();
+  function loop() {
+    requestAnimationFrame(loop);
+
+    const t = now();
+    const dt = clamp((t - lastT) / 1000, 0.001, 0.033);
+    lastT = t;
+
+    if (toastTimer && t > toastTimer) { elToast.style.display="none"; toastTimer = 0; }
+
+    if (!state.paused) {
+      // time
+      state.tSec = Math.floor((t - state.timeStart) / 1000);
+      const mm = String(Math.floor(state.tSec/60)).padStart(2,"0");
+      const ss = String(state.tSec%60).padStart(2,"0");
+      elTime.textContent = `${mm}:${ss}`;
+
+      // flames
+      flame.scale.y = 1.0 + Math.sin(t*0.01)*0.15;
+      flame.position.y = 0.85 + Math.sin(t*0.01)*0.12;
+
+      // bow aiming toggle with Q
+      if (state.keys["q"]) {
+        state.bowAiming = true;
+        if (state.weapon !== "bow") setWeapon("bow");
+      }
+      // interact
+      if (state.keys["e"]) {
+        state.keys["e"] = false;
+        tryInteract();
+      }
+
+      updatePlayer(dt);
+      updateEnemies(dt);
+      updateCoins(dt);
+      updateArrows(dt);
+      updateCamera(dt);
+      updateHint();
+
+      // update collider positions for dynamic things
+      // player doesn't need collider; enemies already updated.
+
+      // small emissive reset after hit flash
+      for (const e of enemies) {
+        if (!e.parent) continue;
+        if (t > (e.userData.hitCD - 200)) {
+          e.traverse(obj => { if (obj.isMesh) obj.material.emissive = new THREE.Color(0x000000); });
+        }
+      }
+
+      // dungeon completion logic
+      if (state.zone === "dungeon" && state.quest.id === "get_key" && state.quest.hasDungeonKey) {
+        // already acquired
+      }
+
+      // keep UI fresh
+      updateHUD();
+      drawMinimap();
+    }
+
+    renderer.render(scene, camera);
+  }
+
+  // ---------- Resize ----------
+  addEventListener("resize", () => {
+    camera.aspect = innerWidth/innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  });
+
+  // ---------- Start ----------
+  setWeapon("sword");
+  setQuest(state.quest.id, state.quest.name);
+  updateHUD();
+  toast("Listo. Ve al campamento y habla con el Anciano (E).");
+
+  loop();
+  </script>
+</body>
+</html>

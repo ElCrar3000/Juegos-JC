@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Observa y Propaga</title>
+  <style>
+    :root{
+      --bg:#111;
+      --bg2:#1a1a1a;
+      --panel:rgba(0,0,0,.55);
+      --line:rgba(255,255,255,.08);
+      --text:#f3f3f3;
+      --muted:#bdbdbd;
+      --good:#58c472;
+      --warn:#e2b64d;
+      --bad:#ef5350;
+      --accent:#8ec5ff;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{width:100%;height:100%}
+    body{
+      background: radial-gradient(circle at top, #222, #111 70%);
+      color:var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      overflow:hidden;
+      user-select:none;
+    }
+
+    canvas{
+      display:block;
+      width:100vw;
+      height:100vh;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(255,255,255,.04), transparent 35%),
+        linear-gradient(to bottom, #1d1d1d, #121212 60%, #0f0f0f);
+    }
+
+    .overlay{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+    }
+
+    .topbar{
+      position:fixed;
+      top:14px;
+      left:14px;
+      right:14px;
+      display:flex;
+      justify-content:space-between;
+      gap:14px;
+      z-index:20;
+      pointer-events:none;
+    }
+
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:12px 14px;
+      backdrop-filter: blur(5px);
+      box-shadow:0 10px 30px rgba(0,0,0,.25);
+    }
+
+    .panel h2{
+      font-size:18px;
+      margin-bottom:8px;
+    }
+
+    .small{
+      font-size:13px;
+      line-height:1.4;
+      color:var(--muted);
+    }
+
+    .stats{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(120px,1fr));
+      gap:8px 14px;
+      min-width:320px;
+    }
+
+    .stat strong{
+      display:block;
+      font-size:18px;
+      color:#fff;
+    }
+
+    .bar-wrap{
+      margin-top:8px;
+      width:100%;
+      height:14px;
+      border-radius:999px;
+      overflow:hidden;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.05);
+    }
+
+    .bar{
+      height:100%;
+      width:0%;
+      transition:width .2s;
+      background:linear-gradient(90deg, var(--good), var(--warn), var(--bad));
+    }
+
+    .bar.calm{
+      background:linear-gradient(90deg, #6fd18c, #88dca1);
+    }
+
+    .bar.truth{
+      background:linear-gradient(90deg, #8ec5ff, #5ca7ff);
+    }
+
+    .feed{
+      position:fixed;
+      right:14px;
+      bottom:14px;
+      width:min(420px, calc(100vw - 28px));
+      max-height:42vh;
+      overflow:hidden;
+      z-index:22;
+      pointer-events:none;
+    }
+
+    .feed-box{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:12px;
+      backdrop-filter: blur(6px);
+    }
+
+    .feed-title{
+      font-weight:bold;
+      margin-bottom:8px;
+      font-size:15px;
+    }
+
+    .feed-list{
+      display:flex;
+      flex-direction:column-reverse;
+      gap:8px;
+    }
+
+    .feed-item{
+      border:1px solid rgba(255,255,255,.07);
+      border-radius:12px;
+      padding:10px;
+      background:rgba(255,255,255,.03);
+      animation:fadeInUp .25s ease;
+    }
+
+    .feed-item .tag{
+      display:inline-block;
+      font-size:11px;
+      border-radius:999px;
+      padding:3px 7px;
+      margin-bottom:6px;
+      background:rgba(255,255,255,.08);
+      color:#fff;
+    }
+
+    .feed-item .tag.good{background:rgba(88,196,114,.18)}
+    .feed-item .tag.warn{background:rgba(226,182,77,.18)}
+    .feed-item .tag.bad{background:rgba(239,83,80,.18)}
+    .feed-item .tag.info{background:rgba(142,197,255,.18)}
+
+    .feed-item p{
+      font-size:13px;
+      line-height:1.35;
+      color:#efefef;
+    }
+
+    .big-message{
+      position:fixed;
+      left:50%;
+      bottom:18px;
+      transform:translateX(-50%);
+      z-index:25;
+      background:rgba(0,0,0,.72);
+      border:1px solid rgba(255,255,255,.08);
+      color:#fff;
+      border-radius:14px;
+      padding:12px 16px;
+      font-size:16px;
+      opacity:0;
+      transition:opacity .2s, transform .2s;
+      pointer-events:none;
+    }
+
+    .big-message.show{
+      opacity:1;
+      transform:translateX(-50%) translateY(-4px);
+    }
+
+    .screen{
+      position:fixed;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:50;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(255,255,255,.05), transparent 25%),
+        rgba(0,0,0,.7);
+      backdrop-filter: blur(4px);
+      padding:20px;
+    }
+
+    .card{
+      width:min(900px, 100%);
+      background:rgba(12,12,12,.9);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:24px;
+      padding:26px;
+      box-shadow:0 20px 50px rgba(0,0,0,.45);
+    }
+
+    .card h1{
+      font-size:42px;
+      margin-bottom:10px;
+      letter-spacing:.5px;
+    }
+
+    .card h3{
+      font-size:20px;
+      margin:18px 0 10px;
+    }
+
+    .card p{
+      color:#d8d8d8;
+      line-height:1.55;
+      margin-bottom:10px;
+    }
+
+    .card .mini{
+      color:#b9b9b9;
+      font-size:14px;
+    }
+
+    .row{
+      display:flex;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-top:18px;
+    }
+
+    button{
+      pointer-events:auto;
+      border:none;
+      cursor:pointer;
+      border-radius:14px;
+      padding:14px 18px;
+      font-weight:bold;
+      font-size:15px;
+      transition:transform .12s, opacity .12s, filter .12s;
+    }
+
+    button:hover{
+      transform:translateY(-1px);
+      filter:brightness(1.06);
+    }
+
+    button.primary{
+      background:#fff;
+      color:#111;
+    }
+
+    button.secondary{
+      background:#252525;
+      color:#fff;
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .legend{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:10px;
+      margin-top:14px;
+    }
+
+    .legend-item{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:14px;
+      padding:12px;
+    }
+
+    .legend-item strong{
+      display:block;
+      margin-bottom:4px;
+    }
+
+    .hidden{display:none !important}
+
+    .hud-center{
+      position:fixed;
+      top:16px;
+      left:50%;
+      transform:translateX(-50%);
+      z-index:21;
+      pointer-events:none;
+      text-align:center;
+    }
+
+    .phase-chip{
+      display:inline-block;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(0,0,0,.48);
+      font-size:13px;
+      letter-spacing:.2px;
+    }
+
+    .bottom-help{
+      position:fixed;
+      left:14px;
+      bottom:14px;
+      z-index:20;
+      pointer-events:none;
+      max-width:380px;
+    }
+
+    .ending-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-top:14px;
+    }
+
+    .ending-box{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:14px;
+      padding:14px;
+    }
+
+    .ending-box strong{
+      display:block;
+      font-size:18px;
+      margin-bottom:6px;
+    }
+
+    @keyframes fadeInUp{
+      from{opacity:0;transform:translateY(8px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div class="overlay">
+    <div class="topbar">
+      <div class="panel" style="max-width:360px;">
+        <h2>Observa y Propaga</h2>
+        <div class="small">
+          Mueve el encuadre con el ratón. Haz clic para publicar una foto.<br>
+          La ciudad cambiará según lo que enseñes. Muy periodístico. Muy peligroso.
+        </div>
+      </div>
+
+      <div class="panel" style="min-width:360px;">
+        <div class="stats">
+          <div class="stat"><span class="small">Publicaciones</span><strong id="shots">0</strong></div>
+          <div class="stat"><span class="small">Fase</span><strong id="phaseText">Calma</strong></div>
+          <div class="stat"><span class="small">Caos</span><strong id="chaosText">0%</strong></div>
+          <div class="stat"><span class="small">Verdad</span><strong id="truthText">50%</strong></div>
+        </div>
+
+        <div class="small" style="margin-top:10px;">Caos social</div>
+        <div class="bar-wrap"><div class="bar" id="chaosBar"></div></div>
+
+        <div class="small" style="margin-top:10px;">Contexto y verdad</div>
+        <div class="bar-wrap"><div class="bar truth" id="truthBar"></div></div>
+      </div>
+    </div>
+
+    <div class="hud-center">
+      <div class="phase-chip" id="phaseChip">Fase: Calma cotidiana</div>
+    </div>
+
+    <div class="feed">
+      <div class="feed-box">
+        <div class="feed-title">Titulares</div>
+        <div class="feed-list" id="feedList"></div>
+      </div>
+    </div>
+
+    <div class="bottom-help">
+      <div class="panel">
+        <div class="small">
+          Consejo: no solo importa <b>qué</b> capturas.<br>
+          Importa también <b>cuántas veces</b> insistes en lo mismo.
+        </div>
+      </div>
+    </div>
+
+    <div class="big-message" id="message"></div>
+  </div>
+
+  <div class="screen" id="startScreen">
+    <div class="card">
+      <h1>Observa y Propaga</h1>
+      <p>
+        Esta es una base más seria y profunda del juego. Tú controlas una cámara y una especie de medio improvisado.
+        La ciudad se mueve sola. Tú eliges qué enseñar. Cada publicación altera la percepción colectiva.
+      </p>
+      <p>
+        No ganas por disparar más fotos. Ganas si entiendes que una sociedad no solo se rompe por lo que pasa,
+        sino por <b>cómo se cuenta</b>, <b>cuánto se repite</b> y <b>si se deforma el contexto</b>.
+      </p>
+
+      <h3>Qué tiene esta versión</h3>
+      <div class="legend">
+        <div class="legend-item"><strong>NPCs con rasgos</strong><span class="mini">normales, raros, enfadados, asustados, imitadores y conciliadores</span></div>
+        <div class="legend-item"><strong>Sistema de memoria social</strong><span class="mini">si repites un tema, la ciudad lo amplifica</span></div>
+        <div class="legend-item"><strong>Fases</strong><span class="mini">calma, curiosidad, tensión, polarización y colapso</span></div>
+        <div class="legend-item"><strong>Verdad</strong><span class="mini">si capturas escenas equilibradas, la bajas menos; si manipulas, la destrozas</span></div>
+        <div class="legend-item"><strong>Titulares</strong><span class="mini">cada foto genera una lectura social</span></div>
+        <div class="legend-item"><strong>Varios finales</strong><span class="mini">no todo termina en incendio</span></div>
+      </div>
+
+      <div class="row">
+        <button class="primary" id="startBtn">Empezar partida</button>
+        <button class="secondary" id="howBtn">Ver controles</button>
+      </div>
+
+      <p class="mini" style="margin-top:14px;">
+        Todo está en un solo archivo. O sea: milagro aceptable.
+      </p>
+    </div>
+  </div>
+
+  <div class="screen hidden" id="helpScreen">
+    <div class="card">
+      <h1>Controles y lógica</h1>
+      <p><b>Ratón:</b> mueves el encuadre.</p>
+      <p><b>Clic izquierdo:</b> publicas una foto de lo que haya dentro del recuadro.</p>
+      <p><b>R:</b> reinicia cuando termine la partida.</p>
+
+      <h3>Cómo afecta cada publicación</h3>
+      <p>
+        Fotografiar escenas raras o violentas sube mucho más el caos.<br>
+        Fotografiar escenas equilibradas, normales o conciliadoras puede bajar tensión y subir verdad.
+      </p>
+      <p>
+        Pero si repites obsesivamente un tema, aunque sea real, la ciudad empieza a girar alrededor de eso.
+        Ahí está la gracia: el daño no lo hace solo la mentira; también lo hace la desproporción.
+      </p>
+
+      <div class="row">
+        <button class="primary" id="backBtn">Volver</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen hidden" id="endScreen">
+    <div class="card">
+      <h1 id="endTitle">Final</h1>
+      <p id="endDesc"></p>
+
+      <div class="ending-grid">
+        <div class="ending-box">
+          <strong>Publicaciones</strong>
+          <span id="endShots">0</span>
+        </div>
+        <div class="ending-box">
+          <strong>Caos final</strong>
+          <span id="endChaos">0%</span>
+        </div>
+        <div class="ending-box">
+          <strong>Verdad final</strong>
+          <span id="endTruth">0%</span>
+        </div>
+        <div class="ending-box">
+          <strong>Tendencia dominante</strong>
+          <span id="endTrend">Ninguna</span>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="primary" id="restartBtn">Jugar otra vez</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    const shotsEl = document.getElementById("shots");
+    const chaosTextEl = document.getElementById("chaosText");
+    const truthTextEl = document.getElementById("truthText");
+    const phaseTextEl = document.getElementById("phaseText");
+    const phaseChip = document.getElementById("phaseChip");
+    const chaosBar = document.getElementById("chaosBar");
+    const truthBar = document.getElementById("truthBar");
+    const feedList = document.getElementById("feedList");
+    const messageEl = document.getElementById("message");
+
+    const startScreen = document.getElementById("startScreen");
+    const helpScreen = document.getElementById("helpScreen");
+    const endScreen = document.getElementById("endScreen");
+
+    const startBtn = document.getElementById("startBtn");
+    const howBtn = document.getElementById("howBtn");
+    const backBtn = document.getElementById("backBtn");
+    const restartBtn = document.getElementById("restartBtn");
+
+    const endTitle = document.getElementById("endTitle");
+    const endDesc = document.getElementById("endDesc");
+    const endShots = document.getElementById("endShots");
+    const endChaos = document.getElementById("endChaos");
+    const endTruth = document.getElementById("endTruth");
+    const endTrend = document.getElementById("endTrend");
+
+    let W = window.innerWidth;
+    let H = window.innerHeight;
+    canvas.width = W;
+    canvas.height = H;
+
+    function resize(){
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = W;
+      canvas.height = H;
+    }
+    window.addEventListener("resize", resize);
+
+    const mouse = { x: W/2, y: H/2 };
+    window.addEventListener("mousemove", e => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+
+    const WORLD = {
+      NPC_COUNT: 34,
+      shotRadius: 62,
+      phaseName: "Calma",
+      running: false,
+      over: false,
+      flash: 0,
+      time: 0,
+      lastAmbientEvent: 0,
+      memory: {
+        normal: 0,
+        odd: 0,
+        angry: 0,
+        fear: 0,
+        peace: 0
+      }
+    };
+
+    const state = {
+      shots: 0,
+      chaos: 0,
+      truth: 50,
+      trend: "equilibrio"
+    };
+
+    const npcs = [];
+
+    function rand(min,max){ return Math.random()*(max-min)+min; }
+    function clamp(v,min,max){ return Math.max(min, Math.min(max,v)); }
+
+    const NAME_BANK = [
+      "Lio", "Mara", "Timo", "Nara", "Elo", "Rin", "Vega", "Nilo", "Paz", "Lume",
+      "Daro", "Iria", "Siro", "Noa", "Kiro", "Vita", "Biel", "Lena", "Sora", "Tera"
+    ];
+
+    const GROUPS = ["vecino", "curioso", "artista", "oficinista", "repartidor", "estudiante"];
+
+    function pick(arr){
+      return arr[Math.floor(Math.random()*arr.length)];
+    }
+
+    function showMessage(text){
+      messageEl.textContent = text;
+      messageEl.classList.add("show");
+      clearTimeout(showMessage.timer);
+      showMessage.timer = setTimeout(() => messageEl.classList.remove("show"), 1200);
+    }
+
+    function addFeed(tagClass, tagText, text){
+      const item = document.createElement("div");
+      item.className = "feed-item";
+      item.innerHTML = `
+        <div class="tag ${tagClass}">${tagText}</div>
+        <p>${text}</p>
+      `;
+      feedList.prepend(item);
+      while(feedList.children.length > 7){
+        feedList.removeChild(feedList.lastChild);
+      }
+    }
+
+    function makeNPC(){
+      const archetypes = ["normal","normal","normal","normal","odd","angry","peacemaker","fearful","copycat"];
+      const type = pick(archetypes);
+      return {
+        id: Math.random().toString(36).slice(2),
+        name: pick(NAME_BANK),
+        group: pick(GROUPS),
+        type,
+        x: rand(60, W-60),
+        y: rand(90, H-80),
+        vx: rand(-1.2,1.2),
+        vy: rand(-1.2,1.2),
+        r: rand(16,20),
+        mood: rand(0,1),
+        attention: 0,
+        panic: 0,
+        influence: rand(.5, 1.4),
+        visibleTrait: Math.random() < 0.25
+      };
+    }
+
+    function resetGame(){
+      npcs.length = 0;
+      for(let i=0;i<WORLD.NPC_COUNT;i++) npcs.push(makeNPC());
+
+      state.shots = 0;
+      state.chaos = 0;
+      state.truth = 50;
+      state.trend = "equilibrio";
+
+      WORLD.running = true;
+      WORLD.over = false;
+      WORLD.flash = 0;
+      WORLD.time = 0;
+      WORLD.lastAmbientEvent = 0;
+      WORLD.phaseName = "Calma";
+      WORLD.memory.normal = 0;
+      WORLD.memory.odd = 0;
+      WORLD.memory.angry = 0;
+      WORLD.memory.fear = 0;
+      WORLD.memory.peace = 0;
+
+      feedList.innerHTML = "";
+      addFeed("info", "Inicio", "La ciudad arranca en relativa calma. De momento, casi todo el mundo sigue con su vida.");
+      updateUI();
+
+      endScreen.classList.add("hidden");
+      startScreen.classList.add("hidden");
+      helpScreen.classList.add("hidden");
+    }
+
+    function getPhase(){
+      if(state.chaos < 15) return "Calma cotidiana";
+      if(state.chaos < 35) return "Curiosidad inquieta";
+      if(state.chaos < 55) return "Tensión creciente";
+      if(state.chaos < 78) return "Polarización";
+      return "Precolapso";
+    }
+
+    function dominantTrend(){
+      const mem = WORLD.memory;
+      const entries = [
+        ["normalidad", mem.normal],
+        ["rareza", mem.odd],
+        ["enfado", mem.angry],
+        ["miedo", mem.fear],
+        ["conciliación", mem.peace]
+      ].sort((a,b)=>b[1]-a[1]);
+      return entries[0][0];
+    }
+
+    function updateUI(){
+      shotsEl.textContent = state.shots;
+      chaosTextEl.textContent = Math.round(state.chaos) + "%";
+      truthTextEl.textContent = Math.round(state.truth) + "%";
+      WORLD.phaseName = getPhase();
+      phaseTextEl.textContent = WORLD.phaseName.replace(" cotidiana","");
+      phaseChip.textContent = "Fase: " + WORLD.phaseName;
+      chaosBar.style.width = clamp(state.chaos,0,100) + "%";
+      truthBar.style.width = clamp(state.truth,0,100) + "%";
+    }
+
+    function drawGrid(){
+      const grid = 40;
+      ctx.strokeStyle = "rgba(255,255,255,0.03)";
+      ctx.lineWidth = 1;
+      for(let x=0;x<W;x+=grid){
+        ctx.beginPath();
+        ctx.moveTo(x,0);
+        ctx.lineTo(x,H);
+        ctx.stroke();
+      }
+      for(let y=0;y<H;y+=grid){
+        ctx.beginPath();
+        ctx.moveTo(0,y);
+        ctx.lineTo(W,y);
+        ctx.stroke();
+      }
+    }
+
+    function drawCityProps(){
+      // bancos / farolas / marcos simples
+      for(let i=0;i<5;i++){
+        const bx = 120 + i*220 + Math.sin(WORLD.time*0.001 + i)*10;
+        const by = H*0.78 + (i%2)*20;
+        ctx.fillStyle = "rgba(255,255,255,.06)";
+        ctx.fillRect(bx, by, 70, 8);
+        ctx.fillRect(bx+8, by+8, 6, 20);
+        ctx.fillRect(bx+56, by+8, 6, 20);
+      }
+
+      for(let i=0;i<4;i++){
+        const fx = 90 + i*300;
+        const fy = H*0.22 + (i%2)*25;
+        ctx.fillStyle = "rgba(255,255,255,.05)";
+        ctx.fillRect(fx, fy, 8, 110);
+        ctx.beginPath();
+        ctx.arc(fx+4, fy-6, 10, 0, Math.PI*2);
+        ctx.fillStyle = "rgba(255,240,180,.06)";
+        ctx.fill();
+      }
+    }
+
+    function npcColor(npc){
+      if(npc.type === "odd") return "#ffd54f";
+      if(npc.type === "angry") return "#ef5350";
+      if(npc.type === "fearful") return "#90caf9";
+      if(npc.type === "peacemaker") return "#72d28a";
+      if(npc.type === "copycat") return "#ce93d8";
+      return "#e0e0e0";
+    }
+
+    function drawNPC(npc){
+      // sombra
+      ctx.beginPath();
+      ctx.ellipse(npc.x, npc.y+npc.r+8, npc.r*.9, npc.r*.45, 0, 0, Math.PI*2);
+      ctx.fillStyle = "rgba(0,0,0,.18)";
+      ctx.fill();
+
+      // cuerpo
+      ctx.beginPath();
+      ctx.arc(npc.x, npc.y, npc.r, 0, Math.PI*2);
+      ctx.fillStyle = npcColor(npc);
+      ctx.fill();
+
+      // halo de atención
+      if(npc.attention > 0){
+        ctx.beginPath();
+        ctx.arc(npc.x, npc.y, npc.r + 8 + Math.sin(WORLD.time*0.02)*2, 0, Math.PI*2);
+        ctx.strokeStyle = `rgba(255,255,255,${0.08 + npc.attention*0.006})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      // ojos
+      ctx.fillStyle = "#111";
+      ctx.beginPath();
+      ctx.arc(npc.x - 5, npc.y - 3, 2.2, 0, Math.PI*2);
+      ctx.arc(npc.x + 5, npc.y - 3, 2.2, 0, Math.PI*2);
+      ctx.fill();
+
+      // cejas / boca según estado
+      ctx.strokeStyle = "#111";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+
+      if(npc.type === "angry"){
+        ctx.moveTo(npc.x - 9, npc.y - 10);
+        ctx.lineTo(npc.x - 2, npc.y - 6);
+        ctx.moveTo(npc.x + 2, npc.y - 6);
+        ctx.lineTo(npc.x + 9, npc.y - 10);
+        ctx.moveTo(npc.x - 7, npc.y + 8);
+        ctx.lineTo(npc.x + 7, npc.y + 8);
+      } else if(npc.type === "fearful"){
+        ctx.arc(npc.x, npc.y + 7, 4, 0, Math.PI, false);
+      } else if(npc.type === "peacemaker"){
+        ctx.arc(npc.x, npc.y + 7, 5, 0, Math.PI, true);
+      } else if(npc.type === "odd"){
+        ctx.arc(npc.x, npc.y + 7, 4, 0, Math.PI, false);
+      } else if(npc.type === "copycat"){
+        ctx.arc(npc.x, npc.y + 7, 5, 0, Math.PI, false);
+      } else {
+        ctx.arc(npc.x, npc.y + 8, 4, 0, Math.PI, true);
+      }
+      ctx.stroke();
+
+      // rasgo visible
+      if(npc.visibleTrait){
+        ctx.fillStyle = "#111";
+        if(npc.type === "odd"){
+          ctx.fillRect(npc.x-3, npc.y-22, 6, 6);
+        } else if(npc.type === "peacemaker"){
+          ctx.fillRect(npc.x-7, npc.y-23, 14, 3);
+          ctx.fillRect(npc.x-2, npc.y-28, 4, 14);
+        } else if(npc.type === "fearful"){
+          ctx.beginPath();
+          ctx.moveTo(npc.x, npc.y-24);
+          ctx.lineTo(npc.x-5, npc.y-14);
+          ctx.lineTo(npc.x+5, npc.y-14);
+          ctx.closePath();
+          ctx.fill();
+        } else if(npc.type === "copycat"){
+          ctx.strokeStyle = "#111";
+          ctx.strokeRect(npc.x-5, npc.y-24, 10, 10);
+        }
+      }
+
+      if(npc.panic > 0){
+        ctx.strokeStyle = "rgba(255,255,255,.35)";
+        ctx.beginPath();
+        ctx.moveTo(npc.x + npc.r + 3, npc.y - npc.r);
+        ctx.lineTo(npc.x + npc.r + 10, npc.y - npc.r - 8);
+        ctx.stroke();
+      }
+    }
+
+    function steerNPC(npc){
+      let chaosFactor = state.chaos / 100;
+
+      if(npc.type === "angry"){
+        npc.vx += rand(-0.08,0.08);
+        npc.vy += rand(-0.08,0.08);
+      } else if(npc.type === "fearful"){
+        npc.vx += rand(-0.05,0.05);
+        npc.vy += rand(-0.05,0.05);
+      } else if(npc.type === "peacemaker"){
+        npc.vx += rand(-0.03,0.03);
+        npc.vy += rand(-0.03,0.03);
+      } else if(npc.type === "copycat"){
+        const nearby = npcs.find(o => o !== npc && Math.hypot(o.x-npc.x, o.y-npc.y) < 110);
+        if(nearby && Math.random() < 0.004 + chaosFactor*0.01){
+          npc.type = nearby.type;
+        }
+      }
+
+      npc.vx = clamp(npc.vx, -2.5 - chaosFactor*1.4, 2.5 + chaosFactor*1.4);
+      npc.vy = clamp(npc.vy, -2.5 - chaosFactor*1.4, 2.5 + chaosFactor*1.4);
+    }
+
+    function socialContagion(){
+      for(let i=0;i<npcs.length;i++){
+        const a = npcs[i];
+        for(let j=i+1;j<npcs.length;j++){
+          const b = npcs[j];
+          const dx = a.x - b.x;
+          const dy = a.y - b.y;
+          const dist = Math.hypot(dx,dy);
+
+          if(dist < a.r + b.r + 4){
+            const tempVx = a.vx;
+            const tempVy = a.vy;
+            a.vx = b.vx;
+            a.vy = b.vy;
+            b.vx = tempVx;
+            b.vy = tempVy;
+
+            if(a.type === "angry" && b.type !== "peacemaker" && Math.random() < 0.015 + state.chaos*0.0015){
+              b.type = "angry";
+              b.panic = 40;
+            }
+
+            if(a.type === "fearful" && b.type === "normal" && Math.random() < 0.012 + WORLD.memory.fear*0.004){
+              b.type = "fearful";
+            }
+
+            if(a.type === "peacemaker" && (b.type === "angry" || b.type === "fearful") && Math.random() < 0.016 + WORLD.memory.peace*0.004){
+              b.type = "normal";
+            }
+          }
+
+          if(dist < 140 && Math.random() < 0.0015){
+            if(a.type === "angry" && b.type === "normal" && state.chaos > 40){
+              b.type = "angry";
+            }
+            if(a.type === "peacemaker" && b.type === "normal" && state.truth > 55){
+              b.type = "peacemaker";
+            }
+          }
+        }
+      }
+    }
+
+    function updateNPC(npc){
+      steerNPC(npc);
+
+      npc.x += npc.vx;
+      npc.y += npc.vy;
+
+      if(npc.x < npc.r){ npc.x = npc.r; npc.vx *= -1; }
+      if(npc.x > W - npc.r){ npc.x = W - npc.r; npc.vx *= -1; }
+      if(npc.y < 70 + npc.r){ npc.y = 70 + npc.r; npc.vy *= -1; }
+      if(npc.y > H - npc.r - 20){ npc.y = H - npc.r - 20; npc.vy *= -1; }
+
+      npc.attention = Math.max(0, npc.attention - 0.15);
+      npc.panic = Math.max(0, npc.panic - 1);
+
+      if(Math.random() < 0.008 + state.chaos*0.00035){
+        npc.vx += rand(-0.25,0.25);
+        npc.vy += rand(-0.25,0.25);
+      }
+
+      // memoria influye en comportamiento global
+      if(WORLD.memory.angry > 4 && npc.type === "normal" && Math.random() < 0.0015 * WORLD.memory.angry){
+        npc.type = "angry";
+      }
+      if(WORLD.memory.fear > 4 && npc.type === "normal" && Math.random() < 0.0012 * WORLD.memory.fear){
+        npc.type = "fearful";
+      }
+      if(WORLD.memory.peace > 4 && (npc.type === "fearful" || npc.type === "normal") && Math.random() < 0.0015 * WORLD.memory.peace){
+        npc.type = "peacemaker";
+      }
+      if(WORLD.memory.odd > 4 && npc.type === "normal" && Math.random() < 0.0012 * WORLD.memory.odd){
+        npc.type = "odd";
+      }
+    }
+
+    function drawCamera(){
+      const s = 124;
+      const x = mouse.x - s/2;
+      const y = mouse.y - s/2;
+
+      ctx.strokeStyle = "rgba(255,255,255,.9)";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x,y,s,s);
+
+      ctx.beginPath();
+      ctx.moveTo(mouse.x - 14, mouse.y);
+      ctx.lineTo(mouse.x + 14, mouse.y);
+      ctx.moveTo(mouse.x, mouse.y - 14);
+      ctx.lineTo(mouse.x, mouse.y + 14);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(mouse.x, mouse.y, WORLD.shotRadius, 0, Math.PI*2);
+      ctx.strokeStyle = "rgba(255,255,255,.18)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    function getEntitiesInFrame(){
+      return npcs.filter(npc => Math.hypot(npc.x - mouse.x, npc.y - mouse.y) < WORLD.shotRadius);
+    }
+
+    function classifyShot(targets){
+      const counts = {
+        normal: 0,
+        odd: 0,
+        angry: 0,
+        fearful: 0,
+        peacemaker: 0,
+        copycat: 0
+      };
+
+      for(const t of targets){
+        counts[t.type] = (counts[t.type] || 0) + 1;
+      }
+
+      const size = targets.length;
+
+      if(size === 0){
+        return { kind:"empty", label:"vacío", chaos:+2, truth:-2, memory:null };
+      }
+
+      if(counts.angry >= 2){
+        return { kind:"conflict", label:"conflicto", chaos:+16, truth:-7, memory:"angry" };
+      }
+
+      if(counts.fearful >= 2){
+        return { kind:"fear", label:"miedo", chaos:+11, truth:-5, memory:"fear" };
+      }
+
+      if(counts.odd >= 2 || (counts.odd >= 1 && size === 1)){
+        return { kind:"oddity", label:"rareza", chaos:+10, truth:-4, memory:"odd" };
+      }
+
+      if(counts.peacemaker >= 2){
+        return { kind:"peace", label:"conciliación", chaos:-8, truth:+9, memory:"peace" };
+      }
+
+      if(counts.normal >= 2 && counts.odd === 0 && counts.angry === 0 && counts.fearful === 0){
+        return { kind:"normal", label:"normalidad", chaos:-2, truth:+4, memory:"normal" };
+      }
+
+      if(size >= 3 && counts.normal && counts.odd && counts.peacemaker){
+        return { kind:"context", label:"contexto", chaos:-5, truth:+10, memory:"peace" };
+      }
+
+      return { kind:"mixed", label:"mezcla", chaos:+3, truth:+1, memory:"normal" };
+    }
+
+    function repetitionPenalty(kind){
+      const map = {
+        normal: "normal",
+        oddity: "odd",
+        conflict: "angry",
+        fear: "fear",
+        peace: "peace",
+        context: "peace",
+        mixed: "normal"
+      };
+      const key = map[kind];
+      if(!key) return 0;
+      const v = WORLD.memory[key];
+      if(v < 2) return 0;
+      return v * 1.6;
+    }
+
+    function buildHeadline(result, targets){
+      const phase = WORLD.phaseName;
+      const lead = targets[0];
+      const name = lead ? lead.name : "nadie";
+      const count = targets.length;
+
+      const headlines = {
+        empty: [
+          "Publicación sin contenido claro: la audiencia rellena los huecos con imaginación.",
+          "Foto vacía: crece la sospecha aunque en realidad no se vea nada."
+        ],
+        conflict: [
+          `Discusión de ${count} personas dispara la conversación: ${name} se vuelve el rostro del enfado.`,
+          `Nuevo foco de tensión en plena fase de ${phase.toLowerCase()}: el conflicto vende demasiado bien.`
+        ],
+        fear: [
+          `Escena de miedo amplificada: la ciudad empieza a mirar por encima del hombro.`,
+          `La inquietud de ${name} se convierte en titular y el temor se contagia.`
+        ],
+        oddity: [
+          `La rareza ocupa la portada otra vez: lo excepcional empieza a parecer cotidiano.`,
+          `Un gesto extraño de ${name} se convierte en tema nacional. Bueno, de esta mini ciudad.`
+        ],
+        peace: [
+          `Una escena conciliadora frena la espiral: todavía queda margen para bajar revoluciones.`,
+          `La calma compartida gana espacio por primera vez en mucho rato.`
+        ],
+        normal: [
+          `Vida cotidiana en pantalla: recordar lo normal también cambia el tono colectivo.`,
+          `Nada espectacular, y precisamente por eso el ambiente se relaja un poco.`
+        ],
+        context: [
+          `La foto muestra matices en vez de extremos: sube la verdad y baja el ruido.`,
+          `Se publica una escena compleja y el público recibe algo raro hoy en día: contexto.`
+        ],
+        mixed: [
+          `Titular ambiguo: cada grupo interpreta la imagen como quiere.`,
+          `Escena mixta publicada. No aclara mucho, pero tampoco incendia del todo.`
+        ]
+      };
+
+      return pick(headlines[result.kind]);
+    }
+
+    function applyShotEffects(result, targets){
+      state.shots++;
+
+      // atención a los personajes capturados
+      for(const t of targets){
+        t.attention += 25;
+        t.panic += result.kind === "conflict" ? 40 : result.kind === "fear" ? 25 : 0;
+      }
+
+      let chaosDelta = result.chaos;
+      let truthDelta = result.truth;
+
+      const penalty = repetitionPenalty(result.kind);
+      if(penalty > 0 && result.kind !== "peace" && result.kind !== "context"){
+        chaosDelta += penalty;
+        truthDelta -= penalty * 0.45;
+      }
+
+      if(result.memory){
+        WORLD.memory[result.memory] += 1;
+      }
+
+      // efectos por memoria acumulada
+      if(WORLD.memory.angry >= 4){
+        chaosDelta += 2;
+      }
+      if(WORLD.memory.fear >= 4){
+        chaosDelta += 2;
+      }
+      if(WORLD.memory.peace >= 3){
+        chaosDelta -= 1.5;
+        truthDelta += 1;
+      }
+      if(WORLD.memory.normal >= 5){
+        chaosDelta -= 1;
+        truthDelta += 1;
+      }
+
+      state.chaos = clamp(state.chaos + chaosDelta, 0, 100);
+      state.truth = clamp(state.truth + truthDelta, 0, 100);
+      state.trend = dominantTrend();
+
+      // transformación del mundo tras publicación
+      if(result.kind === "conflict"){
+        npcs.forEach(n => {
+          if(n.type === "normal" && Math.random() < 0.18) n.type = "angry";
+          if(n.type === "fearful" && Math.random() < 0.22) n.type = "angry";
+        });
+      } else if(result.kind === "fear"){
+        npcs.forEach(n => {
+          if(n.type === "normal" && Math.random() < 0.2) n.type = "fearful";
+        });
+      } else if(result.kind === "oddity"){
+        npcs.forEach(n => {
+          if(n.type === "normal" && Math.random() < 0.16) n.type = "copycat";
+          if(n.type === "copycat" && Math.random() < 0.20) n.type = "odd";
+        });
+      } else if(result.kind === "peace" || result.kind === "context"){
+        npcs.forEach(n => {
+          if((n.type === "angry" || n.type === "fearful") && Math.random() < 0.15) n.type = "normal";
+          if(n.type === "normal" && Math.random() < 0.10) n.type = "peacemaker";
+        });
+      } else if(result.kind === "normal"){
+        npcs.forEach(n => {
+          if(n.type === "copycat" && Math.random() < 0.08) n.type = "normal";
+        });
+      }
+
+      const headline = buildHeadline(result, targets);
+      let tagClass = "info";
+      let tagText = "Publicación";
+
+      if(result.kind === "conflict" || result.kind === "fear") { tagClass = "bad"; tagText = "Alarma"; }
+      else if(result.kind === "oddity" || result.kind === "mixed") { tagClass = "warn"; tagText = "Tendencia"; }
+      else if(result.kind === "peace" || result.kind === "context" || result.kind === "normal") { tagClass = "good"; tagText = "Contrapeso"; }
+      else if(result.kind === "empty") { tagClass = "warn"; tagText = "Vacío"; }
+
+      addFeed(tagClass, tagText, headline);
+
+      if(penalty > 0){
+        addFeed(
+          "warn",
+          "Repetición",
+          "La audiencia ya no distingue bien si informas o insistes. Repetir el mismo enfoque amplifica el efecto."
+        );
+      }
+
+      WORLD.flash = 9;
+      updateUI();
+      checkEndConditions();
+    }
+
+    function takeShot(){
+      if(!WORLD.running || WORLD.over) return;
+
+      const targets = getEntitiesInFrame();
+      const result = classifyShot(targets);
+      applyShotEffects(result, targets);
+
+      const reactionText = {
+        empty: "Publicaste vacío. La imaginación pública hace el resto.",
+        conflict: "Capturaste conflicto. Eso corre solo.",
+        fear: "Capturaste miedo. La ciudad se encoge.",
+        oddity: "Capturaste rareza. La ciudad imita.",
+        peace: "Capturaste calma. Buena decisión.",
+        normal: "Capturaste normalidad. No da clics, pero da oxígeno.",
+        context: "Capturaste contexto. Eso vale oro.",
+        mixed: "Capturaste mezcla. Ni arregla ni incendia demasiado."
+      }[result.kind];
+
+      showMessage(reactionText);
+    }
+
+    window.addEventListener("click", takeShot);
+
+    function ambientEvents(){
+      if(WORLD.time - WORLD.lastAmbientEvent < 260) return;
+      WORLD.lastAmbientEvent = WORLD.time;
+
+      const roll = Math.random();
+
+      if(state.chaos > 60 && roll < 0.35){
+        const target = pick(npcs);
+        target.type = "angry";
+        target.panic = 50;
+        addFeed("bad", "Ambiente", `${target.name} estalla sin salir en portada. El clima ya va solo.`);
+      } else if(state.truth > 62 && roll < 0.65){
+        const target = pick(npcs);
+        if(target.type !== "angry") target.type = "peacemaker";
+        addFeed("good", "Ambiente", `${target.name} calma a quienes tiene cerca. El tono general mejora un poco.`);
+        state.chaos = clamp(state.chaos - 1.2, 0, 100);
+      } else if(WORLD.memory.odd > 4 && roll < 0.55){
+        const target = pick(npcs);
+        if(target.type === "normal") target.type = "odd";
+        addFeed("warn", "Moda", "Lo raro se normaliza. La ciudad empieza a actuar para ser vista.");
+      }
+    }
+
+    function checkEndConditions(){
+      // final por colapso
+      if(state.chaos >= 100){
+        endGame("Colapso viral",
+          "La ciudad ya no reacciona a los hechos, sino a las reacciones. Todo se interpreta como ataque o amenaza. Ganó el ruido."
+        );
+        return;
+      }
+
+      // final bueno
+      if(state.shots >= 18 && state.truth >= 75 && state.chaos <= 28){
+        endGame("Equilibrio difícil",
+          "Has demostrado que contar lo normal, lo complejo y lo conciliador también transforma una sociedad. Cuesta más, pero no la rompe."
+        );
+        return;
+      }
+
+      // final gris
+      if(state.shots >= 22){
+        if(state.truth >= 55 && state.chaos < 55){
+          endGame("Sociedad tensa pero funcional",
+            "No has construido paz completa, pero sí un equilibrio suficiente para que la ciudad no se devore sola."
+          );
+        } else if(state.truth < 35 && state.chaos < 70){
+          endGame("Superficie tranquila, fondo torcido",
+            "No todo ardió, pero la verdad quedó tan dañada que la ciudad ya no distingue bien lo importante de lo llamativo."
+          );
+        } else {
+          endGame("Fatiga colectiva",
+            "La ciudad acaba cansada, hiperreactiva y desordenada. No explota del todo, pero sale peor de lo que entró."
+          );
+        }
+      }
+    }
+
+    function endGame(title, desc){
+      WORLD.running = false;
+      WORLD.over = true;
+
+      endTitle.textContent = title;
+      endDesc.textContent = desc;
+      endShots.textContent = state.shots;
+      endChaos.textContent = Math.round(state.chaos) + "%";
+      endTruth.textContent = Math.round(state.truth) + "%";
+      endTrend.textContent = dominantTrend();
+
+      endScreen.classList.remove("hidden");
+    }
+
+    function drawWorldStateGlow(){
+      if(state.chaos > 20){
+        ctx.fillStyle = `rgba(255,90,90,${(state.chaos/100)*0.08})`;
+        ctx.fillRect(0,0,W,H);
+      }
+
+      if(state.truth > 60){
+        ctx.fillStyle = `rgba(120,180,255,${((state.truth-60)/40)*0.05})`;
+        ctx.fillRect(0,0,W,H);
+      }
+    }
+
+    function drawPhaseDecoration(){
+      const phase = getPhase();
+
+      if(phase === "Curiosidad inquieta"){
+        for(let i=0;i<5;i++){
+          const x = (i+1)*W/6;
+          const y = 110 + Math.sin(WORLD.time*0.02 + i)*8;
+          ctx.fillStyle = "rgba(255,255,255,.05)";
+          ctx.beginPath();
+          ctx.arc(x,y,10,0,Math.PI*2);
+          ctx.fill();
+        }
+      }
+
+      if(phase === "Tensión creciente" || phase === "Polarización" || phase === "Precolapso"){
+        for(let i=0;i<4;i++){
+          ctx.strokeStyle = `rgba(255,255,255,${0.03 + i*0.01})`;
+          ctx.beginPath();
+          ctx.moveTo(0, 140 + i*80 + Math.sin(WORLD.time*0.015+i)*10);
+          ctx.lineTo(W, 135 + i*80 + Math.cos(WORLD.time*0.012+i)*14);
+          ctx.stroke();
+        }
+      }
+    }
+
+    function draw(){
+      ctx.clearRect(0,0,W,H);
+      drawGrid();
+      drawCityProps();
+      drawPhaseDecoration();
+
+      for(const npc of npcs){
+        updateNPC(npc);
+      }
+
+      socialContagion();
+
+      npcs.sort((a,b)=>a.y-b.y);
+      for(const npc of npcs){
+        drawNPC(npc);
+      }
+
+      drawWorldStateGlow();
+      drawCamera();
+
+      if(WORLD.flash > 0){
+        ctx.fillStyle = `rgba(255,255,255,${WORLD.flash*0.08})`;
+        ctx.fillRect(0,0,W,H);
+        WORLD.flash--;
+      }
+    }
+
+    function tick(){
+      requestAnimationFrame(tick);
+      if(!WORLD.running && !WORLD.over) return;
+
+      WORLD.time++;
+      draw();
+      ambientEvents();
+      updateUI();
+    }
+
+    startBtn.addEventListener("click", resetGame);
+    restartBtn.addEventListener("click", resetGame);
+
+    howBtn.addEventListener("click", ()=>{
+      helpScreen.classList.remove("hidden");
+      startScreen.classList.add("hidden");
+    });
+
+    backBtn.addEventListener("click", ()=>{
+      helpScreen.classList.add("hidden");
+      startScreen.classList.remove("hidden");
+    });
+
+    window.addEventListener("keydown", (e)=>{
+      if(e.key.toLowerCase() === "r" && WORLD.over){
+        resetGame();
+      }
+    });
+
+    tick();
+  </script>
+</body>
+</html>

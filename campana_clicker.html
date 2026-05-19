@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Campana Clicker</title>
+  <style>
+    :root { --bg:#0b0f19; --card:#121a2b; --txt:#e8eeff; --mut:#9fb0d6; --acc:#7cf5b7; --warn:#ffcc66; }
+    *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    body{margin:0;background:radial-gradient(1200px 800px at 20% 10%, #1a2a55 0%, var(--bg) 55%);color:var(--txt)}
+    .wrap{max-width:980px;margin:0 auto;padding:22px}
+    .top{display:flex;gap:14px;flex-wrap:wrap;align-items:stretch}
+    .card{background:rgba(18,26,43,.9);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+    h1{margin:0 0 6px;font-size:22px;letter-spacing:.3px}
+    .sub{color:var(--mut);font-size:13px}
+    .stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .pill{padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);font-size:13px}
+    .pill b{color:var(--acc)}
+    .main{display:grid;grid-template-columns:1.05fr .95fr;gap:14px;margin-top:14px}
+    @media (max-width:860px){.main{grid-template-columns:1fr}}
+    .bigBtn{
+      width:100%;aspect-ratio:1/1;border-radius:28px;border:1px solid rgba(255,255,255,.10);
+      background:radial-gradient(400px 260px at 30% 25%, rgba(124,245,183,.25), rgba(255,255,255,.03)),
+                 linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      cursor:pointer;position:relative;overflow:hidden;
+      display:flex;align-items:center;justify-content:center;user-select:none;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.06), 0 18px 40px rgba(0,0,0,.45);
+      transition:transform .06s ease, filter .2s ease;
+    }
+    .bigBtn:active{transform:scale(.985);filter:brightness(1.05)}
+    .bell{
+      width:52%;max-width:320px;filter:drop-shadow(0 12px 16px rgba(0,0,0,.45));
+      transform-origin:50% 0%;
+    }
+    .hint{position:absolute;bottom:14px;left:14px;right:14px;text-align:center;color:var(--mut);font-size:13px}
+    .shop h2{margin:0 0 6px;font-size:16px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    button.small{
+      border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);
+      color:var(--txt);border-radius:12px;padding:10px 12px;cursor:pointer;
+      font-size:13px;flex:1;min-width:190px;
+      transition:transform .06s ease, background .2s ease;
+    }
+    button.small:hover{background:rgba(255,255,255,.08)}
+    button.small:active{transform:scale(.99)}
+    button.small:disabled{opacity:.45;cursor:not-allowed}
+    .cost{color:var(--warn);font-weight:700}
+    .footer{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .footer button{min-width:220px}
+    .log{margin-top:10px;color:var(--mut);font-size:12px;line-height:1.35;min-height:38px}
+    .toast{
+      position:fixed;left:50%;top:18px;transform:translateX(-50%);
+      background:rgba(18,26,43,.95);border:1px solid rgba(255,255,255,.12);
+      padding:10px 12px;border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,.35);
+      color:var(--txt);font-size:13px;opacity:0;pointer-events:none;
+      transition:opacity .25s ease, top .25s ease;
+    }
+    .toast.show{opacity:1;top:26px}
+    .sr{position:absolute;left:-9999px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="card" style="flex:1;min-width:280px">
+        <h1>🛎️ Campana Clicker</h1>
+        <div class="sub">Haz clic en la campana para ganar <b>timbres</b>. Compra mejoras para ganar más por segundo.</div>
+        <div class="stats">
+          <div class="pill">Timbres: <b id="coins">0</b></div>
+          <div class="pill">Por clic: <b id="pc">1</b></div>
+          <div class="pill">Por segundo: <b id="ps">0</b></div>
+          <div class="pill">Nivel: <b id="lvl">1</b></div>
+        </div>
+      </div>
+
+      <div class="card" style="min-width:280px;flex:1">
+        <h1>🎯 Objetivo</h1>
+        <div class="sub">Llega a <b>10.000 timbres</b> para “activar la súper campana”.</div>
+        <div class="log" id="log">Consejo: Mantén pulsado el clic como si fueras un monaguillo con prisa.</div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="card">
+        <button class="bigBtn" id="clickBtn" aria-label="Campana">
+          <!-- Campana en SVG (sin internet, sin imágenes externas) -->
+          <svg class="bell" id="bell" viewBox="0 0 512 512" aria-hidden="true">
+            <path fill="#ffd36a" d="M256 32c-66 0-120 54-120 120v54c0 27-9 54-26 76l-34 44c-10 13-1 32 15 32h330c16 0 25-19 15-32l-34-44c-17-22-26-49-26-76v-54C376 86 322 32 256 32z"/>
+            <path fill="#ffb84d" d="M180 374c0 42 34 76 76 76s76-34 76-76H180z"/>
+            <circle cx="256" cy="456" r="18" fill="#ffcc66"/>
+            <path fill="rgba(0,0,0,.18)" d="M136 206v-54c0-66 54-120 120-120 7 0 14 .6 21 1.8C220 42 176 92 176 152v54c0 27-9 54-26 76l-34 44c-5 7-6 15-3 22h-22c-16 0-25-19-15-32l34-44c17-22 26-49 26-76z"/>
+          </svg>
+          <div class="hint">Clic = +<span id="hintPc">1</span> timbre(s)</div>
+        </button>
+      </div>
+
+      <div class="card shop">
+        <h2>🛒 Tienda de mejoras</h2>
+        <div class="sub">Todo se guarda automáticamente en tu navegador.</div>
+
+        <div class="row">
+          <button class="small" id="buyFinger">
+            🖐️ Dedo entrenado (+1 por clic) — <span class="cost" id="costFinger">15</span>
+          </button>
+          <button class="small" id="buyBellBoy">
+            🧒 Monaguillo (+1/seg) — <span class="cost" id="costBellBoy">25</span>
+          </button>
+        </div>
+
+        <div class="row">
+          <button class="small" id="buyAutoBell">
+            ⚙️ Campana automática (+5/seg) — <span class="cost" id="costAutoBell">140</span>
+          </button>
+          <button class="small" id="buyTower">
+            🏰 Torre de campanas (+25/seg) — <span class="cost" id="costTower">700</span>
+          </button>
+        </div>
+
+        <div class="row">
+          <button class="small" id="buyCrit">
+            🎯 “Ding” crítico (+10% crit, x5) — <span class="cost" id="costCrit">250</span>
+          </button>
+          <button class="small" id="buyBoost">
+            🚀 Turbo 10s (x2 clicks) — <span class="cost" id="costBoost">120</span>
+          </button>
+        </div>
+
+        <div class="footer">
+          <button class="small" id="saveNow">💾 Guardar ahora</button>
+          <button class="small" id="reset">🧨 Reiniciar partida</button>
+        </div>
+
+        <div class="log" id="milestones"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  // ====== Estado ======
+  const SKEY = "campana_clicker_v1";
+  let state = {
+    coins: 0,
+    perClick: 1,
+    perSec: 0,
+
+    lvl: 1,
+    totalClicks: 0,
+
+    // upgrades owned
+    finger: 0,
+    bellBoy: 0,
+    autoBell: 0,
+    tower: 0,
+    crit: 0,
+
+    critChance: 0,      // 0..1
+    turboUntil: 0,      // ms timestamp
+  };
+
+  // costes base y escalado
+  const cost = {
+    finger: { base: 15, mult: 1.15 },
+    bellBoy:{ base: 25, mult: 1.18 },
+    autoBell:{ base: 140, mult: 1.20 },
+    tower:{ base: 700, mult: 1.22 },
+    crit:{ base: 250, mult: 1.35 },
+    boost:{ base: 120, mult: 1.25 }, // consumible
+  };
+
+  // ====== Helpers ======
+  const $ = id => document.getElementById(id);
+  const fmt = n => Math.floor(n).toLocaleString("es-ES");
+  const now = () => Date.now();
+
+  function getCost(key, owned=0){
+    const c = cost[key];
+    return Math.floor(c.base * Math.pow(c.mult, owned));
+  }
+
+  function toast(msg){
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toast._tm);
+    toast._tm = setTimeout(()=>t.classList.remove("show"), 1100);
+  }
+
+  function save(){
+    localStorage.setItem(SKEY, JSON.stringify(state));
+    toast("Guardado ✅");
+  }
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(SKEY);
+      if(!raw) return;
+      const obj = JSON.parse(raw);
+      if(obj && typeof obj === "object") state = { ...state, ...obj };
+    }catch(e){}
+  }
+
+  function recompute(){
+    // perSec desde mejoras
+    state.perSec = state.bellBoy * 1 + state.autoBell * 5 + state.tower * 25;
+
+    // perClick desde dedo entrenado
+    state.perClick = 1 + state.finger * 1;
+
+    // crit chance por upgrades
+    state.critChance = Math.min(0.50, state.crit * 0.10);
+
+    // nivel por coins totales "efectivos"
+    state.lvl = 1 + Math.floor(Math.sqrt(state.coins) / 20);
+  }
+
+  function canAfford(x){ return state.coins >= x; }
+
+  // ====== UI ======
+  const ui = {
+    coins: $("coins"),
+    pc: $("pc"),
+    ps: $("ps"),
+    lvl: $("lvl"),
+    hintPc: $("hintPc"),
+    log: $("log"),
+    milestones: $("milestones"),
+
+    costFinger: $("costFinger"),
+    costBellBoy: $("costBellBoy"),
+    costAutoBell: $("costAutoBell"),
+    costTower: $("costTower"),
+    costCrit: $("costCrit"),
+    costBoost: $("costBoost"),
+
+    buyFinger: $("buyFinger"),
+    buyBellBoy: $("buyBellBoy"),
+    buyAutoBell: $("buyAutoBell"),
+    buyTower: $("buyTower"),
+    buyCrit: $("buyCrit"),
+    buyBoost: $("buyBoost"),
+  };
+
+  function render(){
+    recompute();
+
+    ui.coins.textContent = fmt(state.coins);
+    ui.pc.textContent = fmt(state.perClick) + (isTurbo() ? " (x2 TURBO)" : "");
+    ui.ps.textContent = fmt(state.perSec);
+    ui.lvl.textContent = fmt(state.lvl);
+    ui.hintPc.textContent = fmt(state.perClick * (isTurbo()?2:1));
+
+    // costes actuales
+    const cFinger = getCost("finger", state.finger);
+    const cBellBoy = getCost("bellBoy", state.bellBoy);
+    const cAutoBell = getCost("autoBell", state.autoBell);
+    const cTower = getCost("tower", state.tower);
+    const cCrit = getCost("crit", state.crit);
+    const cBoost = getCost("boost", 0);
+
+    ui.costFinger.textContent = fmt(cFinger);
+    ui.costBellBoy.textContent = fmt(cBellBoy);
+    ui.costAutoBell.textContent = fmt(cAutoBell);
+    ui.costTower.textContent = fmt(cTower);
+    ui.costCrit.textContent = fmt(cCrit);
+    ui.costBoost.textContent = fmt(cBoost);
+
+    // habilitar/deshabilitar
+    ui.buyFinger.disabled = !canAfford(cFinger);
+    ui.buyBellBoy.disabled = !canAfford(cBellBoy);
+    ui.buyAutoBell.disabled = !canAfford(cAutoBell);
+    ui.buyTower.disabled = !canAfford(cTower);
+    ui.buyCrit.disabled = !canAfford(cCrit);
+    ui.buyBoost.disabled = !canAfford(cBoost) || isTurbo();
+
+    // hitos
+    const goal = 10000;
+    const pct = Math.min(100, (state.coins/goal)*100).toFixed(1);
+    ui.milestones.textContent =
+      `Progreso súper campana: ${pct}% (${fmt(state.coins)}/${fmt(goal)}). ` +
+      (state.coins >= goal ? "🔥 ¡SÚPER CAMPANA ACTIVADA!" : "");
+  }
+
+  function isTurbo(){
+    return now() < state.turboUntil;
+  }
+
+  // ====== Click ======
+  const bell = $("bell");
+  function ringAnim(){
+    bell.animate([
+      { transform:"rotate(0deg)" },
+      { transform:"rotate(-7deg)" },
+      { transform:"rotate(7deg)" },
+      { transform:"rotate(-5deg)" },
+      { transform:"rotate(5deg)" },
+      { transform:"rotate(0deg)" }
+    ], { duration: 220, easing: "ease-out" });
+  }
+
+  function doClick(){
+    let gain = state.perClick;
+
+    // crítico
+    if(state.critChance > 0 && Math.random() < state.critChance){
+      gain *= 5;
+      toast("CRÍTICO x5 ⚡");
+    }
+
+    // turbo
+    if(isTurbo()) gain *= 2;
+
+    state.coins += gain;
+    state.totalClicks += 1;
+
+    ringAnim();
+    ui.log.textContent = `+${fmt(gain)} timbre(s) — Clics totales: ${fmt(state.totalClicks)}`;
+
+    // pequeña celebración
+    if(state.coins >= 10000 && !doClick._celebrated){
+      doClick._celebrated = true;
+      toast("🛎️ SÚPER CAMPANA ACTIVADA 🔥");
+      ui.log.textContent = "¡Has llegado a 10.000! Ahora ya eres leyenda del campanario.";
+    }
+
+    render();
+  }
+
+  // ====== Compras ======
+  function buy(key){
+    const owned = state[key] || 0;
+    const price = getCost(key, owned);
+    if(!canAfford(price)) return;
+
+    state.coins -= price;
+    state[key] = owned + 1;
+    render();
+    save();
+  }
+
+  function buyTurbo(){
+    const price = getCost("boost", 0);
+    if(!canAfford(price) || isTurbo()) return;
+    state.coins -= price;
+    state.turboUntil = now() + 10000; // 10s
+    toast("Turbo x2 (10s) 🚀");
+    render();
+    save();
+  }
+
+  // ====== Tick por segundo ======
+  let last = now();
+  function loop(){
+    const t = now();
+    const dt = (t - last) / 1000;
+    last = t;
+
+    if(state.perSec > 0){
+      state.coins += state.perSec * dt;
+    }
+
+    // auto-guardado cada ~8s
+    if(!loop._nextSave) loop._nextSave = t + 8000;
+    if(t >= loop._nextSave){
+      localStorage.setItem(SKEY, JSON.stringify(state));
+      loop._nextSave = t + 8000;
+    }
+
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  // ====== Eventos ======
+  $("clickBtn").addEventListener("click", doClick);
+  ui.buyFinger.addEventListener("click", ()=>buy("finger"));
+  ui.buyBellBoy.addEventListener("click", ()=>buy("bellBoy"));
+  ui.buyAutoBell.addEventListener("click", ()=>buy("autoBell"));
+  ui.buyTower.addEventListener("click", ()=>buy("tower"));
+  ui.buyCrit.addEventListener("click", ()=>buy("crit"));
+  ui.buyBoost.addEventListener("click", buyTurbo);
+
+  $("saveNow").addEventListener("click", save);
+  $("reset").addEventListener("click", () => {
+    if(confirm("¿Seguro que quieres reiniciar? Se borrará la partida.")){
+      localStorage.removeItem(SKEY);
+      state = { coins:0, perClick:1, perSec:0, lvl:1, totalClicks:0,
+                finger:0,bellBoy:0,autoBell:0,tower:0,crit:0,critChance:0,turboUntil:0 };
+      doClick._celebrated = false;
+      render();
+      toast("Reiniciado 🧨");
+    }
+  });
+
+  // Atajos teclado
+  window.addEventListener("keydown", (e)=>{
+    if(e.code === "Space"){ e.preventDefault(); doClick(); }
+    if(e.key.toLowerCase() === "s"){ save(); }
+  });
+
+  // ====== Init ======
+  load();
+  render();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

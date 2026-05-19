@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Skibidi Survival - Prototipo JC</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      background: #1f2f1f;
+    }
+
+    #ui {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.75);
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      max-width: 360px;
+    }
+
+    #msg {
+      position: fixed;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.85);
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 18px;
+      color: #ffd86b;
+    }
+
+    button {
+      margin: 4px;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #ffd24a;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #ffea8a;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="ui">
+  <b>Skibidi Survival JC</b><br><br>
+  ❤️ Vida: <span id="vida"></span><br>
+  ⚔️ Ataque: <span id="ataque"></span><br>
+  💰 Dinero: <span id="dinero"></span><br>
+  🔩 Chatarra: <span id="chatarra"></span><br>
+  🧠 Chips: <span id="chips"></span><br>
+  🔋 Bater: <span id="bater"></span><br>
+  🧻 Papel: <span id="papel"></span><br>
+  🪠 Desatascador: <span id="desatascador"></span><br><br>
+
+  🏠 Base reparada: <span id="base"></span><br>
+  🤖 Skibidi Cámara: <span id="camara"></span><br>
+  🧪 Máquina mejora: <span id="maquina"></span><br><br>
+
+  <button onclick="repairBase()">Reparar base</button>
+  <button onclick="createCamera()">Crear Skibidi Cámara</button>
+  <button onclick="createMachine()">Crear máquina</button>
+  <button onclick="research()">Investigar mejora</button>
+</div>
+
+<div id="msg">Flechas para moverte. Pulsa 1 para atacar.</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const keys = {};
+let message = "Flechas para moverte. Pulsa 1 para atacar.";
+
+const player = {
+  x: canvas.width / 2,
+  y: canvas.height / 2,
+  size: 22,
+  speed: 3,
+  hp: 100,
+  maxHp: 100,
+  damage: 5,
+  range: 45,
+  money: 0,
+  scrap: 0,
+  chips: 0,
+  bater: 0,
+  papel: 0,
+  desatascador: 0,
+  attackCooldown: 0
+};
+
+const base = {
+  x: canvas.width / 2 + 120,
+  y: canvas.height / 2,
+  repaired: false,
+  cameraCreated: false,
+  machineCreated: false
+};
+
+const enemies = [];
+const drops = [];
+
+let gameTime = 0;
+let catTimer = 0;
+let toiletTimer = 0;
+let researchLevel = 0;
+
+function showMessage(text) {
+  message = text;
+  document.getElementById("msg").innerText = text;
+}
+
+function spawnCat() {
+  enemies.push({
+    type: "Gato",
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    size: 18,
+    hp: 10,
+    maxHp: 10,
+    damage: 1,
+    speed: 1.2,
+    attackRate: 60,
+    attackTimer: 0,
+    color: "#d28b45"
+  });
+}
+
+function spawnToilet() {
+  enemies.push({
+    type: "Skibidi Toilet",
+    x: base.x + 250,
+    y: base.y + 100,
+    size: 28,
+    hp: 20,
+    maxHp: 20,
+    damage: 5,
+    speed: 1,
+    attackRate: 120,
+    attackTimer: 0,
+    color: "#eeeeee"
+  });
+  showMessage("¡Ruido cerca de la base! Aparece un Skibidi Toilet.");
+}
+
+function distance(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function dropResource(x, y, kind, amount) {
+  drops.push({ x, y, kind, amount, size: 14 });
+}
+
+function enemyDrop(enemy) {
+  if (enemy.type === "Gato") {
+    player.money += 15;
+    if (Math.random() < 0.05) {
+      dropResource(enemy.x, enemy.y, "bolaPelo", 1);
+    }
+    showMessage("Has derrotado al gato. +15 dinero.");
+  }
+
+  if (enemy.type === "Skibidi Toilet") {
+    player.money += 35;
+
+    if (Math.random() < 0.75) player.bater += 1;
+    if (Math.random() < 0.05) player.desatascador += 1;
+    if (Math.random() < 0.35) player.papel += 1;
+
+    showMessage("Skibidi derrotado. +35 dinero y posibles recursos.");
+  }
+}
+
+function attack() {
+  if (player.attackCooldown > 0) return;
+
+  player.attackCooldown = 25;
+
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const e = enemies[i];
+    if (distance(player, e) < player.range + e.size) {
+      e.hp -= player.damage;
+
+      if (e.hp <= 0) {
+        enemyDrop(e);
+        enemies.splice(i, 1);
+
+        if (!base.repaired && enemies.length === 0) {
+          startHouseEvent();
+        }
+      }
+
+      return;
+    }
+  }
+
+  showMessage("Atacaste, pero no había enemigo cerca.");
+}
+
+function startHouseEvent() {
+  showMessage("¡BOOM! Ves una casa destruida con restos de Camera Mans.");
+
+  dropResource(base.x - 60, base.y - 40, "scrap", 5);
+  dropResource(base.x - 20, base.y - 50, "scrap", 5);
+  dropResource(base.x + 20, base.y - 40, "scrap", 5);
+  dropResource(base.x + 60, base.y - 20, "scrap", 5);
+  dropResource(base.x, base.y + 40, "scrap", 5);
+
+  dropResource(base.x - 80, base.y + 50, "chip", 1);
+  dropResource(base.x + 90, base.y + 40, "bater", 1);
+}
+
+function collectDrops() {
+  for (let i = drops.length - 1; i >= 0; i--) {
+    const d = drops[i];
+
+    if (distance(player, d) < 35) {
+      if (d.kind === "scrap") {
+        const amount = Math.min(d.amount, 5);
+        player.scrap += amount;
+        showMessage("Recoges " + amount + " chatarra.");
+      }
+
+      if (d.kind === "chip") {
+        const amount = Math.min(d.amount, 3);
+        player.chips += amount;
+        showMessage("Recoges " + amount + " chip.");
+      }
+
+      if (d.kind === "bater") {
+        player.bater += d.amount;
+        showMessage("Recoges un bater.");
+      }
+
+      if (d.kind === "bolaPelo") {
+        player.scrap += 2;
+        showMessage("Bola de pelo rara: la reciclas en 2 chatarra.");
+      }
+
+      drops.splice(i, 1);
+    }
+  }
+}
+
+function repairBase() {
+  if (base.repaired) return showMessage("La base ya está reparada.");
+  if (player.money < 50) return showMessage("Necesitas 15 chatarra para reparar la base.");
+
+  player.money -= 50;
+  base.repaired = true;
+  showMessage("Base reparada. Ahora puedes crear Skibidi Cámara.");
+}
+
+function createCamera() {
+  if (!base.repaired) return showMessage("Primero repara la base.");
+  if (base.cameraCreated) return showMessage("Ya tienes Skibidi Cámara.");
+  if (player.chips < 1 || player.scrap < 15 || player.bater < 1 || player.money < 75) {
+    return showMessage("Necesitas 1 chip, 15 chatarra, 1 bater y 75 monedas.");
+  }
+
+  player.chips -= 1;
+  player.scrap -= 15;
+  player.bater -= 1;
+  player.money -= 75;
+
+  base.cameraCreated = true;
+  showMessage("Skibidi Cámara creado. Ahora tienes investigador.");
+}
+
+function createMachine() {
+  if (!base.cameraCreated) return showMessage("Necesitas Skibidi Cámara investigador.");
+  if (base.machineCreated) return showMessage("Ya tienes la máquina.");
+  if (player.money < 65 || player.scrap < 15) {
+    return showMessage("Necesitas 65 dinero y 15 chatarra.");
+  }
+
+  player.money -= 65;
+  player.scrap -= 15;
+  base.machineCreated = true;
+  showMessage("Máquina de mejora construida.");
+}
+
+function research() {
+  if (!base.machineCreated) return showMessage("Primero crea la máquina de mejora.");
+
+  const costMoney = 40 * (researchLevel + 1);
+  const costScrap = 10 + researchLevel * 5;
+
+  if (player.money < costMoney || player.scrap < costScrap) {
+    return showMessage("Investigación cuesta " + costMoney + " dinero y " + costScrap + " chatarra.");
+  }
+
+  player.money -= costMoney;
+  player.scrap -= costScrap;
+  researchLevel++;
+
+  const upgrades = [
+    () => { player.maxHp += 10; player.hp += 10; showMessage("Mejora blanca: +10 vida."); },
+    () => { player.damage += 1; showMessage("Mejora negra: +1 ataque."); },
+    () => { player.speed += 0.4; showMessage("Mejora beige: +velocidad."); },
+    () => { player.range += 5; showMessage("Mejora azul marino: +distancia de ataque."); }
+  ];
+
+  upgrades[(researchLevel - 1) % upgrades.length]();
+}
+
+function updateEnemies() {
+  enemies.forEach(e => {
+    const dx = player.x - e.x;
+    const dy = player.y - e.y;
+    const dist = Math.hypot(dx, dy);
+
+    if (dist > 0) {
+      e.x += (dx / dist) * e.speed;
+      e.y += (dy / dist) * e.speed;
+    }
+
+    e.attackTimer++;
+
+    if (dist < e.size + player.size && e.attackTimer >= e.attackRate) {
+      player.hp -= e.damage;
+      e.attackTimer = 0;
+      showMessage(e.type + " te golpea: -" + e.damage + " vida.");
+    }
+  });
+
+  if (player.hp <= 0) {
+    showMessage("Has muerto. Recarga la página para volver a jugar.");
+  }
+}
+
+function updatePlayer() {
+  if (keys["ArrowUp"]) player.y -= player.speed;
+  if (keys["ArrowDown"]) player.y += player.speed;
+  if (keys["ArrowLeft"]) player.x -= player.speed;
+  if (keys["ArrowRight"]) player.x += player.speed;
+
+  player.x = Math.max(0, Math.min(canvas.width, player.x));
+  player.y = Math.max(0, Math.min(canvas.height, player.y));
+
+  if (player.attackCooldown > 0) player.attackCooldown--;
+
+  collectDrops();
+}
+
+function drawPlayer() {
+  ctx.fillStyle = "#42a5ff";
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "white";
+  ctx.font = "12px Arial";
+  ctx.fillText("Jugador", player.x - 22, player.y - 28);
+}
+
+function drawBase() {
+  ctx.fillStyle = base.repaired ? "#7bd66f" : "#795548";
+  ctx.fillRect(base.x - 45, base.y - 35, 90, 70);
+
+  ctx.fillStyle = "white";
+  ctx.font = "13px Arial";
+  ctx.fillText(base.repaired ? "BASE" : "CASA ROTA", base.x - 38, base.y - 45);
+
+  if (base.cameraCreated) {
+    ctx.fillStyle = "#222";
+    ctx.fillRect(base.x + 65, base.y - 20, 35, 35);
+    ctx.fillStyle = "#87cefa";
+    ctx.fillText("Cam", base.x + 65, base.y - 25);
+  }
+
+  if (base.machineCreated) {
+    ctx.fillStyle = "#9c27b0";
+    ctx.fillRect(base.x - 100, base.y - 20, 35, 35);
+    ctx.fillStyle = "white";
+    ctx.fillText("Máq", base.x - 100, base.y - 25);
+  }
+}
+
+function drawEnemies() {
+  enemies.forEach(e => {
+    ctx.fillStyle = e.color;
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "black";
+    ctx.font = "12px Arial";
+    ctx.fillText(e.type, e.x - 35, e.y - e.size - 8);
+
+    ctx.fillStyle = "red";
+    ctx.fillRect(e.x - 20, e.y + e.size + 5, 40, 5);
+
+    ctx.fillStyle = "lime";
+    ctx.fillRect(e.x - 20, e.y + e.size + 5, 40 * (e.hp / e.maxHp), 5);
+  });
+}
+
+function drawDrops() {
+  drops.forEach(d => {
+    if (d.kind === "scrap") ctx.fillStyle = "#aaa";
+    if (d.kind === "chip") ctx.fillStyle = "#00e5ff";
+    if (d.kind === "bater") ctx.fillStyle = "#ffeb3b";
+    if (d.kind === "bolaPelo") ctx.fillStyle = "#8d6e63";
+
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "white";
+    ctx.font = "11px Arial";
+    ctx.fillText(d.kind, d.x - 18, d.y - 18);
+  });
+}
+
+function updateUI() {
+  document.getElementById("vida").innerText = player.hp + "/" + player.maxHp;
+  document.getElementById("ataque").innerText = player.damage;
+  document.getElementById("dinero").innerText = player.money;
+  document.getElementById("chatarra").innerText = player.scrap;
+  document.getElementById("chips").innerText = player.chips;
+  document.getElementById("bater").innerText = player.bater;
+  document.getElementById("papel").innerText = player.papel;
+  document.getElementById("desatascador").innerText = player.desatascador;
+  document.getElementById("base").innerText = base.repaired ? "Sí" : "No";
+  document.getElementById("camara").innerText = base.cameraCreated ? "Sí" : "No";
+  document.getElementById("maquina").innerText = base.machineCreated ? "Sí" : "No";
+}
+
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  gameTime++;
+  catTimer++;
+  toiletTimer++;
+
+  if (catTimer >= 60 * 60) {
+    spawnCat();
+    catTimer = 0;
+  }
+
+  if (toiletTimer >= 60 * 180) {
+    spawnToilet();
+    toiletTimer = 0;
+  }
+
+  updatePlayer();
+  updateEnemies();
+
+  drawBase();
+  drawDrops();
+  drawEnemies();
+  drawPlayer();
+
+  updateUI();
+
+  requestAnimationFrame(gameLoop);
+}
+
+window.addEventListener("keydown", e => {
+  keys[e.key] = true;
+
+  if (e.key === "1") attack();
+});
+
+window.addEventListener("keyup", e => {
+  keys[e.key] = false;
+});
+
+spawnCat();
+gameLoop();
+</script>
+
+</body>
+</html>
