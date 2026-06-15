@@ -24,9 +24,7 @@
   --teal: #2dd4bf;
   --gold: #ffbe0b;
 }
-
 * { margin: 0; padding: 0; box-sizing: border-box; }
-
 body {
   font-family: 'Rubik', system-ui, sans-serif;
   background:
@@ -36,7 +34,6 @@ body {
   color: var(--text);
   min-height: 100vh;
 }
-
 .container { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
 
 /* ===== HEADER ===== */
@@ -48,14 +45,12 @@ header {
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
 }
-
 .nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 14px 0;
 }
-
 .brand {
   display: flex;
   align-items: center;
@@ -63,7 +58,6 @@ header {
   text-decoration: none;
   color: var(--text);
 }
-
 .brand-logo {
   width: 40px;
   height: 40px;
@@ -77,13 +71,11 @@ header {
   color: #fff;
   box-shadow: 0 0 18px rgba(255,45,120,0.4);
 }
-
 .brand-name {
   font-family: 'Press Start 2P', monospace;
   font-size: 13px;
   letter-spacing: 1px;
 }
-
 .brand-tag {
   font-size: 11px;
   color: var(--muted);
@@ -92,7 +84,6 @@ header {
   font-family: 'Rubik', sans-serif;
   letter-spacing: 0.5px;
 }
-
 .nav-pill {
   font-size: 12px;
   color: var(--teal);
@@ -106,7 +97,6 @@ header {
 
 /* ===== HERO / DESTACADO ===== */
 .hero { padding: 48px 0 8px; }
-
 .featured {
   position: relative;
   display: grid;
@@ -117,9 +107,7 @@ header {
   border-radius: 20px;
   overflow: hidden;
 }
-
 .featured-info { padding: 42px 40px; }
-
 .badge-new {
   display: inline-block;
   font-family: 'Press Start 2P', monospace;
@@ -131,7 +119,6 @@ header {
   margin-bottom: 18px;
   box-shadow: 0 0 16px rgba(255,190,11,0.45);
 }
-
 .featured-eyebrow {
   font-size: 12px;
   letter-spacing: 2px;
@@ -140,7 +127,6 @@ header {
   font-weight: 500;
   margin-bottom: 10px;
 }
-
 .featured h1 {
   font-family: 'Press Start 2P', monospace;
   font-size: clamp(18px, 3vw, 28px);
@@ -149,7 +135,6 @@ header {
   text-shadow: 0 0 22px rgba(255,45,120,0.55);
   margin-bottom: 16px;
 }
-
 .featured p {
   color: var(--muted);
   line-height: 1.65;
@@ -157,14 +142,12 @@ header {
   margin-bottom: 14px;
   max-width: 46ch;
 }
-
 .featured-meta {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   margin-bottom: 26px;
 }
-
 .meta-chip {
   font-size: 12px;
   color: var(--muted);
@@ -173,7 +156,6 @@ header {
   padding: 6px 11px;
   border-radius: 999px;
 }
-
 .btn-play-big {
   display: inline-block;
   font-family: 'Press Start 2P', monospace;
@@ -186,12 +168,10 @@ header {
   box-shadow: 0 0 24px rgba(45,212,191,0.45);
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
-
 .btn-play-big:hover {
   transform: translateY(-2px);
   box-shadow: 0 0 36px rgba(45,212,191,0.7);
 }
-
 .featured-visual {
   position: relative;
   background:
@@ -203,18 +183,15 @@ header {
   min-height: 280px;
   overflow: hidden;
 }
-
 .featured-visual .ship {
   font-size: 96px;
   filter: drop-shadow(0 0 28px rgba(45,212,191,0.6));
   animation: float 3s ease-in-out infinite;
 }
-
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-14px); }
 }
-
 .featured-visual .star {
   position: absolute;
   width: 2px;
@@ -224,7 +201,6 @@ header {
   opacity: 0.7;
   animation: fall linear infinite;
 }
-
 @keyframes fall {
   from { transform: translateY(-20px); }
   to { transform: translateY(360px); opacity: 0; }
@@ -232,7 +208,6 @@ header {
 
 /* ===== SECCIÓN TODOS LOS JUEGOS ===== */
 .section { padding: 54px 0 70px; }
-
 .section-title {
   font-family: 'Press Start 2P', monospace;
   font-size: clamp(15px, 2.4vw, 22px);
@@ -241,13 +216,11 @@ header {
   letter-spacing: 2px;
   margin-bottom: 30px;
 }
-
 .games-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 24px;
 }
-
 .game-card {
   background: var(--card);
   border: 1px solid var(--line);
@@ -257,13 +230,13 @@ header {
   flex-direction: column;
   transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
-
 .game-card:hover {
   transform: translateY(-4px);
   border-color: rgba(45,212,191,0.45);
   box-shadow: 0 14px 38px rgba(0,0,0,0.45);
 }
 
+/* ===== CARD ICON CON HOVER VIDEO ===== */
 .card-icon {
   position: relative;
   background: var(--card-top);
@@ -273,7 +246,31 @@ header {
   align-items: center;
   justify-content: center;
   font-size: 56px;
+  overflow: hidden;
 }
+.card-icon .preview-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+.card-icon .icon-emoji {
+  position: relative;
+  z-index: 1;
+  transition: opacity 0.25s ease;
+}
+.game-card:hover .preview-video {
+  opacity: 1;
+}
+.game-card:hover .icon-emoji {
+  opacity: 0;
+}
+/* ===== FIN HOVER VIDEO ===== */
 
 .card-badge {
   position: absolute;
@@ -285,15 +282,14 @@ header {
   background: var(--gold);
   padding: 6px 9px;
   border-radius: 5px;
+  z-index: 2;
 }
-
 .card-body {
   padding: 20px 22px 24px;
   display: flex;
   flex-direction: column;
   flex: 1;
 }
-
 .card-cat {
   font-size: 11px;
   letter-spacing: 2px;
@@ -302,13 +298,11 @@ header {
   font-weight: 500;
   margin-bottom: 9px;
 }
-
 .card-body h3 {
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 9px;
 }
-
 .card-body p {
   color: var(--muted);
   font-size: 14px;
@@ -316,7 +310,6 @@ header {
   flex: 1;
   margin-bottom: 20px;
 }
-
 .btn-play {
   display: block;
   text-align: center;
@@ -330,7 +323,6 @@ header {
   border-radius: 10px;
   transition: background 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
 }
-
 .btn-play:hover {
   background: var(--teal);
   color: #0a0d1a;
@@ -348,7 +340,6 @@ footer {
   flex-wrap: wrap;
   gap: 10px;
 }
-
 footer .f-neon {
   color: var(--neon);
   font-family: 'Press Start 2P', monospace;
@@ -362,7 +353,6 @@ footer .f-neon {
   .featured-info { padding: 30px 26px 36px; }
   .nav-pill { display: none; }
 }
-
 @media (prefers-reduced-motion: reduce) {
   .featured-visual .ship, .featured-visual .star { animation: none; }
 }
@@ -384,7 +374,6 @@ footer .f-neon {
 </header>
 
 <main>
-
   <!-- ===== DESTACADO ===== -->
   <section class="hero container">
     <div class="featured">
@@ -410,12 +399,11 @@ footer .f-neon {
   <!-- ===== TODOS LOS JUEGOS ===== -->
   <section class="section container">
     <h2 class="section-title">TODOS LOS JUEGOS</h2>
-
     <div class="games-grid">
 
       <article class="game-card">
         <div class="card-icon">
-          🚀
+          <span class="icon-emoji">🚀</span>
           <span class="card-badge">NUEVO</span>
         </div>
         <div class="card-body">
@@ -427,7 +415,9 @@ footer .f-neon {
       </article>
 
       <article class="game-card">
-        <div class="card-icon">💨</div>
+        <div class="card-icon">
+          <span class="icon-emoji">💨</span>
+        </div>
         <div class="card-body">
           <div class="card-cat">Acción · Esquivar</div>
           <h3>Dodge JC</h3>
@@ -436,8 +426,19 @@ footer .f-neon {
         </div>
       </article>
 
+      <!-- CLICK DEFENDER — con vídeo preview al hover -->
       <article class="game-card">
-        <div class="card-icon">🛡️</div>
+        <div class="card-icon">
+          <span class="icon-emoji">🛡️</span>
+          <video
+            class="preview-video"
+            src="videos/click-defender-preview.mp4"
+            muted
+            loop
+            playsinline
+            preload="none"
+          ></video>
+        </div>
         <div class="card-body">
           <div class="card-cat">Acción · Defensa</div>
           <h3>Click Defender</h3>
@@ -447,7 +448,9 @@ footer .f-neon {
       </article>
 
       <article class="game-card">
-        <div class="card-icon">🎨</div>
+        <div class="card-icon">
+          <span class="icon-emoji">🎨</span>
+        </div>
         <div class="card-body">
           <div class="card-cat">Reflejos · Velocidad</div>
           <h3>Color Match</h3>
@@ -458,7 +461,6 @@ footer .f-neon {
 
     </div>
   </section>
-
 </main>
 
 <footer>
@@ -469,20 +471,34 @@ footer .f-neon {
 </footer>
 
 <script>
-document.getElementById('year').textContent = new Date().getFullYear();
+  document.getElementById('year').textContent = new Date().getFullYear();
 
-// Estrellas animadas del destacado
-const visual = document.querySelector('.featured-visual');
-if (visual && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-  for (let i = 0; i < 18; i++) {
-    const s = document.createElement('span');
-    s.className = 'star';
-    s.style.left = Math.random() * 100 + '%';
-    s.style.animationDuration = (2 + Math.random() * 3) + 's';
-    s.style.animationDelay = Math.random() * 3 + 's';
-    visual.appendChild(s);
+  // Estrellas animadas del destacado
+  const visual = document.querySelector('.featured-visual');
+  if (visual && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    for (let i = 0; i < 18; i++) {
+      const s = document.createElement('span');
+      s.className = 'star';
+      s.style.left = Math.random() * 100 + '%';
+      s.style.animationDuration = (2 + Math.random() * 3) + 's';
+      s.style.animationDelay = Math.random() * 3 + 's';
+      visual.appendChild(s);
+    }
   }
-}
+
+  // Hover video: play al entrar, pause al salir
+  document.querySelectorAll('.game-card').forEach(card => {
+    const video = card.querySelector('.preview-video');
+    if (!video) return;
+    card.addEventListener('mouseenter', () => {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    });
+    card.addEventListener('mouseleave', () => {
+      video.pause();
+      video.currentTime = 0;
+    });
+  });
 </script>
 
 </body>
